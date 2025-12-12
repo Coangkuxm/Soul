@@ -2,6 +2,19 @@
 const { query } = require('../config/db-connection');
 
 const userModel = {
+  // Đếm tổng số người dùng (có thể lọc theo tìm kiếm)
+  async countUsers(search = '') {
+    let queryText = 'SELECT COUNT(*) FROM users';
+    const queryParams = [];
+    
+    if (search) {
+      queryText += ' WHERE username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1';
+      queryParams.push(`%${search}%`);
+    }
+    
+    const result = await query(queryText, queryParams);
+    return parseInt(result.rows[0].count, 10);
+  },
   // Tìm user bằng ID
   async findById(id) {
     const result = await query(
@@ -71,17 +84,42 @@ const userModel = {
   // Lấy danh sách người dùng (phân trang)
   async getAll({ page = 1, limit = 10, search = '' }) {
     const offset = (page - 1) * limit;
-    const result = await query(
-      `SELECT 
-        id, username, email, display_name as "displayName", 
-        avatar_url as "avatarUrl", created_at as "createdAt"
-       FROM users
-       WHERE username ILIKE $1 OR email ILIKE $1
-       ORDER BY created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [`%${search}%`, limit, offset]
-    );
-    return result.rows;
+    let queryText = `
+      SELECT 
+        id, 
+        username, 
+        email, 
+        display_name as "displayName", 
+        avatar_url as "avatarUrl", 
+        bio, 
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM users
+    `;
+    
+    const queryParams = [];
+    
+    if (search) {
+      queryText += ' WHERE username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1';
+      queryParams.push(`%${search}%`);
+    }
+    
+    queryText += ` ORDER BY created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+    
+    queryParams.push(limit, offset);
+    
+    const result = await query(queryText, queryParams);
+    const total = await this.countUsers(search);
+    
+    return {
+      users: result.rows,
+      pagination: {
+        total,
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   },
 
   // Xóa người dùng

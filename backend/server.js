@@ -18,7 +18,13 @@ const { authenticateToken } = require('./middlewares/auth.middleware');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
+// ...
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
