@@ -1,37 +1,56 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { query } = require('../config/db-connection');
-const { NotFoundError, ConflictError, UnauthorizedError } = require('../utils/errors');
+const userModel = require('../models/user.model');
+const { 
+  NotFoundError, 
+  ConflictError, 
+  UnauthorizedError,
+  BadRequestError 
+} = require('../utils/errors');
 
 const userController = {
+  // Lấy thông tin người dùng hiện tại
+  async getProfile(req, res, next) {
+    try {
+      // Lấy thông tin user từ token (đã được xác thực bởi middleware)
+      const user = await userModel.findById(req.user.userId);
+      
+      if (!user) {
+        throw new NotFoundError('Không tìm thấy người dùng');
+      }
+
+      // Ẩn thông tin nhạy cảm
+      const { password, ...userWithoutPassword } = user;
+
+      res.json({
+        success: true,
+        user: userWithoutPassword
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   // Đăng ký người dùng mới
   async register(req, res, next) {
     try {
-      const { username, email, password } = req.body;
+      const { username, email, password, displayName, avatarUrl, bio } = req.body;
       
       // Kiểm tra email đã tồn tại chưa
-      const existingUser = await query(
-        'SELECT id FROM users WHERE email = $1',
-        [email]
-      );
-      
-      if (existingUser.rows.length > 0) {
+      const existingUser = await userModel.findByEmail(email);
+      if (existingUser) {
         throw new ConflictError('Email đã được sử dụng');
       }
       
-      // Mã hóa mật khẩu
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-      
       // Tạo người dùng mới
-      const result = await query(
-        `INSERT INTO users (username, email, password, created_at, updated_at)
-         VALUES ($1, $2, $3, NOW(), NOW())
-         RETURNING id, username, email, display_name, avatar_url, created_at`,
-        [username, email, password]
-      );
-      
-      const newUser = result.rows[0];
+      const newUser = await userModel.create({
+        username,
+        email,
+        password, // Lưu ý: Nên mã hóa mật khẩu ở tầng service
+        displayName,
+        avatarUrl,
+        bio
+      });
       
       // Tạo token
       const token = jwt.sign(
@@ -43,14 +62,7 @@ const userController = {
       res.status(201).json({
         success: true,
         token,
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-          email: newUser.email,
-          displayName: newUser.display_name,
-          avatarUrl: newUser.avatar_url,
-          createdAt: newUser.created_at
-        }
+        user: newUser
       });
       
     } catch (error) {
@@ -61,27 +73,14 @@ const userController = {
   // Lấy thông tin profile người dùng hiện tại
   async getProfile(req, res, next) {
     try {
-      const result = await query(
-        'SELECT id, username, email, display_name, avatar_url, created_at FROM users WHERE id = $1',
-        [req.user.id]
-      );
-      
-      if (result.rows.length === 0) {
+      const user = await userModel.findById(req.user.id);
+      if (!user) {
         throw new NotFoundError('Không tìm thấy người dùng');
       }
       
-      const user = result.rows[0];
-      
       res.json({
         success: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.display_name,
-          avatarUrl: user.avatar_url,
-          createdAt: user.created_at
-        }
+        user
       });
       
     } catch (error) {
@@ -92,34 +91,17 @@ const userController = {
   // Cập nhật thông tin người dùng
   async updateProfile(req, res, next) {
     try {
-      const { displayName, avatarUrl } = req.body;
+      const { displayName, avatarUrl, bio } = req.body;
       
-      const result = await query(
-        `UPDATE users 
-         SET display_name = COALESCE($1, display_name),
-             avatar_url = COALESCE($2, avatar_url),
-             updated_at = NOW()
-         WHERE id = $3
-         RETURNING id, username, email, display_name, avatar_url, created_at`,
-        [displayName, avatarUrl, req.user.id]
-      );
-      
-      if (result.rows.length === 0) {
-        throw new NotFoundError('Không tìm thấy người dùng');
-      }
-      
-      const user = result.rows[0];
+      const updatedUser = await userModel.update(req.user.id, {
+        displayName,
+        avatarUrl,
+        bio
+      });
       
       res.json({
         success: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.display_name,
-          avatarUrl: user.avatar_url,
-          createdAt: user.created_at
-        }
+        user: updatedUser
       });
       
     } catch (error) {
@@ -132,33 +114,19 @@ const userController = {
     try {
       const { currentPassword, newPassword } = req.body;
       
-      // Lấy mật khẩu hiện tại từ database
-      const result = await query(
-        'SELECT password FROM users WHERE id = $1',
-        [req.user.id]
-      );
-      
-      if (result.rows.length === 0) {
+      // Lấy thông tin người dùng
+      const user = await userModel.findById(req.user.id);
+      if (!user) {
         throw new NotFoundError('Không tìm thấy người dùng');
       }
       
-      const user = result.rows[0];
-      
       // Kiểm tra mật khẩu hiện tại
-      const isMatch = (user.password === currentPassword);
-      if (!isMatch) {
+      if (user.password !== currentPassword) {
         throw new UnauthorizedError('Mật khẩu hiện tại không đúng');
       }
       
-      // Mã hóa mật khẩu mới
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(newPassword, salt);
-      
       // Cập nhật mật khẩu mới
-      await query(
-        'UPDATE users SET password  = $1, updated_at = NOW() WHERE id = $2',
-        [hashedPassword, req.user.id]
-      );
+      await userModel.changePassword(user.id, newPassword);
       
       res.json({
         success: true,
@@ -170,58 +138,29 @@ const userController = {
     }
   },
 
-  // Lấy tất cả người dùng (chỉ admin)
+  // Lấy danh sách người dùng (phân trang)
   async getAllUsers(req, res, next) {
     try {
-      const result = await query(
-        'SELECT id, username, email, display_name, avatar_url, created_at FROM users ORDER BY created_at DESC'
-      );
+      const { page = 1, limit = 10, search = '' } = req.query;
       
-      const users = result.rows.map(user => ({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        displayName: user.display_name,
-        avatarUrl: user.avatar_url,
-        createdAt: user.created_at
-      }));
-      
-      res.json({
-        success: true,
-        count: users.length,
-        users
+      const users = await userModel.getAll({ 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        search 
       });
       
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  // Lấy thông tin người dùng theo ID (chỉ admin)
-  async getUserById(req, res, next) {
-    try {
-      const { id } = req.params;
-      
-      const result = await query(
-        'SELECT id, username, email, display_name, avatar_url, created_at FROM users WHERE id = $1',
-        [id]
-      );
-      
-      if (result.rows.length === 0) {
-        throw new NotFoundError('Không tìm thấy người dùng');
-      }
-      
-      const user = result.rows[0];
+      // Lấy tổng số người dùng để phân trang
+      const total = await userModel.countUsers(search);
+      const totalPages = Math.ceil(total / limit);
       
       res.json({
         success: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.display_name,
-          avatarUrl: user.avatar_url,
-          createdAt: user.created_at
+        data: users,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          totalPages
         }
       });
       
@@ -230,41 +169,50 @@ const userController = {
     }
   },
 
-  // Cập nhật thông tin người dùng (chỉ admin)
+  // Lấy thông tin người dùng theo ID
+  async getUserById(req, res, next) {
+    try {
+      const user = await userModel.findById(req.params.id);
+      if (!user) {
+        throw new NotFoundError('Không tìm thấy người dùng');
+      }
+      
+      res.json({
+        success: true,
+        user
+      });
+      
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Cập nhật thông tin người dùng (admin)
   async updateUser(req, res, next) {
     try {
       const { id } = req.params;
-      const { username, email, displayName, role } = req.body;
+      const { username, email, displayName, avatarUrl, bio } = req.body;
       
-      const result = await query(
-        `UPDATE users 
-         SET username = COALESCE($1, username),
-             email = COALESCE($2, email),
-             display_name = COALESCE($3, display_name),
-             role = COALESCE($4, role),
-             updated_at = NOW()
-         WHERE id = $5
-         RETURNING id, username, email, display_name, avatar_url, role, created_at`,
-        [username, email, displayName, role, id]
-      );
-      
-      if (result.rows.length === 0) {
-        throw new NotFoundError('Không tìm thấy người dùng');
+      // Kiểm tra email đã tồn tại chưa (nếu có thay đổi email)
+      if (email) {
+        const existingUser = await userModel.findByEmail(email);
+        if (existingUser && existingUser.id !== parseInt(id)) {
+          throw new ConflictError('Email đã được sử dụng bởi người dùng khác');
+        }
       }
       
-      const user = result.rows[0];
+      // Cập nhật thông tin
+      const updatedUser = await userModel.update(id, {
+        username,
+        email,
+        displayName,
+        avatarUrl,
+        bio
+      });
       
       res.json({
         success: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.display_name,
-          avatarUrl: user.avatar_url,
-          role: user.role,
-          createdAt: user.created_at
-        }
+        user: updatedUser
       });
       
     } catch (error) {
@@ -272,28 +220,119 @@ const userController = {
     }
   },
 
-  // Xóa người dùng (chỉ admin)
+  // Xóa người dùng (admin)
   async deleteUser(req, res, next) {
     try {
       const { id } = req.params;
       
-      // Không cho xóa chính mình
-      if (id === req.user.id) {
-        throw new ForbiddenError('Không thể xóa tài khoản của chính bạn');
+      // Kiểm tra không được xóa chính mình
+      if (parseInt(id) === req.user.id) {
+        throw new BadRequestError('Không thể xóa tài khoản của chính bạn');
       }
       
-      const result = await query(
-        'DELETE FROM users WHERE id = $1 RETURNING id',
-        [id]
-      );
-      
-      if (result.rowCount === 0) {
-        throw new NotFoundError('Không tìm thấy người dùng');
-      }
+      // Xóa người dùng
+      await userModel.delete(id);
       
       res.json({
         success: true,
         message: 'Đã xóa người dùng thành công'
+      });
+      
+    } catch (error) {
+      next(error);
+    }
+  },
+  
+  // Theo dõi người dùng
+  async followUser(req, res, next) {
+    try {
+      const { id } = req.params;
+      
+      // Không được tự theo dõi chính mình
+      if (parseInt(id) === req.user.id) {
+        throw new BadRequestError('Không thể tự theo dõi chính mình');
+      }
+      
+      // Kiểm tra người dùng tồn tại
+      const userToFollow = await userModel.findById(id);
+      if (!userToFollow) {
+        throw new NotFoundError('Không tìm thấy người dùng');
+      }
+      
+      // Thực hiện theo dõi
+      await userModel.followUser(req.user.id, id);
+      
+      res.json({
+        success: true,
+        message: 'Đã theo dõi người dùng',
+        isFollowing: true
+      });
+      
+    } catch (error) {
+      next(error);
+    }
+  },
+  
+  // Bỏ theo dõi người dùng
+  async unfollowUser(req, res, next) {
+    try {
+      const { id } = req.params;
+      
+      // Bỏ theo dõi
+      await userModel.unfollowUser(req.user.id, id);
+      
+      res.json({
+        success: true,
+        message: 'Đã bỏ theo dõi người dùng',
+        isFollowing: false
+      });
+      
+    } catch (error) {
+      next(error);
+    }
+  },
+  
+  // Lấy danh sách người theo dõi
+  async getFollowers(req, res, next) {
+    try {
+      const { id } = req.params;
+      const followers = await userModel.getFollowers(id);
+      
+      res.json({
+        success: true,
+        data: followers
+      });
+      
+    } catch (error) {
+      next(error);
+    }
+  },
+  
+  // Lấy danh sách đang theo dõi
+  async getFollowing(req, res, next) {
+    try {
+      const { id } = req.params;
+      const following = await userModel.getFollowing(id);
+      
+      res.json({
+        success: true,
+        data: following
+      });
+      
+    } catch (error) {
+      next(error);
+    }
+  },
+  
+  // Kiểm tra đang theo dõi
+  async checkFollowing(req, res, next) {
+    try {
+      const { id } = req.params;
+      const isFollowing = await userModel.isFollowing(req.user.id, id);
+      
+      res.json({
+        success: true,
+        isFollowing
       });
       
     } catch (error) {

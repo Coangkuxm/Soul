@@ -24,9 +24,14 @@ const authController = {
         throw new UnauthorizedError('Email hoặc mật khẩu không đúng');
       }
 
-      // 4. Tạo JWT token
+      // 4. Tạo JWT token với đầy đủ thông tin cần thiết
       const token = jwt.sign(
-        { userId: user.id, username: user.username },
+        { 
+          userId: user.id, 
+          username: user.username,
+          email: user.email,
+          role: 'user'  // Thêm role để phù hợp với middleware
+        },
         process.env.JWT_SECRET,
         { expiresIn: '1d' }
       );
