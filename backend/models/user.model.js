@@ -1,5 +1,5 @@
 // backend/models/user.model.js
-const { query } = require('../config/db');
+const { query } = require('../config/db-connection');
 
 const userModel = {
   // Tìm user bằng ID
