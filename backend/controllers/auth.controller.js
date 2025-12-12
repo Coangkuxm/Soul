@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { query } = require('../../config/db-connection');
+const { query } = require('../config/db-connection');
 const { UnauthorizedError } = require('../utils/errors');
 
 const authController = {

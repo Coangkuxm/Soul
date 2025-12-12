@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { query } = require('../db-connection');
+const { query } = require('../config/db-connection');
 const { NotFoundError, ConflictError, UnauthorizedError } = require('../utils/errors');
 
 const userController = {
@@ -25,10 +25,10 @@ const userController = {
       
       // Tạo người dùng mới
       const result = await query(
-        `INSERT INTO users (username, email, password_hash, created_at, updated_at)
+        `INSERT INTO users (username, email, password, created_at, updated_at)
          VALUES ($1, $2, $3, NOW(), NOW())
          RETURNING id, username, email, display_name, avatar_url, created_at`,
-        [username, email, hashedPassword]
+        [username, email, password]
       );
       
       const newUser = result.rows[0];
@@ -134,7 +134,7 @@ const userController = {
       
       // Lấy mật khẩu hiện tại từ database
       const result = await query(
-        'SELECT password_hash FROM users WHERE id = $1',
+        'SELECT password FROM users WHERE id = $1',
         [req.user.id]
       );
       
@@ -145,7 +145,7 @@ const userController = {
       const user = result.rows[0];
       
       // Kiểm tra mật khẩu hiện tại
-      const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+      const isMatch = (user.password === currentPassword);
       if (!isMatch) {
         throw new UnauthorizedError('Mật khẩu hiện tại không đúng');
       }
@@ -156,7 +156,7 @@ const userController = {
       
       // Cập nhật mật khẩu mới
       await query(
-        'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+        'UPDATE users SET password  = $1, updated_at = NOW() WHERE id = $2',
         [hashedPassword, req.user.id]
       );
       
