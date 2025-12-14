@@ -11,6 +11,7 @@ const { body } = require('express-validator');
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
+const collectionsRoutes = require('./routes/collections.routes');
 
 // Import middlewares
 const { errorHandler } = require('./middlewares/errorHandler');
@@ -51,6 +52,7 @@ app.use(limiter);
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/collections', collectionsRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

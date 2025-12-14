@@ -54,6 +54,40 @@ const options = {
               format: 'date-time'
             }
           }
+        },
+        Collection: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', format: 'int64' },
+            name: { type: 'string' },
+            description: { type: 'string' },
+            cover_image_url: { type: 'string', format: 'uri' },
+            is_private: { type: 'boolean', default: false },
+            owner_id: { type: 'integer', format: 'int64' },
+            view_count: { type: 'integer', default: 0 },
+            like_count: { type: 'integer', default: 0 },
+            comment_count: { type: 'integer', default: 0 },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        CollectionItem: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', format: 'int64' },
+            collection_id: { type: 'integer', format: 'int64' },
+            item_id: { type: 'integer', format: 'int64' },
+            note: { type: 'string' },
+            rating: { type: 'integer', minimum: 1, maximum: 5 },
+            added_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        Tag: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', format: 'int64' },
+            name: { type: 'string' }
+          }
         }
       },
       securitySchemes: {

@@ -1,157 +1,151 @@
--- Tạo bảng users
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    display_name VARCHAR(100),
-    avatar_url TEXT,
-    bio TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+CREATE SCHEMA "public";
+CREATE TABLE "activities" (
+	"id" serial PRIMARY KEY,
+	"user_id" integer NOT NULL,
+	"activity_type" varchar(30) NOT NULL,
+	"target_user_id" integer,
+	"collection_id" integer,
+	"item_id" integer,
+	"comment_id" integer,
+	"metadata" jsonb,
+	"is_read" boolean DEFAULT false,
+	"created_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "activities_activity_type_check" CHECK (CHECK (((activity_type)::text = ANY ((ARRAY['follow'::character varying, 'like'::character varying, 'comment'::character varying, 'add_item'::character varying, 'create_collection'::character varying])::text[]))))
 );
-
--- Tạo bảng items
-CREATE TABLE IF NOT EXISTS items (
-    id SERIAL PRIMARY KEY,
-    type VARCHAR(20) NOT NULL CHECK (type IN ('book', 'movie', 'music', 'artist', 'game', 'other')),
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    cover_image_url TEXT,
-    external_id VARCHAR(255),
-    metadata JSONB,
-    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE "collection_items" (
+	"id" serial PRIMARY KEY,s
+	"collection_id" integer NOT NULL UNIQUE,
+	"item_id" integer NOT NULL UNIQUE,
+	"note" text,
+	"rating" integer,
+	"added_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "collection_items_collection_id_item_id_key" UNIQUE("collection_id","item_id"),
+	CONSTRAINT "collection_items_rating_check" CHECK (CHECK (((rating >= 1) AND (rating <= 5))))
 );
-
--- Tạo bảng collections
-CREATE TABLE IF NOT EXISTS collections (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    cover_image_url TEXT,
-    is_private BOOLEAN DEFAULT false,
-    owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    view_count INTEGER DEFAULT 0,
-    like_count INTEGER DEFAULT 0,
-    comment_count INTEGER DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE "collection_tags" (
+	"collection_id" integer,
+	"tag_id" integer,
+	CONSTRAINT "collection_tags_pkey" PRIMARY KEY("collection_id","tag_id")
 );
-
--- Bảng trung gian cho mối quan hệ nhiều-nhiều giữa collections và items
-CREATE TABLE IF NOT EXISTS collection_items (
-    id SERIAL PRIMARY KEY,
-    collection_id INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
-    item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
-    note TEXT,
-    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
-    added_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(collection_id, item_id)
+CREATE TABLE "collections" (
+	"id" serial PRIMARY KEY,
+	"name" varchar(255) NOT NULL,
+	"description" text,
+	"cover_image_url" text,
+	"is_private" boolean DEFAULT false,
+	"owner_id" integer NOT NULL,
+	"view_count" integer DEFAULT 0,
+	"like_count" integer DEFAULT 0,
+	"comment_count" integer DEFAULT 0,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now()
 );
-
--- Bảng tags
-CREATE TABLE IF NOT EXISTS tags (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL
+CREATE TABLE "comments" (
+	"id" serial PRIMARY KEY,
+	"user_id" integer NOT NULL,
+	"content" text NOT NULL,
+	"target_id" integer NOT NULL,
+	"target_type" varchar(20) NOT NULL,
+	"parent_id" integer,
+	"like_count" integer DEFAULT 0,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "comments_target_type_check" CHECK (CHECK (((target_type)::text = ANY ((ARRAY['collection'::character varying, 'item'::character varying])::text[]))))
 );
-
--- Bảng trung gian cho mối quan hệ nhiều-nhiều giữa collections và tags
-CREATE TABLE IF NOT EXISTS collection_tags (
-    collection_id INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
-    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (collection_id, tag_id)
+CREATE TABLE "items" (
+	"id" serial PRIMARY KEY,
+	"type" varchar(20) NOT NULL,
+	"title" varchar(255) NOT NULL,
+	"description" text,
+	"cover_image_url" text,
+	"external_id" varchar(255),
+	"metadata" jsonb,
+	"created_by" integer,
+	"created_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "items_type_check" CHECK (CHECK (((type)::text = ANY ((ARRAY['book'::character varying, 'movie'::character varying, 'music'::character varying, 'artist'::character varying, 'game'::character varying, 'other'::character varying])::text[]))))
 );
-
--- Bảng likes
-CREATE TABLE IF NOT EXISTS likes (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    target_id INTEGER NOT NULL,
-    target_type VARCHAR(20) NOT NULL CHECK (target_type IN ('collection', 'item', 'comment')),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id, target_id, target_type)
+CREATE TABLE "likes" (
+	"id" serial PRIMARY KEY,
+	"user_id" integer NOT NULL UNIQUE,
+	"target_id" integer NOT NULL UNIQUE,
+	"target_type" varchar(20) NOT NULL UNIQUE,
+	"created_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "likes_user_id_target_id_target_type_key" UNIQUE("user_id","target_id","target_type"),
+	CONSTRAINT "likes_target_type_check" CHECK (CHECK (((target_type)::text = ANY ((ARRAY['collection'::character varying, 'item'::character varying, 'comment'::character varying])::text[]))))
 );
-
--- Bảng comments
-CREATE TABLE IF NOT EXISTS comments (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    target_id INTEGER NOT NULL,
-    target_type VARCHAR(20) NOT NULL CHECK (target_type IN ('collection', 'item')),
-    parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
-    like_count INTEGER DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE "notifications" (
+	"id" serial PRIMARY KEY,
+	"recipient_id" integer NOT NULL,
+	"notification_type" varchar(20) NOT NULL,
+	"sender_id" integer NOT NULL,
+	"target_id" integer NOT NULL,
+	"target_type" varchar(20) NOT NULL,
+	"is_read" boolean DEFAULT false,
+	"created_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "notifications_notification_type_check" CHECK (CHECK (((notification_type)::text = ANY ((ARRAY['like'::character varying, 'comment'::character varying, 'follow'::character varying, 'mention'::character varying])::text[]))))
 );
-
--- Bảng user_follows cho mối quan hệ theo dõi
-CREATE TABLE IF NOT EXISTS user_follows (
-    follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    following_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (follower_id, following_id),
-    CHECK (follower_id != following_id)
+CREATE TABLE "tags" (
+	"id" serial PRIMARY KEY,
+	"name" varchar(50) NOT NULL CONSTRAINT "tags_name_key" UNIQUE
 );
-
--- Bảng activities
-CREATE TABLE IF NOT EXISTS activities (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    activity_type VARCHAR(30) NOT NULL CHECK (activity_type IN ('follow', 'like', 'comment', 'add_item', 'create_collection')),
-    target_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    collection_id INTEGER REFERENCES collections(id) ON DELETE SET NULL,
-    item_id INTEGER REFERENCES items(id) ON DELETE SET NULL,
-    comment_id INTEGER REFERENCES comments(id) ON DELETE SET NULL,
-    metadata JSONB,
-    is_read BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE "user_follows" (
+	"follower_id" integer,
+	"following_id" integer,
+	"created_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "user_follows_pkey" PRIMARY KEY("follower_id","following_id"),
+	CONSTRAINT "user_follows_check" CHECK (CHECK ((follower_id <> following_id)))
 );
-
--- Bảng notifications
-CREATE TABLE IF NOT EXISTS notifications (
-    id SERIAL PRIMARY KEY,
-    recipient_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    notification_type VARCHAR(20) NOT NULL CHECK (notification_type IN ('like', 'comment', 'follow', 'mention')),
-    sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    target_id INTEGER NOT NULL,
-    target_type VARCHAR(20) NOT NULL,
-    is_read BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE "users" (
+	"id" serial PRIMARY KEY,
+	"username" varchar(50) NOT NULL CONSTRAINT "users_username_key" UNIQUE,
+	"email" varchar(255) NOT NULL CONSTRAINT "users_email_key" UNIQUE,
+	"password" varchar(255) NOT NULL,
+	"display_name" varchar(100),
+	"avatar_url" text,
+	"bio" text,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now()
 );
-
--- Tạo indexes
-CREATE INDEX idx_items_title ON items(title);
-CREATE INDEX idx_items_type ON items(type);
-CREATE INDEX idx_items_external_id ON items(external_id);
-CREATE INDEX idx_collections_owner ON collections(owner_id);
-CREATE INDEX idx_collections_created_at ON collections(created_at);
-CREATE INDEX idx_comments_target ON comments(target_id, target_type);
-CREATE INDEX idx_likes_target ON likes(target_id, target_type);
-CREATE INDEX idx_activities_user ON activities(user_id, created_at);
-CREATE INDEX idx_notifications_recipient ON notifications(recipient_id, is_read, created_at);
-
--- Tạo function để tự động cập nhật updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Tạo trigger cho bảng users
-CREATE TRIGGER update_users_updated_at
-BEFORE UPDATE ON users
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Tạo trigger cho bảng collections
-CREATE TRIGGER update_collections_updated_at
-BEFORE UPDATE ON collections
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Tạo trigger cho bảng comments
-CREATE TRIGGER update_comments_updated_at
-BEFORE UPDATE ON comments
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+ALTER TABLE "activities" ADD CONSTRAINT "activities_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "collections"("id") ON DELETE SET NULL;
+ALTER TABLE "activities" ADD CONSTRAINT "activities_comment_id_fkey" FOREIGN KEY ("comment_id") REFERENCES "comments"("id") ON DELETE SET NULL;
+ALTER TABLE "activities" ADD CONSTRAINT "activities_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "items"("id") ON DELETE SET NULL;
+ALTER TABLE "activities" ADD CONSTRAINT "activities_target_user_id_fkey" FOREIGN KEY ("target_user_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "activities" ADD CONSTRAINT "activities_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "collection_items" ADD CONSTRAINT "collection_items_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "collections"("id") ON DELETE CASCADE;
+ALTER TABLE "collection_items" ADD CONSTRAINT "collection_items_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "items"("id") ON DELETE CASCADE;
+ALTER TABLE "collection_tags" ADD CONSTRAINT "collection_tags_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "collections"("id") ON DELETE CASCADE;
+ALTER TABLE "collection_tags" ADD CONSTRAINT "collection_tags_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE;
+ALTER TABLE "collections" ADD CONSTRAINT "collections_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "comments" ADD CONSTRAINT "comments_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "comments"("id") ON DELETE CASCADE;
+ALTER TABLE "comments" ADD CONSTRAINT "comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "items" ADD CONSTRAINT "items_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON DELETE SET NULL;
+ALTER TABLE "likes" ADD CONSTRAINT "likes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "user_follows" ADD CONSTRAINT "user_follows_follower_id_fkey" FOREIGN KEY ("follower_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "user_follows" ADD CONSTRAINT "user_follows_following_id_fkey" FOREIGN KEY ("following_id") REFERENCES "users"("id") ON DELETE CASCADE;
+CREATE UNIQUE INDEX "activities_pkey" ON "activities" ("id");
+CREATE INDEX "idx_activities_user" ON "activities" ("user_id","created_at");
+CREATE UNIQUE INDEX "collection_items_collection_id_item_id_key" ON "collection_items" ("collection_id","item_id");
+CREATE UNIQUE INDEX "collection_items_pkey" ON "collection_items" ("id");
+CREATE UNIQUE INDEX "collection_tags_pkey" ON "collection_tags" ("collection_id","tag_id");
+CREATE UNIQUE INDEX "collections_pkey" ON "collections" ("id");
+CREATE INDEX "idx_collections_created_at" ON "collections" ("created_at");
+CREATE INDEX "idx_collections_owner" ON "collections" ("owner_id");
+CREATE UNIQUE INDEX "comments_pkey" ON "comments" ("id");
+CREATE INDEX "idx_comments_target" ON "comments" ("target_id","target_type");
+CREATE INDEX "idx_items_external_id" ON "items" ("external_id");
+CREATE INDEX "idx_items_title" ON "items" ("title");
+CREATE INDEX "idx_items_type" ON "items" ("type");
+CREATE UNIQUE INDEX "items_pkey" ON "items" ("id");
+CREATE INDEX "idx_likes_target" ON "likes" ("target_id","target_type");
+CREATE UNIQUE INDEX "likes_pkey" ON "likes" ("id");
+CREATE UNIQUE INDEX "likes_user_id_target_id_target_type_key" ON "likes" ("user_id","target_id","target_type");
+CREATE INDEX "idx_notifications_recipient" ON "notifications" ("recipient_id","is_read","created_at");
+CREATE UNIQUE INDEX "notifications_pkey" ON "notifications" ("id");
+CREATE UNIQUE INDEX "tags_name_key" ON "tags" ("name");
+CREATE UNIQUE INDEX "tags_pkey" ON "tags" ("id");
+CREATE UNIQUE INDEX "user_follows_pkey" ON "user_follows" ("follower_id","following_id");
+CREATE UNIQUE INDEX "users_email_key" ON "users" ("email");
+CREATE UNIQUE INDEX "users_pkey" ON "users" ("id");
+CREATE UNIQUE INDEX "users_username_key" ON "users" ("username");

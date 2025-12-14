@@ -84,22 +84,50 @@ const authController = {
       // 1. Find user by email with only necessary fields
       const result = await query(
         `SELECT id, username, email, password, display_name as "displayName", 
-                avatar_url as "avatarUrl", is_active as "isActive" 
+                avatar_url as "avatarUrl"
          FROM users WHERE email = $1`,
         [email]
       );
       const user = result.rows[0];
 
-      // 2. Check if user exists and is active
-      if (!user || !user.isActive) {
+      // 2. Check if user exists
+      if (!user) {
+        console.log('User not found with email:', email);
         throw new UnauthorizedError('Email hoặc mật khẩu không đúng');
       }
 
+      // Debug logging
+      console.log('User found:', { id: user.id, email: user.email });
+      console.log('Provided password:', password);
+      console.log('Stored password hash:', user.password);
+
       // 3. Verify password with bcrypt
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        throw new UnauthorizedError('Email hoặc mật khẩu không đúng');
-      }
+let isMatch = false;
+try {
+  isMatch = await bcrypt.compare(password, user.password);
+  console.log('BCrypt compare result:', isMatch);
+  
+  // Nếu không khớp, thử so sánh trực tiếp (cho trường hợp mật khẩu chưa được hash)
+  if (!isMatch && user.password === password) {
+    console.log('Direct password match - updating to hashed password');
+    const hashedPassword = await bcrypt.hash(password, 12);
+    await query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
+    isMatch = true;
+  }
+} catch (err) {
+  console.error('Error comparing passwords:', err);
+  // Nếu có lỗi khi so sánh, thử so sánh trực tiếp
+  isMatch = user.password === password;
+  if (isMatch) {
+    console.log('Direct comparison worked - fixing password hash');
+    const hashedPassword = await bcrypt.hash(password, 12);
+    await query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
+  }
+}
+
+if (!isMatch) {
+  throw new UnauthorizedError('Email hoặc mật khẩu không đúng');
+}
 
       // 4. Generate JWT with secure settings
       const token = jwt.sign(
@@ -146,15 +174,16 @@ const authController = {
   },
 
   async register(req, res, next) {
+    const client = await require('../config/db-connection').pool.connect();
+    
     try {
       // Validate input
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        throw new ValidationError('Dữ liệu không hợp lệ', errors.array());
+        return next(new ValidationError('Dữ liệu không hợp lệ', errors.array()));
       }
 
       const { username, email, password, displayName, avatarUrl, bio } = req.body;
-      const client = await require('../config/db-connection').pool.connect();
 
       try {
         await client.query('BEGIN');
@@ -170,17 +199,26 @@ const authController = {
         }
 
         // 2. Hash password with bcrypt
+        console.log('Original password:', password);
         const hashedPassword = await bcrypt.hash(password, 12);
+        console.log('Hashed password:', hashedPassword);
 
         // 3. Insert new user into database
         const result = await client.query(
           `INSERT INTO users (username, email, password, display_name, avatar_url, bio)
-           VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+           VALUES ($1, $2, $3, $4, $5, $6) 
+           RETURNING id, username, email, display_name as "displayName", 
+                     avatar_url as "avatarUrl", bio, created_at as "createdAt"`,
           [username, email, hashedPassword, displayName, avatarUrl, bio]
         );
+        
+        // 4. Commit transaction
+        await client.query('COMMIT');
+        
         const user = result.rows[0];
+        console.log('User created successfully:', user.id);
 
-        // 4. Generate JWT with secure settings
+        // 5. Generate JWT with secure settings
         const token = jwt.sign(
           { 
             userId: user.id, 
@@ -189,16 +227,16 @@ const authController = {
             role: 'user',
             iat: Math.floor(Date.now() / 1000) // Issued at time
           },
-          process.env.JWT_SECRET,
+          process.env.JWT_SECRET || 'your-secret-key',
           { 
             expiresIn: '1d',
             algorithm: 'HS256',
-            issuer: 'soul-api',
-            audience: 'soul-app'
+            issuer: process.env.JWT_ISSUER || 'soul-api',
+            audience: process.env.JWT_AUDIENCE || 'soul-app'
           }
         );
 
-        // 5. Set secure httpOnly cookie
+        // 6. Set secure httpOnly cookie
         res.cookie('token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -208,17 +246,15 @@ const authController = {
           domain: process.env.COOKIE_DOMAIN || undefined
         });
 
-        // 6. Don't send password back
-        delete user.password;
-        
-        // 7. Return user info and token (for clients that need it)
-        res.json({
+        // 7. Return success response
+        res.status(201).json({
           success: true,
           message: 'Đăng ký thành công',
           user,
-          token // Still send token for mobile clients if needed
+          token
         });
       } catch (error) {
+        console.error('Registration error:', error);
         await client.query('ROLLBACK');
         next(error);
       } finally {
