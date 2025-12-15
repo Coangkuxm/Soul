@@ -5,13 +5,30 @@ require('dotenv').config();
 console.log('Đang kết nối đến cơ sở dữ liệu...');
 console.log('Database URL:', process.env.DATABASE_URL ? 'Đã cấu hình' : 'Chưa cấu hình');
 
-const pool = new Pool({
+// Tăng thời gian chờ kết nối lên 10 giây
+const poolConfig = {
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 20, // Số kết nối tối đa
-  idleTimeoutMillis: 30000, // Thời gian chờ tối đa
-  connectionTimeoutMillis: 2000 // Thời gian chờ kết nối
+  // Sử dụng SSL trong môi trường production
+  ssl: process.env.NODE_ENV === 'production' ? { 
+    rejectUnauthorized: false 
+  } : false,
+  max: 20,                    // Số kết nối tối đa
+  idleTimeoutMillis: 30000,   // Thời gian chờ tối đa khi không sử dụng
+  connectionTimeoutMillis: 10000, // Tăng thời gian chờ kết nối lên 10 giây
+  // Thử kết nối lại nếu thất bại
+  retry: {
+    max: 3,                   // Số lần thử lại tối đa
+    timeout: 30000            // Thời gian chờ giữa các lần thử (ms)
+  }
+};
+
+console.log('Cấu hình kết nối database:', {
+  ssl: process.env.NODE_ENV === 'production',
+  max: poolConfig.max,
+  connectionTimeout: poolConfig.connectionTimeoutMillis + 'ms'
 });
+
+const pool = new Pool(poolConfig);
 
 // Sự kiện khi kết nối mới được tạo
 pool.on('connect', (client) => {
@@ -32,42 +49,57 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
-// Hàm thực thi query với xử lý lỗi
-const query = async (text, params) => {
+// Hàm thực thi query với xử lý lỗi và thử lại
+const query = async (text, params, maxRetries = 3) => {
   const start = Date.now();
-  try {
-    console.log('🔄 Thực hiện truy vấn:', { 
-      query: text, 
-      params: params || 'Không có tham số' 
-    });
-    
-    const res = await pool.query(text, params);
-    const duration = Date.now() - start;
-    
-    // Log query chậm (lớn hơn 1s)
-    if (duration > 1000) {
-      console.warn(`⚠️ Query chậm (${duration}ms):`, { 
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 [Lần thử ${attempt}/${maxRetries}] Thực hiện truy vấn:`, { 
         query: text, 
-        duration, 
-        rows: res.rowCount 
+        params: params || 'Không có tham số'
       });
-    } else {
-      console.log(`✅ Query thành công (${duration}ms)`, { 
-        query: text, 
-        rowCount: res.rowCount 
+      
+      const res = await pool.query(text, params);
+      const duration = Date.now() - start;
+      
+      // Log query chậm (lớn hơn 1s)
+      if (duration > 1000) {
+        console.warn(`⚠️ Query chậm (${duration}ms):`, { 
+          query: text, 
+          duration, 
+          rows: res.rowCount 
+        });
+      } else {
+        console.log(`✅ Query thành công (${duration}ms)`, { 
+          query: text, 
+          rowCount: res.rowCount 
+        });
+      }
+      
+      return res;
+    } catch (error) {
+      lastError = error;
+      console.error(`❌ Lỗi khi thực thi query (lần thử ${attempt}/${maxRetries}):`, {
+        error: error.message,
+        query: text,
+        params: params || 'Không có tham số',
+        stack: error.stack
       });
+      
+      // Nếu không phải lần thử cuối cùng thì đợi một chút trước khi thử lại
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 100; // Exponential backoff
+        console.log(`⏳ Đợi ${delay}ms trước khi thử lại...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
-    
-    return res;
-  } catch (error) {
-    console.error('❌ Lỗi khi thực thi query:', {
-      error: error.message,
-      query: text,
-      params: params || 'Không có tham số',
-      stack: error.stack
-    });
-    throw error; // Ném lỗi để xử lý ở tầng trên
   }
+  
+  // Nếu đã thử hết số lần mà vẫn lỗi
+  console.error(`❌ Đã thử lại ${maxRetries} lần nhưng không thành công`);
+  throw lastError;
 };
 
 // Kiểm tra kết nối khi khởi động
