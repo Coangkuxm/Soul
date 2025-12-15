@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateJWT } = require('../middleware/auth.middleware');
-const { validate } = require('../middleware/validation.middleware');
+const { authenticateToken } = require('../middlewares/auth.middleware');
+const { validate } = require('../middlewares/validation.middleware');
 const collectionItemsController = require('../controllers/collectionItems.controller');
 const {
   addItemToCollectionValidation,
@@ -12,7 +12,7 @@ const {
 // Thêm item vào collection
 router.post(
   '/:collection_id/items',  // Sửa lại route để phù hợp với URL
-  authenticateJWT,
+  authenticateToken,
   validate(addItemToCollectionValidation),
   collectionItemsController.addItemToCollection
 );
@@ -20,7 +20,7 @@ router.post(
 // Xóa item khỏi collection
 router.delete(
   '/:collection_id/items/:item_id',
-  authenticateJWT,
+  authenticateToken,
   validate(removeItemFromCollectionValidation),
   collectionItemsController.removeItemFromCollection
 );

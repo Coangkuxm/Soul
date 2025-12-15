@@ -2,9 +2,10 @@ const jwt = require('jsonwebtoken');
 const { UnauthorizedError, ForbiddenError } = require('../utils/errors');
 
 const authenticateToken = (req, res, next) => {
-  // Lấy token từ header Authorization
+  // Lấy token từ header Authorization hoặc cookie
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const cookieToken = req.cookies && req.cookies.token;
+  const token = (authHeader && authHeader.split(' ')[1]) || cookieToken;
 
   if (!token) {
     return next(new UnauthorizedError('Vui lòng đăng nhập để tiếp tục'));
@@ -12,7 +13,11 @@ const authenticateToken = (req, res, next) => {
 
   try {
     // Xác thực token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ['HS256'],
+      issuer: 'soul-api',
+      audience: 'soul-app'
+    });
     
     // Gắn thông tin user vào request để sử dụng trong các route
     req.user = {

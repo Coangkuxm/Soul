@@ -10,12 +10,12 @@ CREATE TABLE "activities" (
 	"metadata" jsonb,
 	"is_read" boolean DEFAULT false,
 	"created_at" timestamp with time zone DEFAULT now(),
-	CONSTRAINT "activities_activity_type_check" CHECK (CHECK (((activity_type)::text = ANY ((ARRAY['follow'::character varying, 'like'::character varying, 'comment'::character varying, 'add_item'::character varying, 'create_collection'::character varying])::text[]))))
+	CONSTRAINT "activities_activity_type_check" CHECK (CHECK (((activity_type)::text = ANY ((ARRAY['follow'::character varying, 'like'::character varying, 'comment'::character varying, 'add_item'::character varying, 'create_collection'::character varying, 'update_collection'::character varying])::text[]))))
 );
 CREATE TABLE "collection_items" (
 	"id" serial PRIMARY KEY,
-	"collection_id" integer NOT NULL UNIQUE,
-	"item_id" integer NOT NULL UNIQUE,
+	"collection_id" integer NOT NULL,
+	"item_id" integer NOT NULL,
 	"note" text,
 	"rating" integer,
 	"added_at" timestamp with time zone DEFAULT now(),

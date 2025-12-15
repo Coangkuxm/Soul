@@ -2,6 +2,7 @@ const { query } = require('../config/db-connection');
 const { NotFoundError, ForbiddenError } = require('../utils/errors');
 
 const createCollection = async (req, res, next) => {
+  
   try {
     const { name, description, cover_image_url, is_private, tags } = req.body;
     const owner_id = req.user.id;
@@ -35,134 +36,162 @@ const createCollection = async (req, res, next) => {
 };
 
 const getCollections = async (req, res, next) => {
+  
   console.log('=== BẮT ĐẦU XỬ LÝ GET COLLECTIONS ===');
   console.log('Thông tin request:', {
     method: req.method,
     url: req.originalUrl,
     query: req.query,
-    user: req.user || 'Không có thông tin người dùng'
+    user: req.user ? { id: req.user.id, role: req.user.role } : 'Không có thông tin người dùng'
   });
 
   try {
-    // 1. Kiểm tra kết nối database
-    try {
-      const dbCheck = await query('SELECT NOW()');
-      console.log('✅ Kết nối database thành công. Thời gian hiện tại:', dbCheck.rows[0].now);
-    } catch (dbError) {
-      console.error('❌ Lỗi kết nối database:', dbError);
-      return res.status(500).json({
-        success: false,
-        error: 'Database connection error',
-        details: process.env.NODE_ENV === 'development' ? dbError.message : undefined
-      });
-    }
+    // 1. Xử lý tham số
+    const { 
+      page = 1, 
+      limit = 10, 
+      user_id, 
+      is_private,
+      sort_by = 'created_at',
+      sort_order = 'DESC'
+    } = req.query;
 
-    // 2. Xử lý tham số
-    const { page = 1, limit = 10, user_id, is_private } = req.query;
-    const offset = (page - 1) * limit;
-    
-    console.log('Tham số phân trang:', { page, limit, offset });
-    
-    // 3. Xây dựng câu truy vấn chính
+    // Validate input
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(parseInt(limit, 10) || 10, 100); // Giới hạn tối đa 100 items/trang
+    const offset = (pageNum - 1) * limitNum;
+
+    // Validate sort order và sort column
+    const validSortOrders = ['ASC', 'DESC', 'asc', 'desc'];
+    const validSortColumns = ['created_at', 'name', 'updated_at'];
+    const orderBy = validSortColumns.includes(sort_by) ? sort_by : 'created_at';
+    const order = validSortOrders.includes(sort_order.toUpperCase()) 
+      ? sort_order.toUpperCase() 
+      : 'DESC';
+
+    // 2. Xây dựng câu truy vấn đếm tổng số bản ghi
+    let countQuery = {
+      text: `SELECT COUNT(*) FROM collections c WHERE 1=1`,
+      values: []
+    };
+
+    // 3. Xây dựng câu truy vấn chính - đơn giản hóa để tránh treo
     let queryStr = `
-      SELECT c.*, u.username, u.avatar_url as owner_avatar,
-             (SELECT COUNT(*) FROM collection_items WHERE collection_id = c.id) as item_count
+      SELECT 
+        c.*, 
+        u.username, 
+        u.avatar_url as owner_avatar
       FROM collections c
       JOIN users u ON c.owner_id = u.id
       WHERE 1=1
     `;
-    
+
     const queryParams = [];
     
     // Thêm điều kiện lọc
     if (user_id) {
-      queryParams.push(user_id);
-      queryStr += ` AND c.owner_id = $${queryParams.length}`;
+      const userId = parseInt(user_id, 10);
+      if (!isNaN(userId)) {
+        queryParams.push(userId);
+        const paramIndex = queryParams.length;
+        queryStr += ` AND c.owner_id = $${paramIndex}`;
+        countQuery.text += ` AND c.owner_id = $${paramIndex}`;
+        countQuery.values.push(userId);
+      }
     }
     
     if (is_private !== undefined) {
-      queryParams.push(is_private === 'true');
-      queryStr += ` AND c.is_private = $${queryParams.length}`;
+      const isPrivate = is_private === 'true';
+      queryParams.push(isPrivate);
+      const paramIndex = queryParams.length;
+      queryStr += ` AND c.is_private = $${paramIndex}`;
+      countQuery.text += ` AND c.is_private = $${paramIndex}`;
+      countQuery.values.push(isPrivate);
     }
     
     // Kiểm tra quyền xem collection private
     if (req.user) {
-      queryStr += ` AND (c.is_private = false OR c.owner_id = ${req.user.id})`;
+      queryParams.push(req.user.id);
+      const paramIndex = queryParams.length;
+      queryStr += ` AND (c.is_private = false OR c.owner_id = $${paramIndex})`;
+      countQuery.text += ` AND (c.is_private = false OR c.owner_id = $${paramIndex})`;
+      countQuery.values.push(req.user.id);
     } else {
       queryStr += ` AND c.is_private = false`;
+      countQuery.text += ` AND c.is_private = false`;
     }
     
-    // Thêm phân trang
-    queryParams.push(parseInt(limit, 10), parseInt(offset, 10));
-    queryStr += ` ORDER BY c.created_at DESC
-                 LIMIT $${queryParams.length - 1} 
-                 OFFSET $${queryParams.length}`;
-    
-    console.log('🔍 Truy vấn chính:', queryStr);
-    console.log('📌 Tham số truy vấn:', queryParams);
-    
-    // 4. Thực hiện truy vấn chính
-    let result;
+    // Thêm sắp xếp và phân trang
+    queryStr += ` ORDER BY c.${orderBy} ${order}`;
+    queryParams.push(limitNum, offset);
+    queryStr += ` LIMIT $${queryParams.length - 1} OFFSET $${queryParams.length}`;
+
+    console.log('Thực hiện truy vấn đếm:', countQuery);
+    console.log('Thực hiện truy vấn dữ liệu:', {
+      text: queryStr,
+      values: queryParams
+    });
+
+    // Thực hiện truy vấn với timeout để tránh treo
     try {
-      result = await query(queryStr, queryParams);
-      console.log(`✅ Truy vấn thành công, tìm thấy ${result.rows.length} bản ghi`);
+      console.log('Bắt đầu thực hiện query...');
+      
+      // Thêm timeout 10 giây cho query
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Query timeout sau 10 giây')), 10000);
+      });
+      
+      const [countResult, dataResult] = await Promise.race([
+        Promise.all([
+          query(countQuery),
+          query({ text: queryStr, values: queryParams })
+        ]),
+        timeoutPromise
+      ]);
+
+      const totalItems = parseInt(countResult.rows[0].count);
+      const totalPages = Math.ceil(totalItems / limitNum);
+
+      console.log(`Kết quả: ${dataResult.rows.length} collections / ${totalItems} tổng cộng`);
+
+      res.json({
+        success: true,
+        data: dataResult.rows,
+        pagination: {
+          currentPage: pageNum,
+          itemsPerPage: limitNum,
+          totalItems,
+          totalPages,
+          hasNextPage: pageNum < totalPages,
+          hasPreviousPage: pageNum > 1
+        }
+      });
     } catch (queryError) {
-      console.error('❌ Lỗi truy vấn chính:', queryError);
+      console.error('Lỗi truy vấn database:', queryError);
+      res.status(500).json({
+        success: false,
+        error: 'Lỗi khi lấy dữ liệu collections'
+      });
+    }
+
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách collections:', {
+      message: error.message,
+      stack: error.stack,
+      query: error.query
+    });
+    
+    // Trả về lỗi chi tiết hơn cho client trong môi trường development
+    if (process.env.NODE_ENV === 'development') {
       return res.status(500).json({
         success: false,
-        error: 'Query execution failed',
-        details: process.env.NODE_ENV === 'development' ? queryError.message : undefined
+        error: error.message,
+        stack: error.stack
       });
     }
     
-    // 5. Đếm tổng số bản ghi
-    let total = 0;
-    try {
-      let countQuery = 'SELECT COUNT(*) FROM collections WHERE 1=1';
-      const countParams = [];
-      
-      if (user_id) {
-        countParams.push(user_id);
-        countQuery += ` AND owner_id = $${countParams.length}`;
-      }
-      
-      if (is_private !== undefined) {
-        countParams.push(is_private === 'true');
-        countQuery += ` AND is_private = $${countParams.length}`;
-      }
-      
-      if (!req.user) {
-        countQuery += ` AND is_private = false`;
-      } else {
-        countQuery += ` AND (is_private = false OR owner_id = ${req.user.id})`;
-      }
-      
-      console.log('🔢 Truy vấn đếm:', countQuery);
-      console.log('📌 Tham số đếm:', countParams);
-      
-      const countResult = await query(countQuery, countParams);
-      total = parseInt(countResult.rows[0].count, 10);
-      console.log(`📊 Tổng số bản ghi: ${total}`);
-    } catch (countError) {
-      console.error('⚠️ Lỗi khi đếm tổng số bản ghi, sử dụng mặc định total = 0:', countError);
-      total = 0;
-    }
-    
-    // 6. Trả về kết quả
-    const response = {
-      success: true,
-      data: result.rows,
-      pagination: {
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
-        total: total
-      }
-    };
-    
-    console.log('✅ Hoàn thành xử lý. Trả về kết quả');
-    return res.json(response);
-  } catch (error) {
-    next(error);
+    // Trong môi trường production chỉ trả về thông báo chung
+    next(new Error('Đã xảy ra lỗi khi lấy danh sách collections. Vui lòng thử lại sau.'));
   }
 };
 
@@ -170,15 +199,9 @@ const getCollectionById = async (req, res, next) => {
   try {
     const { id } = req.params;
     
+    // Đơn giản hóa query để tránh treo - bỏ subquery
     const result = await query(
-      `SELECT c.*, u.username, u.avatar_url as owner_avatar,
-              (SELECT COUNT(*) FROM collection_items WHERE collection_id = c.id) as item_count,
-              EXISTS (
-                SELECT 1 FROM likes 
-                WHERE target_id = c.id 
-                AND target_type = 'collection' 
-                AND user_id = $2
-              ) as is_liked
+      `SELECT c.*, u.username, u.avatar_url as owner_avatar
        FROM collections c
        JOIN users u ON c.owner_id = u.id
        WHERE c.id = $1
@@ -386,28 +409,57 @@ const getCollectionIfOwner = async (collection_id, user_id) => {
 };
 
 const addCollectionTags = async (collection_id, tags) => {
-  const tagQueries = tags.map(tag => 
-    query(
-      `INSERT INTO tags (name) 
-       VALUES ($1) 
-       ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-       RETURNING id`,
-      [tag]
-    ).then(result => result.rows[0].id)
-  );
+  try {
+    console.log('=== ADD COLLECTION TAGS ===');
+    console.log('Collection ID:', collection_id);
+    console.log('Tags:', tags);
+    
+    // Thêm timeout cho từng query tag
+    const tagQueries = tags.map(tag => {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Tag query timeout')), 5000);
+      });
+      
+      return Promise.race([
+        query(
+          `INSERT INTO tags (name) 
+           VALUES ($1) 
+           ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+           RETURNING id`,
+          [tag]
+        ).then(result => result.rows[0].id),
+        timeoutPromise
+      ]);
+    });
 
-  const tagIds = await Promise.all(tagQueries);
+    console.log('Bắt đầu xử lý tag queries...');
+    const tagIds = await Promise.all(tagQueries);
+    console.log('Tag IDs:', tagIds);
 
-  const linkQueries = tagIds.map(tagId => 
-    query(
-      `INSERT INTO collection_tags (collection_id, tag_id)
-       VALUES ($1, $2)
-       ON CONFLICT (collection_id, tag_id) DO NOTHING`,
-      [collection_id, tagId]
-    )
-  );
+    // Thêm timeout cho link queries
+    const linkQueries = tagIds.map(tagId => {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Link query timeout')), 5000);
+      });
+      
+      return Promise.race([
+        query(
+          `INSERT INTO collection_tags (collection_id, tag_id)
+           VALUES ($1, $2)
+           ON CONFLICT (collection_id, tag_id) DO NOTHING`,
+          [collection_id, tagId]
+        ),
+        timeoutPromise
+      ]);
+    });
 
-  await Promise.all(linkQueries);
+    console.log('Bắt đầu xử lý link queries...');
+    await Promise.all(linkQueries);
+    console.log('Hoàn thành addCollectionTags');
+  } catch (error) {
+    console.error('Lỗi trong addCollectionTags:', error);
+    throw error;
+  }
 };
 
 module.exports = {

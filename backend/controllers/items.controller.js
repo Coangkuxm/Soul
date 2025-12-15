@@ -28,93 +28,134 @@ const itemsController = {
 
   // Lấy danh sách items
   async getAllItems(req, res, next) {
-  try {
     console.log('=== BẮT ĐẦU XỬ LÝ GET ALL ITEMS ===');
+    console.log('Tham số truy vấn:', {
+      page: req.query.page,
+      limit: req.query.limit,
+      type: req.query.type,
+      search: req.query.search,
+      sort_by: req.query.sort_by,
+      sort_order: req.query.sort_order
+    });
     
-    const { 
-      page = 1, 
-      limit = 10, 
-      type, 
-      search,
-      sort_by = 'created_at',
-      sort_order = 'desc'
-    } = req.query;
+    try {
+      const { 
+        page = 1, 
+        limit = 10, 
+        type, 
+        search,
+        sort_by = 'created_at',
+        sort_order = 'desc'
+      } = req.query;
 
-    const offset = (page - 1) * limit;
-    const queryParams = [];
-    const whereClauses = ['1=1'];
+      // Validate input
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = Math.min(parseInt(limit, 10) || 10, 100); // Giới hạn tối đa 100 items/trang
+      const offset = (pageNum - 1) * limitNum;
+      
+      // Validate sort order
+      const validSortOrders = ['asc', 'desc', 'asc nulls first', 'desc nulls last'];
+      const sortOrder = validSortOrders.includes(sort_order.toLowerCase()) ? sort_order : 'desc';
+      
+      // Validate sort_by - chỉ cho phép các cột hợp lệ
+      const validSortColumns = ['created_at', 'title', 'type'];
+      const sortColumn = validSortColumns.includes(sort_by.toLowerCase()) ? sort_by : 'created_at';
 
-    // Xây dựng điều kiện WHERE
-    if (type) {
-      queryParams.push(type);
-      whereClauses.push(`i.type = $${queryParams.length}`);
-    }
+      const queryParams = [];
+      const whereClauses = [];
 
-    if (search) {
-      queryParams.push(`%${search}%`);
-      whereClauses.push(`(i.title ILIKE $${queryParams.length} OR i.description ILIKE $${queryParams.length})`);
-    }
+      // Xây dựng điều kiện WHERE
+      if (type) {
+        queryParams.push(type);
+        whereClauses.push(`i.type = $${queryParams.length}`);
+      }
 
-    // Xây dựng câu query
-    const queryText = `
-      SELECT 
-        i.*,
-        u.username as creator_username,
-        u.avatar_url as creator_avatar
-      FROM items i
-      LEFT JOIN users u ON i.created_by = u.id
-      WHERE ${whereClauses.join(' AND ')}
-      ORDER BY i.${sort_by} ${sort_order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'}
-      LIMIT ${parseInt(limit)} OFFSET ${offset}
-    `;
+      if (search) {
+        queryParams.push(`%${search}%`);
+        whereClauses.push(`(i.title ILIKE $${queryParams.length} OR i.description ILIKE $${queryParams.length})`);
+      }
 
-    console.log('=== THÔNG TIN TRUY VẤN ===');
-    console.log('Query:', queryText);
-    console.log('Params:', queryParams);
+      // Thêm điều kiện mặc định nếu không có điều kiện nào
+      if (whereClauses.length === 0) {
+        whereClauses.push('1=1');
+      }
 
-    // Thực hiện truy vấn
-    const result = await query(queryText, queryParams);
-    
-    // Lấy tổng số bản ghi
-    const countQuery = `
-      SELECT COUNT(*) 
-      FROM items i
-      WHERE ${whereClauses.join(' AND ')}
-    `;
-    
-    const countResult = await query(countQuery, queryParams);
-    const total = parseInt(countResult.rows[0]?.count || 0);
+      console.log('Điều kiện tìm kiếm:', {
+        whereClauses,
+        queryParams,
+        sortColumn,
+        sortOrder,
+        limit: limitNum,
+        offset
+      });
 
-    if (result.rows.length === 0) {
-      console.log('Không tìm thấy items nào');
-      return res.json({
+      // Xây dựng câu query đếm tổng số bản ghi
+      const countQuery = {
+        text: `SELECT COUNT(*) FROM items i WHERE ${whereClauses.join(' AND ')}`,
+        values: [...queryParams]
+      };
+
+      // Xây dựng câu query lấy dữ liệu
+      const dataQuery = {
+        text: `
+          SELECT 
+            i.*,
+            u.username as creator_username,
+            u.avatar_url as creator_avatar
+          FROM items i
+          LEFT JOIN users u ON i.created_by = u.id
+          WHERE ${whereClauses.join(' AND ')}
+          ORDER BY i.${sortColumn} ${sortOrder}
+          LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
+        `,
+        values: [...queryParams, limitNum, offset]
+      };
+
+      console.log('Thực thi truy vấn đếm:', countQuery.text, countQuery.values);
+      console.log('Thực thi truy vấn dữ liệu:', dataQuery.text, dataQuery.values);
+
+      // Thực hiện song song 2 truy vấn
+      const [countResult, dataResult] = await Promise.all([
+        query(countQuery),
+        query(dataQuery)
+      ]);
+
+      const totalItems = parseInt(countResult.rows[0].count);
+      const totalPages = Math.ceil(totalItems / limitNum);
+
+      console.log(`Kết quả: ${dataResult.rows.length} items / ${totalItems} tổng cộng`);
+
+      res.json({
         success: true,
-        data: [],
+        data: dataResult.rows,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total: 0,
-          total_pages: 0
+          currentPage: pageNum,
+          itemsPerPage: limitNum,
+          totalItems,
+          totalPages,
+          hasNextPage: pageNum < totalPages,
+          hasPreviousPage: pageNum > 1
         }
       });
-    }
-
-    res.json({
-      success: true,
-      data: result.rows,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        total_pages: Math.ceil(total / limit)
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách items:', {
+        message: error.message,
+        stack: error.stack,
+        query: error.query
+      });
+      
+      // Trả về lỗi chi tiết hơn cho client trong môi trường development
+      if (process.env.NODE_ENV === 'development') {
+        return res.status(500).json({
+          success: false,
+          error: error.message,
+          stack: error.stack
+        });
       }
-    });
-  } catch (error) {
-    console.error('=== LỖI TRONG GETALLITEMS ===');
-    console.error('Thông báo lỗi:', error.message);
-    console.error('Stack trace:', error.stack);
-    next(new DatabaseError('Lỗi khi lấy danh sách items: ' + error.message));
-  }
+      
+      // Trong môi trường production chỉ trả về thông báo chung
+      next(new Error('Đã xảy ra lỗi khi lấy danh sách items. Vui lòng thử lại sau.'));
+    }
 },
 
   // Lấy chi tiết item

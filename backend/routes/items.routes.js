@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { body, param, query } = require('express-validator');
 const itemsController = require('../controllers/items.controller');
-const { authenticateJWT } = require('../middleware/auth.middleware');
-const { validate } = require('../middleware/validation.middleware');
+const { authenticateToken } = require('../middlewares/auth.middleware');
+const { validate } = require('../middlewares/validation.middleware');
 
 /**
  * @swagger
@@ -137,7 +137,7 @@ router.get(
  */
 router.post(
   '/',
-  authenticateJWT,
+  authenticateToken,
   itemsController.validateItem,
   validate(),
   itemsController.createItem
@@ -190,7 +190,7 @@ router.post(
  */
 router.put(
   '/:id',
-  authenticateJWT,
+  authenticateToken,
   validate([
     param('id').isInt({ min: 1 }).withMessage('ID không hợp lệ')
   ]),
@@ -236,7 +236,7 @@ router.put(
  */
 router.delete(
   '/:id',
-  authenticateJWT,
+  authenticateToken,
   validate([
     param('id').isInt({ min: 1 }).withMessage('ID không hợp lệ')
   ]),

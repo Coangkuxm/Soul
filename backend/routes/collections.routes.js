@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { body, param, query } = require('express-validator');
 const collectionsController = require('../controllers/collections.controller');
-const { authenticateJWT } = require('../middleware/auth.middleware');
-const { validate } = require('../middleware/validation.middleware');
+const { authenticateToken } = require('../middlewares/auth.middleware');
+const { validate } = require('../middlewares/validation.middleware');
 
 /**
  * @swagger
@@ -68,16 +68,7 @@ const { validate } = require('../middleware/validation.middleware');
  */
 router.post(
   '/',
-  authenticateJWT,
-  [
-    body('name').trim().notEmpty().withMessage('Tên không được để trống'),
-    body('description').optional().trim(),
-    body('cover_image_url').optional().isURL().withMessage('URL không hợp lệ'),
-    body('is_private').optional().isBoolean().withMessage('Giá trị phải là true hoặc false'),
-    body('tags').optional().isArray().withMessage('Tags phải là một mảng'),
-    body('tags.*').isString().withMessage('Mỗi tag phải là chuỗi'),
-  ],
-  validate,
+  authenticateToken,
   collectionsController.createCollection
 );
 
@@ -143,13 +134,7 @@ router.post(
  */
 router.get(
   '/',
-  [
-    query('page').optional().isInt({ min: 1 }).withMessage('Trang phải là số nguyên dương'),
-    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Giới hạn phải từ 1 đến 100'),
-    query('user_id').optional().isInt({ min: 1 }).withMessage('ID người dùng không hợp lệ'),
-    query('is_private').optional().isBoolean().withMessage('Giá trị phải là true hoặc false'),
-  ],
-  validate,
+  authenticateToken,
   collectionsController.getCollections
 );
 
@@ -201,8 +186,6 @@ router.get(
  */
 router.get(
   '/:id',
-  param('id').isInt({ min: 1 }).withMessage('ID bộ sưu tập không hợp lệ'),
-  validate,
   collectionsController.getCollectionById
 );
 
@@ -270,17 +253,7 @@ router.get(
  */
 router.put(
   '/:id',
-  authenticateJWT,
-  [
-    param('id').isInt({ min: 1 }).withMessage('ID bộ sưu tập không hợp lệ'),
-    body('name').optional().trim().notEmpty().withMessage('Tên không được để trống'),
-    body('description').optional().trim(),
-    body('cover_image_url').optional().isURL().withMessage('URL không hợp lệ'),
-    body('is_private').optional().isBoolean().withMessage('Giá trị phải là true hoặc false'),
-    body('tags').optional().isArray().withMessage('Tags phải là một mảng'),
-    body('tags.*').isString().withMessage('Mỗi tag phải là chuỗi'),
-  ],
-  validate,
+  authenticateToken,
   collectionsController.updateCollection
 );
 
@@ -322,9 +295,7 @@ router.put(
  */
 router.delete(
   '/:id',
-  authenticateJWT,
-  param('id').isInt({ min: 1 }).withMessage('ID bộ sưu tập không hợp lệ'),
-  validate,
+  authenticateToken,
   collectionsController.deleteCollection
 );
 
@@ -391,14 +362,7 @@ router.delete(
  */
 router.post(
   '/:id/items',
-  authenticateJWT,
-  [
-    param('id').isInt({ min: 1 }).withMessage('ID bộ sưu tập không hợp lệ'),
-    body('item_id').isInt({ min: 1 }).withMessage('ID sản phẩm không hợp lệ'),
-    body('note').optional().trim(),
-    body('rating').optional().isInt({ min: 1, max: 5 }).withMessage('Đánh giá phải từ 1 đến 5 sao'),
-  ],
-  validate,
+  authenticateToken,
   collectionsController.addItemToCollection
 );
 
@@ -446,12 +410,7 @@ router.post(
  */
 router.delete(
   '/:collectionId/items/:itemId',
-  authenticateJWT,
-  [
-    param('collectionId').isInt({ min: 1 }).withMessage('ID bộ sưu tập không hợp lệ'),
-    param('itemId').isInt({ min: 1 }).withMessage('ID sản phẩm không hợp lệ'),
-  ],
-  validate,
+  authenticateToken,
   collectionsController.removeItemFromCollection
 );
 

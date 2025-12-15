@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const { body } = require('express-validator');
 const { query } = require('./config/db-connection');
 // Import routes
@@ -34,6 +35,7 @@ app.use(cors({
 
 app.use(helmet());
 app.use(morgan('dev'));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -60,7 +62,7 @@ app.use(limiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/collections', collectionsRoutes);
-app.use('/api/collections', collectionItemsRoutes); // Add this line
+app.use('/api/collection-items', collectionItemsRoutes);
 app.use('/api/items', itemsRoutes);
 
 // Health check endpoint
@@ -79,6 +81,33 @@ app.get('/health', async (req, res) => {
       status: 'error',
       database: 'disconnected',
       error: error.message 
+    });
+  }
+});
+
+// Test database connection endpoint
+app.get('/test-db', async (req, res) => {
+  try {
+    console.log('=== TEST DB CONNECTION ===');
+    console.log('Bắt đầu test query...');
+    
+    const startTime = Date.now();
+    const result = await query('SELECT NOW() as current_time');
+    const duration = Date.now() - startTime;
+    
+    console.log(`Test query thành công trong ${duration}ms`);
+    
+    res.json({
+      success: true,
+      message: 'Database connection OK',
+      time: result.rows[0].current_time,
+      duration: `${duration}ms`
+    });
+  } catch (error) {
+    console.error('Test query lỗi:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 });
