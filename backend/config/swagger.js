@@ -88,6 +88,68 @@ const options = {
             id: { type: 'integer', format: 'int64' },
             name: { type: 'string' }
           }
+        },
+        Item: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            type: { 
+              type: 'string',
+              enum: ['book', 'movie', 'music', 'artist', 'game', 'other']
+            },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            cover_image_url: { type: 'string', format: 'url' },
+            external_id: { type: 'string' },
+            metadata: { type: 'object' },
+            created_by: { type: 'integer' },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+            creator_username: { type: 'string' },
+            creator_avatar: { type: 'string', format: 'url' }
+          }
+        },
+        ItemInput: {
+          type: 'object',
+          required: ['type', 'title'],
+          properties: {
+            type: { 
+              type: 'string',
+              enum: ['book', 'movie', 'music', 'artist', 'game', 'other'],
+              description: 'Loại item'
+            },
+            title: { 
+              type: 'string',
+              maxLength: 255,
+              description: 'Tiêu đề item (1-255 ký tự)'
+            },
+            description: { 
+              type: 'string',
+              description: 'Mô tả chi tiết'
+            },
+            cover_image_url: { 
+              type: 'string',
+              format: 'url',
+              description: 'URL ảnh bìa'
+            },
+            external_id: { 
+              type: 'string',
+              description: 'ID từ dịch vụ bên thứ 3'
+            },
+            metadata: { 
+              type: 'object',
+              description: 'Dữ liệu bổ sung dạng JSON'
+            }
+          }
+        },
+        Pagination: {
+          type: 'object',
+          properties: {
+            page: { type: 'integer' },
+            limit: { type: 'integer' },
+            total: { type: 'integer' },
+            total_pages: { type: 'integer' }
+          }
         }
       },
       securitySchemes: {

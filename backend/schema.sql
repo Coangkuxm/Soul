@@ -13,7 +13,7 @@ CREATE TABLE "activities" (
 	CONSTRAINT "activities_activity_type_check" CHECK (CHECK (((activity_type)::text = ANY ((ARRAY['follow'::character varying, 'like'::character varying, 'comment'::character varying, 'add_item'::character varying, 'create_collection'::character varying])::text[]))))
 );
 CREATE TABLE "collection_items" (
-	"id" serial PRIMARY KEY,s
+	"id" serial PRIMARY KEY,
 	"collection_id" integer NOT NULL UNIQUE,
 	"item_id" integer NOT NULL UNIQUE,
 	"note" text,

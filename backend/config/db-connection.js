@@ -1,21 +1,21 @@
+// config/db-connection.js
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Tạo pool kết nối đến database
+console.log('Đang kết nối đến cơ sở dữ liệu...');
+console.log('Database URL:', process.env.DATABASE_URL ? 'Đã cấu hình' : 'Chưa cấu hình');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_CtDi5MFc7XEA@ep-fancy-fire-a1ar04ra-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require',
-  ssl: {
-    rejectUnauthorized: false // Cần thiết cho Neon
-  },
-  // Tối ưu kết nối
-  connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 30000,
-  max: 20
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 20, // Số kết nối tối đa
+  idleTimeoutMillis: 30000, // Thời gian chờ tối đa
+  connectionTimeoutMillis: 2000 // Thời gian chờ kết nối
 });
 
 // Sự kiện khi kết nối mới được tạo
 pool.on('connect', (client) => {
-  console.log('Đã tạo kết nối mới đến cơ sở dữ liệu');
+  console.log('✅ Đã tạo kết nối mới đến cơ sở dữ liệu');
   
   // Thiết lập múi giờ cho client
   client.query('SET timezone = "+7"');
@@ -28,88 +28,65 @@ pool.on('connect', (client) => {
 
 // Xử lý lỗi kết nối
 pool.on('error', (err) => {
-  console.error('Lỗi không mong muốn trên client cơ sở dữ liệu', err);
-  process.exit(-1); // Thoát ứng dụng nếu không thể kết nối đến database
+  console.error('❌ Lỗi không mong muốn trên client cơ sở dữ liệu', err);
+  process.exit(-1);
 });
 
 // Hàm thực thi query với xử lý lỗi
 const query = async (text, params) => {
   const start = Date.now();
   try {
+    console.log('🔄 Thực hiện truy vấn:', { 
+      query: text, 
+      params: params || 'Không có tham số' 
+    });
+    
     const res = await pool.query(text, params);
     const duration = Date.now() - start;
     
     // Log query chậm (lớn hơn 1s)
     if (duration > 1000) {
-      console.log('Query chậm được thực thi', { text, duration, rows: res.rowCount });
+      console.warn(`⚠️ Query chậm (${duration}ms):`, { 
+        query: text, 
+        duration, 
+        rows: res.rowCount 
+      });
+    } else {
+      console.log(`✅ Query thành công (${duration}ms)`, { 
+        query: text, 
+        rowCount: res.rowCount 
+      });
     }
     
     return res;
   } catch (error) {
-    console.error('Lỗi khi thực thi query:', {
+    console.error('❌ Lỗi khi thực thi query:', {
       error: error.message,
       query: text,
-      params: params ? JSON.stringify(params) : 'none',
+      params: params || 'Không có tham số',
       stack: error.stack
     });
-    throw error; // Ném lỗi để xử lý ở middleware
+    throw error; // Ném lỗi để xử lý ở tầng trên
   }
-};
-
-// Hàm lấy client từ pool để thực hiện transaction
-const getClient = async () => {
-  const client = await pool.connect();
-  
-  // Override hàm query để log thời gian thực thi
-  const query = client.query.bind(client);
-  const release = client.release.bind(client);
-  
-  // Giới hạn thời gian thực thi query
-  client.query = async (text, params) => {
-    const start = Date.now();
-    try {
-      const res = await query(text, params);
-      const duration = Date.now() - start;
-      
-      if (duration > 1000) {
-        console.log('Query chậm trong transaction', { text, duration });
-      }
-      
-      return res;
-    } catch (error) {
-      console.error('Lỗi trong transaction:', { error: error.message, query: text });
-      throw error;
-    }
-  };
-  
-  // Đảm bảo client luôn được giải phóng
-  client.release = () => {
-    // Reset các phương thức về mặc định
-    client.query = query;
-    client.release = release;
-    return release();
-  };
-  
-  return client;
 };
 
 // Kiểm tra kết nối khi khởi động
-const testConnection = async () => {
+const checkConnection = async () => {
   try {
     const res = await query('SELECT NOW()');
-    console.log('✅ Kết nối cơ sở dữ liệu thành công:', res.rows[0].now);
+    console.log('✅ Kết nối cơ sở dữ liệu thành công. Thời gian hiện tại:', res.rows[0].now);
     return true;
   } catch (error) {
-    console.error('❌ Kết nối cơ sở dữ liệu thất bại:', error.message);
-    process.exit(1); // Thoát ứng dụng nếu không kết nối được database
+    console.error('❌ Không thể kết nối đến cơ sở dữ liệu:', error.message);
+    process.exit(1);
   }
 };
 
-// Tự động kiểm tra kết nối khi load module
-testConnection();
+// Gọi hàm kiểm tra kết nối khi khởi động
+checkConnection();
 
 module.exports = {
   query,
-  getClient,
-  pool, // Export pool để sử dụng trực tiếp nếu cần
+  pool,
+  checkConnection
 };

@@ -35,10 +35,35 @@ const createCollection = async (req, res, next) => {
 };
 
 const getCollections = async (req, res, next) => {
+  console.log('=== BẮT ĐẦU XỬ LÝ GET COLLECTIONS ===');
+  console.log('Thông tin request:', {
+    method: req.method,
+    url: req.originalUrl,
+    query: req.query,
+    user: req.user || 'Không có thông tin người dùng'
+  });
+
   try {
+    // 1. Kiểm tra kết nối database
+    try {
+      const dbCheck = await query('SELECT NOW()');
+      console.log('✅ Kết nối database thành công. Thời gian hiện tại:', dbCheck.rows[0].now);
+    } catch (dbError) {
+      console.error('❌ Lỗi kết nối database:', dbError);
+      return res.status(500).json({
+        success: false,
+        error: 'Database connection error',
+        details: process.env.NODE_ENV === 'development' ? dbError.message : undefined
+      });
+    }
+
+    // 2. Xử lý tham số
     const { page = 1, limit = 10, user_id, is_private } = req.query;
     const offset = (page - 1) * limit;
     
+    console.log('Tham số phân trang:', { page, limit, offset });
+    
+    // 3. Xây dựng câu truy vấn chính
     let queryStr = `
       SELECT c.*, u.username, u.avatar_url as owner_avatar,
              (SELECT COUNT(*) FROM collection_items WHERE collection_id = c.id) as item_count
@@ -49,6 +74,7 @@ const getCollections = async (req, res, next) => {
     
     const queryParams = [];
     
+    // Thêm điều kiện lọc
     if (user_id) {
       queryParams.push(user_id);
       queryStr += ` AND c.owner_id = $${queryParams.length}`;
@@ -59,29 +85,82 @@ const getCollections = async (req, res, next) => {
       queryStr += ` AND c.is_private = $${queryParams.length}`;
     }
     
+    // Kiểm tra quyền xem collection private
     if (req.user) {
       queryStr += ` AND (c.is_private = false OR c.owner_id = ${req.user.id})`;
     } else {
       queryStr += ` AND c.is_private = false`;
     }
     
+    // Thêm phân trang
+    queryParams.push(parseInt(limit, 10), parseInt(offset, 10));
     queryStr += ` ORDER BY c.created_at DESC
-                 LIMIT $${queryParams.length + 1} 
-                 OFFSET $${queryParams.length + 2}`;
+                 LIMIT $${queryParams.length - 1} 
+                 OFFSET $${queryParams.length}`;
     
-    queryParams.push(limit, offset);
+    console.log('🔍 Truy vấn chính:', queryStr);
+    console.log('📌 Tham số truy vấn:', queryParams);
     
-    const result = await query(queryStr, queryParams);
+    // 4. Thực hiện truy vấn chính
+    let result;
+    try {
+      result = await query(queryStr, queryParams);
+      console.log(`✅ Truy vấn thành công, tìm thấy ${result.rows.length} bản ghi`);
+    } catch (queryError) {
+      console.error('❌ Lỗi truy vấn chính:', queryError);
+      return res.status(500).json({
+        success: false,
+        error: 'Query execution failed',
+        details: process.env.NODE_ENV === 'development' ? queryError.message : undefined
+      });
+    }
     
-    res.json({
+    // 5. Đếm tổng số bản ghi
+    let total = 0;
+    try {
+      let countQuery = 'SELECT COUNT(*) FROM collections WHERE 1=1';
+      const countParams = [];
+      
+      if (user_id) {
+        countParams.push(user_id);
+        countQuery += ` AND owner_id = $${countParams.length}`;
+      }
+      
+      if (is_private !== undefined) {
+        countParams.push(is_private === 'true');
+        countQuery += ` AND is_private = $${countParams.length}`;
+      }
+      
+      if (!req.user) {
+        countQuery += ` AND is_private = false`;
+      } else {
+        countQuery += ` AND (is_private = false OR owner_id = ${req.user.id})`;
+      }
+      
+      console.log('🔢 Truy vấn đếm:', countQuery);
+      console.log('📌 Tham số đếm:', countParams);
+      
+      const countResult = await query(countQuery, countParams);
+      total = parseInt(countResult.rows[0].count, 10);
+      console.log(`📊 Tổng số bản ghi: ${total}`);
+    } catch (countError) {
+      console.error('⚠️ Lỗi khi đếm tổng số bản ghi, sử dụng mặc định total = 0:', countError);
+      total = 0;
+    }
+    
+    // 6. Trả về kết quả
+    const response = {
       success: true,
       data: result.rows,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: parseInt((await query('SELECT COUNT(*) FROM collections WHERE is_private = false'))[0].count)
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        total: total
       }
-    });
+    };
+    
+    console.log('✅ Hoàn thành xử lý. Trả về kết quả');
+    return res.json(response);
   } catch (error) {
     next(error);
   }
