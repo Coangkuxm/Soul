@@ -8,12 +8,18 @@ console.log('Database URL:', process.env.DATABASE_URL ? 'Đã cấu hình' : 'Ch
 // Tăng thời gian chờ kết nối lên 10 giây
 const poolConfig = {
   connectionString: process.env.DATABASE_URL,
-  ssl: false,
-  max: 5,  // Giảm số lượng connection tối đa
-  idleTimeoutMillis: 10000,
-  connectionTimeoutMillis: 2000,  // Giảm thời gian chờ kết nối
-  query_timeout: 10000,  // Thêm timeout cho query
-  statement_timeout: 10000
+  // Sử dụng SSL trong môi trường production
+  ssl: process.env.NODE_ENV === 'production' ? { 
+    rejectUnauthorized: false 
+  } : false,
+  max: 20,                    // Số kết nối tối đa
+  idleTimeoutMillis: 30000,   // Thời gian chờ tối đa khi không sử dụng
+  connectionTimeoutMillis: 30000, // Tăng thời gian chờ kết nối lên 30 giây
+  // Thử kết nối lại nếu thất bại
+  retry: {
+    max: 3,                   // Số lần thử lại tối đa
+    timeout: 30000            // Thời gian chờ giữa các lần thử (ms)
+  }
 };
 
 console.log('Cấu hình kết nối database:', {
