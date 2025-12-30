@@ -33,7 +33,8 @@ const options = {
             },
             email: {
               type: 'string',
-              format: 'email'
+              format: 'email',
+              example: 'user@gmail.com'
             },
             displayName: {
               type: 'string'
@@ -159,9 +160,274 @@ const options = {
           bearerFormat: 'JWT',
         },
       },
+      responses: {
+        BadRequest: {
+          description: 'Bad Request - The request was invalid or cannot be served',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  error: {
+                    type: 'object',
+                    properties: {
+                      code: { type: 'string', example: 'BAD_REQUEST' },
+                      message: { type: 'string', example: 'Invalid input data' },
+                      details: { type: 'array', items: { type: 'object' } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        Unauthorized: {
+          description: 'Unauthorized - Authentication failed or user does not have permissions',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  error: {
+                    type: 'object',
+                    properties: {
+                      code: { type: 'string', example: 'UNAUTHORIZED' },
+                      message: { type: 'string', example: 'Authentication required' },
+                      details: { type: 'array', items: { type: 'object' } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        ServerError: {
+          description: 'Server Error - Something went wrong on the server',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: false },
+                  error: {
+                    type: 'object',
+                    properties: {
+                      code: { type: 'string', example: 'INTERNAL_SERVER_ERROR' },
+                      message: { type: 'string', example: 'An unexpected error occurred' },
+                      details: { type: 'array', items: { type: 'object' } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
     },
+    paths: {
+      '/account/forgot-password': {
+        post: {
+          tags: ['Account'],
+          summary: 'Gửi yêu cầu đặt lại mật khẩu',
+          description: 'Gửi email chứa liên kết đặt lại mật khẩu đến email đăng ký',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email'],
+                  properties: {
+                    email: {
+                      type: 'string',
+                      format: 'email',
+                      example: 'user@gmail.com'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: {
+              description: 'Yêu cầu thành công, kiểm tra email của bạn',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      message: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            },
+            400: { $ref: '#/components/responses/BadRequest' },
+            500: { $ref: '#/components/responses/ServerError' }
+          }
+        }
+      },
+      '/account/reset-password': {
+        post: {
+          tags: ['Account'],
+          summary: 'Đặt lại mật khẩu',
+          description: 'Đặt lại mật khẩu bằng token từ email',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['token', 'password'],
+                  properties: {
+                    token: {
+                      type: 'string',
+                      description: 'Token đặt lại mật khẩu từ email',
+                      example: 'a1b2c3d4e5f6g7h8i9j0'
+                    },
+                    password: {
+                      type: 'string',
+                      format: 'password',
+                      minLength: 6,
+                      example: 'newSecurePassword123'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: {
+              description: 'Đặt lại mật khẩu thành công',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      message: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            },
+            400: { $ref: '#/components/responses/BadRequest' },
+            401: { $ref: '#/components/responses/Unauthorized' },
+            500: { $ref: '#/components/responses/ServerError' }
+          }
+        }
+      },
+      '/account/send-verification-email': {
+        get: {
+          tags: ['Account'],
+          summary: 'Gửi lại email xác thực',
+          description: 'Gửi lại email xác thực cho người dùng đã đăng nhập',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: 'Email xác thực đã được gửi',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      message: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            },
+            400: { $ref: '#/components/responses/BadRequest' },
+            401: { $ref: '#/components/responses/Unauthorized' },
+            500: { $ref: '#/components/responses/ServerError' }
+          }
+        }
+      },
+      '/account/verify-email': {
+        post: {
+          tags: ['Account'],
+          summary: 'Xác thực email',
+          description: 'Xác thực địa chỉ email bằng token',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['token'],
+                  properties: {
+                    token: {
+                      type: 'string',
+                      description: 'Token xác thực từ email',
+                      example: 'a1b2c3d4e5f6g7h8i9j0'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: {
+              description: 'Email đã được xác thực thành công',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      message: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            },
+            400: { $ref: '#/components/responses/BadRequest' },
+            401: { $ref: '#/components/responses/Unauthorized' },
+            500: { $ref: '#/components/responses/ServerError' }
+          }
+        }
+      },
+      '/account/check-email-verification': {
+        get: {
+          tags: ['Account'],
+          summary: 'Kiểm tra trạng thái xác thực email',
+          description: 'Kiểm tra xem email của người dùng đã được xác thực chưa',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: 'Trạng thái xác thực email',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      data: {
+                        type: 'object',
+                        properties: {
+                          email_verified: { type: 'boolean' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            401: { $ref: '#/components/responses/Unauthorized' },
+            500: { $ref: '#/components/responses/ServerError' }
+          }
+        }
+      }
+    }
   },
-  apis: ['./routes/*.js'],
+  apis: [
+    './routes/*.js',
+    './docs/*.js'  // Include all .js files in the docs directory
+  ],
 };
 
 const specs = swaggerJsdoc(options);

@@ -15,7 +15,9 @@ const userRoutes = require('./routes/user.routes');
 const collectionsRoutes = require('./routes/collections.routes');
 const collectionItemsRoutes = require('./routes/collectionItems.routes');
 const itemsRoutes = require('./routes/items.routes');
-
+const spotifyRoutes = require('./routes/spotify.routes');
+const accountRoutes = require('./routes/account.routes');
+const socialRoutes = require('./routes/social.routes');
 // Import middlewares
 const { errorHandler } = require('./middlewares/errorHandler');
 const { authenticateToken } = require('./middlewares/auth.middleware');
@@ -59,7 +61,10 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // API Routes
+app.use('/api/spotify', spotifyRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/account', accountRoutes);
+app.use('/api/social', socialRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/collections', collectionsRoutes);
 app.use('/api/collection-items', collectionItemsRoutes);

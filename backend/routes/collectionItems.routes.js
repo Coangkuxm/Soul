@@ -9,15 +9,25 @@ const {
   removeItemFromCollectionValidation
 } = require('../validations/collectionItems.validations');
 
-// Thêm item vào collection
+const {
+  addSpotifyItemToCollectionValidation,
+  getSpotifyItemsInCollectionValidation,
+  removeSpotifyItemFromCollectionValidation
+} = require('../validations/spotify.validations');
+
+// ==================================
+// Regular Item Routes
+// ==================================
+
+// Thêm item thường vào collection
 router.post(
-  '/:collection_id/items',  // Sửa lại route để phù hợp với URL
+  '/:collection_id/items',
   authenticateToken,
   validate(addItemToCollectionValidation),
   collectionItemsController.addItemToCollection
 );
 
-// Xóa item khỏi collection
+// Xóa item thường khỏi collection
 router.delete(
   '/:collection_id/items/:item_id',
   authenticateToken,
@@ -25,7 +35,38 @@ router.delete(
   collectionItemsController.removeItemFromCollection
 );
 
-// Lấy danh sách items trong collection
+// ==================================
+// Spotify Item Routes
+// ==================================
+
+// Thêm Spotify item vào collection bằng ID trực tiếp
+router.post(
+  '/:collection_id/spotify-items',
+  authenticateToken,
+  validate(addSpotifyItemToCollectionValidation),
+  collectionItemsController.addSpotifyItemToCollection
+);
+
+// Thêm Spotify item vào collection bằng URL
+router.post(
+  '/:collection_id/spotify/url',
+  authenticateToken,
+  collectionItemsController.addSpotifyItemByUrl
+);
+
+// Xóa Spotify item khỏi collection
+router.delete(
+  '/:collection_id/spotify-items/:spotify_id',
+  authenticateToken,
+  validate(removeSpotifyItemFromCollectionValidation),
+  collectionItemsController.removeSpotifyItemFromCollection
+);
+
+// ==================================
+// General Collection Routes
+// ==================================
+
+// Lấy danh sách items trong collection (cả thường và Spotify)
 router.get(
   '/:collection_id/items',
   validate(getItemsInCollectionValidation),
