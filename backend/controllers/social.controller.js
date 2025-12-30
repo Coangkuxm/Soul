@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const db = require('../config/db-connection');
 const { BadRequestError, UnauthorizedError, NotFoundError } = require('../utils/errors');
 
 class SocialController {
