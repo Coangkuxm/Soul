@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.soulapp"
+    namespace = "com.example.soul"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.soulapp"
+        applicationId = "com.example.soul"
         minSdk = 33
         targetSdk = 35
         versionCode = 1
@@ -36,6 +36,15 @@ android {
 }
 
 dependencies {
+// Retrofit để gọi API
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // OkHttp để log dữ liệu API (rất quan trọng khi debug)
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    // Nếu bạn dùng Jetpack Compose cho giao diện
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

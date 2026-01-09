@@ -1,4 +1,4 @@
-package com.example.soulapp
+package com.example.soul
 
 import org.junit.Test
 
