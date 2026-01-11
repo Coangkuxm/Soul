@@ -27,9 +27,9 @@ router.post(
 );
 
 // Protected routes
+router.use(authenticateToken);
 router.get(
   '/send-verification-email',
-  authenticateToken,
   (req, res, next) => accountController.sendVerificationEmail(req, res, next)
 );
 

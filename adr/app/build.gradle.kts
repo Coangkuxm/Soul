@@ -5,7 +5,11 @@ plugins {
 
 android {
     namespace = "com.example.soul"
-    compileSdk = 35
+    compileSdk = 36
+    
+    buildFeatures {
+        viewBinding = true
+    }
 
     defaultConfig {
         applicationId = "com.example.soul"

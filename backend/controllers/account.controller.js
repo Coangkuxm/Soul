@@ -20,6 +20,11 @@ const generateToken = (length = 32) => {
 
 const accountController = {
   // Validation middlewares
+  validateChangePassword: [
+    body('currentPassword').notEmpty().withMessage('Current password is required'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long')
+  ],
+  
   validateForgotPassword: [
     body('email').isEmail().normalizeEmail()
   ],
@@ -211,17 +216,56 @@ const accountController = {
         [userId]
       );
       
-      const user = userResult.rows[0];
-
-      if (!user) {
+      if (userResult.rows.length === 0) {
         throw new NotFoundError('User not found');
       }
 
       res.json({ 
         success: true, 
         data: { 
-          email_verified: user.email_verified 
+          email_verified: userResult.rows[0].email_verified 
         } 
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Change password with current password
+  async changePassword(req, res, next) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        throw new BadRequestError('Validation failed', errors.array());
+      }
+
+      const { currentPassword, newPassword } = req.body;
+      const userId = req.user.id;
+
+      // Get user's current password hash
+      const userResult = await query('SELECT password FROM users WHERE id = $1', [userId]);
+      const user = userResult.rows[0];
+
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+
+      // Verify current password
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        throw new UnauthorizedError('Current password is incorrect');
+      }
+
+      // Hash new password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+      // Update password
+      await query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId]);
+
+      res.json({
+        success: true,
+        message: 'Password changed successfully'
       });
     } catch (error) {
       next(error);
