@@ -35,8 +35,15 @@ router.get(
 
 router.get(
   '/check-email-verification',
-  authenticateToken,
   (req, res, next) => accountController.checkEmailVerification(req, res, next)
+);
+
+// Change password route
+router.post(
+  '/change-password',
+  accountController.validateChangePassword,
+  validateRequest,
+  (req, res, next) => accountController.changePassword(req, res, next)
 );
 
 module.exports = router;
