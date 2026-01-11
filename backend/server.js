@@ -49,7 +49,37 @@ app.use((req, res, next) => {
 });
 
 // Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+const swaggerUiOptions = {
+  explorer: true,
+  swaggerOptions: {
+    persistAuthorization: true,
+    oauth2RedirectUrl: `${process.env.API_URL || 'http://localhost:5000'}/api-docs/oauth2-redirect.html`,
+    docExpansion: 'none',
+    filter: '',
+    tagsSorter: 'alpha',
+    operationsSorter: 'alpha',
+    defaultModelsExpandDepth: 1,
+    defaultModelExpandDepth: 1,
+    displayRequestDuration: true,
+    showCommonExtensions: true,
+    showExtensions: true,
+    showRequestHeaders: true,
+    deepLinking: true
+  }
+};
+
+app.use('/api-docs', 
+  swaggerUi.serve, 
+  (req, res, next) => {
+    // Ensure the Swagger UI is always served with the latest spec
+    swaggerUi.setup(swaggerSpec, swaggerUiOptions)(req, res, next);
+  }
+);
+
+// Serve OAuth2 redirect HTML for Swagger UI
+app.get('/api-docs/oauth2-redirect.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'node_modules/swagger-ui/dist/oauth2-redirect.html'));
+});
 
 // Rate limiting
 const limiter = rateLimit({

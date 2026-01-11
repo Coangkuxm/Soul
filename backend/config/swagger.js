@@ -152,6 +152,57 @@ const options = {
             total: { type: 'integer' },
             total_pages: { type: 'integer' }
           }
+        },
+        TMDBResults: {
+          type: 'object',
+          properties: {
+            page: { type: 'integer' },
+            results: {
+              type: 'array',
+              items: {
+                oneOf: [
+                  { $ref: '#/components/schemas/TMDBMovie' },
+                  { $ref: '#/components/schemas/TMDBTVShow' }
+                ]
+              }
+            },
+            total_pages: { type: 'integer' },
+            total_results: { type: 'integer' }
+          }
+        },
+        TMDBMovie: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            title: { type: 'string' },
+            overview: { type: 'string' },
+            poster_path: { type: 'string', nullable: true },
+            backdrop_path: { type: 'string', nullable: true },
+            release_date: { type: 'string', format: 'date' },
+            vote_average: { type: 'number' },
+            vote_count: { type: 'integer' },
+            genre_ids: {
+              type: 'array',
+              items: { type: 'integer' }
+            }
+          }
+        },
+        TMDBTVShow: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            name: { type: 'string' },
+            overview: { type: 'string' },
+            poster_path: { type: 'string', nullable: true },
+            backdrop_path: { type: 'string', nullable: true },
+            first_air_date: { type: 'string', format: 'date' },
+            vote_average: { type: 'number' },
+            vote_count: { type: 'integer' },
+            genre_ids: {
+              type: 'array',
+              items: { type: 'integer' }
+            }
+          }
         }
       },
       securitySchemes: {
@@ -226,61 +277,6 @@ const options = {
           }
         }
       },
-    },
-    components: {
-      schemas: {
-        TMDBResults: {
-          type: 'object',
-          properties: {
-            page: { type: 'integer' },
-            results: {
-              type: 'array',
-              items: {
-                oneOf: [
-                  { $ref: '#/components/schemas/TMDBMovie' },
-                  { $ref: '#/components/schemas/TMDBTVShow' }
-                ]
-              }
-            },
-            total_pages: { type: 'integer' },
-            total_results: { type: 'integer' }
-          }
-        },
-        TMDBMovie: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer' },
-            title: { type: 'string' },
-            overview: { type: 'string' },
-            poster_path: { type: 'string', nullable: true },
-            backdrop_path: { type: 'string', nullable: true },
-            release_date: { type: 'string', format: 'date' },
-            vote_average: { type: 'number' },
-            vote_count: { type: 'integer' },
-            genre_ids: {
-              type: 'array',
-              items: { type: 'integer' }
-            }
-          }
-        },
-        TMDBTVShow: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer' },
-            name: { type: 'string' },
-            overview: { type: 'string' },
-            poster_path: { type: 'string', nullable: true },
-            backdrop_path: { type: 'string', nullable: true },
-            first_air_date: { type: 'string', format: 'date' },
-            vote_average: { type: 'number' },
-            vote_count: { type: 'integer' },
-            genre_ids: {
-              type: 'array',
-              items: { type: 'integer' }
-            }
-          }
-        }
-      }
     },
     paths: {
       '/account/forgot-password': {

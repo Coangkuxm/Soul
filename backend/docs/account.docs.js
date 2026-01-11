@@ -83,7 +83,7 @@
  *               email:
  *                 type: string
  *                 format: email
- *                 example: user@example.com
+ *                 example: user@gmail.com
  *     responses:
  *       200:
  *         description: If the email is registered, a reset link will be sent
