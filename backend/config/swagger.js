@@ -1,5 +1,6 @@
 // config/swagger.js
 const swaggerJsdoc = require('swagger-jsdoc');
+const path = require('path');
 
 const options = {
   definition: {
@@ -225,7 +226,6 @@ const options = {
           }
         }
       },
-    },
     },
     components: {
       schemas: {
@@ -481,9 +481,9 @@ const options = {
     }
   },
   apis: [
-    path.join(__dirname, '../routes/*.js'),
-    path.join(__dirname, '../docs/*.js')  // Include all .js files in the docs directory
-  ],
+    path.join(__dirname, '..', 'routes', '*.js'),
+    path.join(__dirname, '..', 'docs', '*.js')
+  ]
 };
 
 const specs = swaggerJsdoc(options);
