@@ -27,4 +27,13 @@
     <string name="sign_in_with_google">Sign in with Google</string>
     <string name="sign_in_with_facebook">Sign in with Facebook</string>
     <string name="sign_in_with_apple">Sign in with Apple</string>
+    
+    <!-- Main Screen -->
+    <string name="logout">Logout</string>
+    <string name="welcome_user">Welcome!</string>
+    <string name="loading_user_info">Loading user info...</string>
+    <string name="test_connection">Test Server Connection</string>
+    <string name="test_connection_hint">Press button to test connection to server</string>
+    <string name="login_success">Login successful!</string>
+    <string name="login_failed">Login failed</string>
 </resources>

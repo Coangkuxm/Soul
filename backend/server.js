@@ -19,6 +19,7 @@ const spotifyRoutes = require('./routes/spotify.routes');
 const accountRoutes = require('./routes/account.routes');
 const socialRoutes = require('./routes/social.routes');
 const tmdbRoutes = require('./routes/tmdb.routes');
+const uploadRoutes = require('./routes/upload.routes');
 // Import middlewares
 const { errorHandler } = require('./middlewares/errorHandler');
 const { authenticateToken } = require('./middlewares/auth.middleware');
@@ -101,6 +102,7 @@ app.use('/api/collections', collectionsRoutes);
 app.use('/api/collection-items', collectionItemsRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/tmdb', tmdbRoutes);
+app.use('/api/upload', uploadRoutes);
 // Health check endpoint
 app.get('/health', async (req, res) => {
   try {
