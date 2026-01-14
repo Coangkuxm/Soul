@@ -4,6 +4,8 @@ import com.example.soul.data.model.CollectionsResponse
 import com.example.soul.data.model.FeedResponse
 import com.example.soul.data.model.HealthResponse
 import com.example.soul.data.model.ProfileResponse
+import com.example.soul.data.model.SpotifySearchResponse
+import com.example.soul.data.model.TMDBSearchResponse
 import com.example.soul.data.model.auth.LoginRequest
 import com.example.soul.data.model.auth.LoginResponse
 import retrofit2.Response
@@ -96,4 +98,26 @@ interface ApiService {
         @Path("collection_id") collectionId: Int,
         @Body body: Map<String, @JvmSuppressWildcards Any?>
     ): Response<Map<String, Any?>>
+
+    // ==================== SPOTIFY API ====================
+    
+    /**
+     * Search for tracks on Spotify
+     */
+    @GET("/api/spotify/search")
+    suspend fun searchSpotify(
+        @Query("q") query: String,
+        @Query("limit") limit: Int = 10
+    ): Response<SpotifySearchResponse>
+
+    // ==================== TMDB API ====================
+    
+    /**
+     * Search for movies/TV shows on TMDB
+     */
+    @GET("/api/tmdb/search")
+    suspend fun searchTMDB(
+        @Query("query") query: String,
+        @Query("page") page: Int = 1
+    ): Response<TMDBSearchResponse>
 }

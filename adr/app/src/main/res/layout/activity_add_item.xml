@@ -109,6 +109,19 @@
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>
 
+            <!-- Search from API Button (for Music/Movie) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSearch"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="🔍 Tìm kiếm từ Spotify / TMDB"
+                android:textColor="@color/primary"
+                app:strokeColor="@color/primary"
+                app:icon="@drawable/ic_search"
+                app:iconTint="@color/primary"/>
+
             <!-- Cover Image -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardCover"

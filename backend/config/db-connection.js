@@ -117,8 +117,32 @@ const checkConnection = async () => {
 // Gọi hàm kiểm tra kết nối khi khởi động
 checkConnection();
 
+// Hàm lấy client để thực hiện transaction
+const getClient = async () => {
+  const client = await pool.connect();
+  const originalQuery = client.query.bind(client);
+  const originalRelease = client.release.bind(client);
+
+  // Thiết lập timeout để tự động release client sau 5 giây nếu bị quên
+  const timeout = setTimeout(() => {
+    console.error('⚠️ Client đã không được release sau 5 giây!');
+    console.trace('Trace stack để debug:');
+  }, 5000);
+
+  // Ghi đè release để clear timeout
+  client.release = () => {
+    clearTimeout(timeout);
+    client.query = originalQuery;
+    client.release = originalRelease;
+    return originalRelease();
+  };
+
+  return client;
+};
+
 module.exports = {
   query,
   pool,
-  checkConnection
+  checkConnection,
+  getClient
 };

@@ -7,9 +7,11 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.example.soul.R
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.Collection
+import com.example.soul.data.model.SearchResult
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.ActivityAddItemBinding
 import kotlinx.coroutines.launch
@@ -27,6 +29,10 @@ class AddItemActivity : AppCompatActivity() {
     private var selectedType = "music"
     private var collections: List<Collection> = emptyList()
     private var selectedCollectionId: Int? = null
+    
+    // Store selected search result
+    private var selectedSearchResult: SearchResult? = null
+    private var selectedCoverUrl: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +56,7 @@ class AddItemActivity : AppCompatActivity() {
     private fun setupTypeChips() {
         binding.chipGroupType.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isNotEmpty()) {
-                selectedType = when (checkedIds[0]) {
+                val newType = when (checkedIds[0]) {
                     R.id.chipMusic -> "music"
                     R.id.chipMovie -> "movie"
                     R.id.chipBook -> "book"
@@ -59,11 +65,31 @@ class AddItemActivity : AppCompatActivity() {
                     R.id.chipOther -> "other"
                     else -> "music"
                 }
+                
+                // Clear search result if type changed
+                if (newType != selectedType) {
+                    selectedSearchResult = null
+                    clearForm()
+                }
+                
+                selectedType = newType
                 updateMetadataFields()
             }
         }
         // Initial state
         updateMetadataFields()
+    }
+    
+    private fun clearForm() {
+        binding.etTitle.text?.clear()
+        binding.etDescription.text?.clear()
+        binding.etArtist.text?.clear()
+        binding.etAlbum.text?.clear()
+        binding.etDirector.text?.clear()
+        binding.etAuthor.text?.clear()
+        binding.etYear.text?.clear()
+        binding.ivCover.setImageResource(R.drawable.bg_placeholder_cover)
+        selectedCoverUrl = null
     }
 
     private fun updateMetadataFields() {
@@ -72,6 +98,19 @@ class AddItemActivity : AppCompatActivity() {
         binding.tilAlbum.visibility = View.GONE
         binding.tilDirector.visibility = View.GONE
         binding.tilAuthor.visibility = View.GONE
+        
+        // Show/hide search button based on type
+        binding.btnSearch.visibility = if (selectedType == "music" || selectedType == "movie") {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+        
+        // Update search button text based on type
+        when (selectedType) {
+            "music" -> binding.btnSearch.text = "🔍 Tìm kiếm từ Spotify"
+            "movie" -> binding.btnSearch.text = "🔍 Tìm kiếm từ TMDB"
+        }
 
         // Show relevant fields based on type
         when (selectedType) {
@@ -97,9 +136,18 @@ class AddItemActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        // Cover image picker
+        // Cover image picker / Search button
         binding.cardCover.setOnClickListener {
-            Toast.makeText(this, "Chọn ảnh bìa - sẽ cập nhật sau", Toast.LENGTH_SHORT).show()
+            if (selectedType == "music" || selectedType == "movie") {
+                showSearchBottomSheet()
+            } else {
+                Toast.makeText(this, "Chọn ảnh bìa - sẽ cập nhật sau", Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        // Search button
+        binding.btnSearch.setOnClickListener {
+            showSearchBottomSheet()
         }
 
         // Collection dropdown
@@ -113,6 +161,56 @@ class AddItemActivity : AppCompatActivity() {
         binding.btnAdd.setOnClickListener {
             addItem()
         }
+    }
+    
+    private fun showSearchBottomSheet() {
+        val mediaType = if (selectedType == "music") "music" else "movie"
+        val bottomSheet = SearchMediaBottomSheet.newInstance(mediaType) { result ->
+            fillFormFromSearchResult(result)
+        }
+        bottomSheet.show(supportFragmentManager, SearchMediaBottomSheet.TAG)
+    }
+    
+    private fun fillFormFromSearchResult(result: SearchResult) {
+        selectedSearchResult = result
+        selectedCoverUrl = result.coverUrl
+        
+        // Fill title
+        binding.etTitle.setText(result.title)
+        
+        // Fill description if available
+        result.metadata?.get("subtitle")?.let {
+            binding.etDescription.setText(it.toString())
+        }
+        
+        // Load cover image
+        result.coverUrl?.let { url ->
+            Glide.with(this)
+                .load(url)
+                .placeholder(R.drawable.bg_placeholder_cover)
+                .error(R.drawable.bg_placeholder_cover)
+                .centerCrop()
+                .into(binding.ivCover)
+        }
+        
+        // Fill type-specific fields
+        when (selectedType) {
+            "music" -> {
+                // Fill artist from subtitle (contains artist names)
+                result.subtitle?.let { binding.etArtist.setText(it) }
+                // Fill album from metadata
+                result.metadata?.get("album")?.let { binding.etAlbum.setText(it.toString()) }
+            }
+            "movie" -> {
+                // Fill year from metadata
+                result.metadata?.get("release_date")?.let { dateStr ->
+                    val year = dateStr.toString().split("-").firstOrNull()
+                    year?.let { binding.etYear.setText(it) }
+                }
+            }
+        }
+        
+        Toast.makeText(this, "Đã chọn: ${result.title}", Toast.LENGTH_SHORT).show()
     }
 
     private fun loadCollections() {
@@ -281,6 +379,15 @@ class AddItemActivity : AppCompatActivity() {
 
         if (year.isNotEmpty()) {
             metadata["year"] = year.toIntOrNull()
+        }
+        
+        // Add cover URL from search result or manual input
+        selectedCoverUrl?.let { metadata["cover_url"] = it }
+        
+        // Add external_id from search result (Spotify ID or TMDB ID)
+        selectedSearchResult?.let { result ->
+            metadata["external_id"] = result.externalId
+            metadata["source"] = if (selectedType == "music") "spotify" else "tmdb"
         }
 
         return metadata
