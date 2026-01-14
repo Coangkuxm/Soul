@@ -68,4 +68,32 @@ interface ApiService {
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 10
     ): Response<FeedResponse>
+
+    /**
+     * Create a new collection
+     */
+    @POST("/api/collections")
+    suspend fun createCollection(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any?>>
+
+    /**
+     * Create a new item
+     */
+    @POST("/api/items")
+    suspend fun createItem(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any?>>
+
+    /**
+     * Add item to collection
+     */
+    @POST("/api/collection-items/{collection_id}/items")
+    suspend fun addItemToCollection(
+        @Header("Authorization") token: String,
+        @Path("collection_id") collectionId: Int,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any?>>
 }

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,6 +15,9 @@ import com.example.soul.R
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.FeedItem
 import com.example.soul.databinding.ActivityFeedBinding
+import com.example.soul.ui.add.AddCollectionActivity
+import com.example.soul.ui.add.AddItemActivity
+import com.example.soul.ui.add.AddOptionsBottomSheet
 import com.example.soul.ui.auth.LoginActivity
 import com.example.soul.ui.home.adapter.FeedAdapter
 import com.example.soul.utils.Resource
@@ -26,6 +30,23 @@ class FeedActivity : AppCompatActivity() {
 
     private val viewModel: HomeViewModel by viewModels {
         HomeViewModelFactory(this)
+    }
+
+    // Activity result launchers
+    private val addCollectionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            viewModel.refresh()
+        }
+    }
+
+    private val addItemLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            viewModel.refresh()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,6 +97,10 @@ class FeedActivity : AppCompatActivity() {
         // Observe profile for header avatar
         viewModel.profile.observe(this) { resource ->
             when (resource) {
+                is Resource.Loading -> {
+                    // Show default avatar while loading
+                    binding.ivUserAvatar.setImageResource(R.drawable.ic_default_avatar)
+                }
                 is Resource.Success -> {
                     resource.data?.let { profile ->
                         // Load user avatar in header
@@ -97,7 +122,9 @@ class FeedActivity : AppCompatActivity() {
                         }
                     }
                 }
-                else -> {}
+                is Resource.Error -> {
+                    binding.ivUserAvatar.setImageResource(R.drawable.ic_default_avatar)
+                }
             }
         }
 
@@ -159,7 +186,7 @@ class FeedActivity : AppCompatActivity() {
 
         // FAB - Add new item
         binding.fabAdd.setOnClickListener {
-            Toast.makeText(this, "Add item coming soon", Toast.LENGTH_SHORT).show()
+            showAddOptionsBottomSheet()
         }
 
         // Bottom navigation
@@ -199,6 +226,18 @@ class FeedActivity : AppCompatActivity() {
             }
             show()
         }
+    }
+
+    private fun showAddOptionsBottomSheet() {
+        val bottomSheet = AddOptionsBottomSheet(
+            onAddCollection = {
+                addCollectionLauncher.launch(Intent(this, AddCollectionActivity::class.java))
+            },
+            onAddItem = {
+                addItemLauncher.launch(Intent(this, AddItemActivity::class.java))
+            }
+        )
+        bottomSheet.show(supportFragmentManager, AddOptionsBottomSheet.TAG)
     }
 
     private fun onFeedItemClicked(feedItem: FeedItem) {

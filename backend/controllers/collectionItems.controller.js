@@ -33,12 +33,14 @@ const collectionItemsController = {
   // Thêm item vào collection
   async addItemToCollection(req, res, next) {
     try {
-      const { collection_id, item_id } = req.body;
+      // Get collection_id from params, item_id from body
+      const collection_id = req.params.collection_id || req.body.collection_id;
+      const { item_id, note, rating } = req.body;
       const user_id = req.user.id;
 
       // Kiểm tra quyền sở hữu collection
       const collectionCheck = await query(
-        'SELECT created_by FROM collections WHERE id = $1',
+        'SELECT owner_id FROM collections WHERE id = $1',
         [collection_id]
       );
 
@@ -46,7 +48,7 @@ const collectionItemsController = {
         throw new NotFoundError('Không tìm thấy collection');
       }
 
-      if (collectionCheck.rows[0].created_by !== user_id) {
+      if (collectionCheck.rows[0].owner_id !== user_id) {
         throw new ForbiddenError('Bạn không có quyền thêm item vào collection này');
       }
 
@@ -70,10 +72,10 @@ const collectionItemsController = {
         });
       }
 
-      // Thêm item vào collection
+      // Thêm item vào collection với note và rating
       const result = await query(
-        'INSERT INTO collection_items (collection_id, item_id, created_by) VALUES ($1, $2, $3) RETURNING *',
-        [collection_id, item_id, user_id]
+        'INSERT INTO collection_items (collection_id, item_id, note, rating) VALUES ($1, $2, $3, $4) RETURNING *',
+        [collection_id, item_id, note || null, rating || null]
       );
 
       res.status(201).json({

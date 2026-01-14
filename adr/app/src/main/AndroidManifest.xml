@@ -46,6 +46,20 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize" />
+
+        <!-- Add Collection Activity -->
+        <activity
+            android:name=".ui.add.AddCollectionActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Soul" />
+
+        <!-- Add Item Activity -->
+        <activity
+            android:name=".ui.add.AddItemActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Soul" />
             
     </application>
 </manifest>

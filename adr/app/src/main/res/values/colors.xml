@@ -13,6 +13,7 @@
     <color name="primary">#D4A574</color>
     <color name="primary_dark">#A87D52</color>
     <color name="primary_light">#E8D3BC</color>
+    <color name="secondary">#9C7CF4</color>
     <color name="text_primary">#1F1F1F</color>
     <color name="text_secondary">#757575</color>
     <color name="text_hint">#9E9E9E</color>
@@ -20,5 +21,5 @@
     <color name="error">#F44336</color>
     <color name="background">#F8F8F8</color>
     <color name="surface">#FFFFFF</color>
-    <color name="card_background">#FFFFFF</color>
+    <color name="card_background">#F5F5F5</color>
 </resources>
