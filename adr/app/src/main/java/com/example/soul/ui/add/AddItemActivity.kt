@@ -87,7 +87,6 @@ class AddItemActivity : AppCompatActivity() {
         binding.etAlbum.text?.clear()
         binding.etDirector.text?.clear()
         binding.etAuthor.text?.clear()
-        binding.etYear.text?.clear()
         binding.ivCover.setImageResource(R.drawable.bg_placeholder_cover)
         selectedCoverUrl = null
     }
@@ -202,11 +201,7 @@ class AddItemActivity : AppCompatActivity() {
                 result.metadata?.get("album")?.let { binding.etAlbum.setText(it.toString()) }
             }
             "movie" -> {
-                // Fill year from metadata
-                result.metadata?.get("release_date")?.let { dateStr ->
-                    val year = dateStr.toString().split("-").firstOrNull()
-                    year?.let { binding.etYear.setText(it) }
-                }
+                // Nothing extra to fill for movie
             }
         }
         
@@ -285,6 +280,16 @@ class AddItemActivity : AppCompatActivity() {
                     "description" to description,
                     "metadata" to metadata
                 )
+                
+                // Add external_id as separate field (for Spotify/TMDB)
+                selectedSearchResult?.let { result ->
+                    itemBody["external_id"] = result.externalId
+                }
+                
+                // Add cover_image_url as separate field
+                selectedCoverUrl?.let { url ->
+                    itemBody["cover_image_url"] = url
+                }
 
                 val itemResponse = RetrofitClient.apiService.createItem(
                     token = "Bearer $token",
@@ -354,7 +359,6 @@ class AddItemActivity : AppCompatActivity() {
 
     private fun buildMetadata(): Map<String, Any?> {
         val metadata = mutableMapOf<String, Any?>()
-        val year = binding.etYear.text.toString().trim()
 
         when (selectedType) {
             "music" -> {
@@ -376,18 +380,16 @@ class AddItemActivity : AppCompatActivity() {
                 if (developer.isNotEmpty()) metadata["developer"] = developer
             }
         }
-
-        if (year.isNotEmpty()) {
-            metadata["year"] = year.toIntOrNull()
-        }
         
-        // Add cover URL from search result or manual input
-        selectedCoverUrl?.let { metadata["cover_url"] = it }
-        
-        // Add external_id from search result (Spotify ID or TMDB ID)
+        // Add source info from search result (spotify or tmdb)
         selectedSearchResult?.let { result ->
-            metadata["external_id"] = result.externalId
             metadata["source"] = if (selectedType == "music") "spotify" else "tmdb"
+            // Also store preview_url for music if available
+            result.metadata?.get("preview_url")?.let { metadata["preview_url"] = it }
+            result.metadata?.get("spotify_url")?.let { metadata["spotify_url"] = it }
+            // Store TMDB info
+            result.metadata?.get("vote_average")?.let { metadata["vote_average"] = it }
+            result.metadata?.get("overview")?.let { metadata["overview"] = it }
         }
 
         return metadata

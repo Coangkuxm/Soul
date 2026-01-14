@@ -258,23 +258,6 @@
                         android:layout_height="wrap_content"
                         android:inputType="text"/>
                 </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Year -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilYear"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Năm phát hành">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etYear"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="number"
-                        android:maxLength="4"/>
-                </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
             <!-- Select Collection -->

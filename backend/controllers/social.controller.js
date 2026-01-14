@@ -36,8 +36,7 @@ class SocialController {
         JOIN collections c ON ci.collection_id = c.id
         JOIN users u ON c.owner_id = u.id
         LEFT JOIN user_follows uf ON uf.following_id = u.id AND uf.follower_id = $1
-        WHERE c.is_private = false 
-          AND c.owner_id != $1
+        WHERE c.is_private = false
         ORDER BY 
           CASE WHEN uf.follower_id IS NOT NULL THEN 0 ELSE 1 END,
           RANDOM()
