@@ -2,6 +2,91 @@ const db = require('../config/db-connection');
 const { BadRequestError, UnauthorizedError, NotFoundError } = require('../utils/errors');
 
 class SocialController {
+  // Get feed - random items from collection_items (friends first, then others)
+  async getFeed(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
+
+      // Query: JOIN collection_items + items + collections + users
+      // Priority: friends (user_follows) first, then random others
+      const feedQuery = `
+        SELECT 
+          ci.id as collection_item_id,
+          ci.note,
+          ci.rating,
+          ci.added_at,
+          i.id as item_id,
+          i.type as item_type,
+          i.title,
+          i.description,
+          i.cover_image_url,
+          i.metadata,
+          c.id as collection_id,
+          c.name as collection_name,
+          u.id as user_id,
+          u.username,
+          u.display_name,
+          u.avatar_url,
+          CASE WHEN uf.follower_id IS NOT NULL THEN true ELSE false END as is_friend
+        FROM collection_items ci
+        JOIN items i ON ci.item_id = i.id
+        JOIN collections c ON ci.collection_id = c.id
+        JOIN users u ON c.owner_id = u.id
+        LEFT JOIN user_follows uf ON uf.following_id = u.id AND uf.follower_id = $1
+        WHERE c.is_private = false 
+          AND c.owner_id != $1
+        ORDER BY 
+          CASE WHEN uf.follower_id IS NOT NULL THEN 0 ELSE 1 END,
+          RANDOM()
+        LIMIT $2 OFFSET $3
+      `;
+
+      const result = await db.query(feedQuery, [userId, limit, offset]);
+      
+      const feedItems = result.rows.map(row => ({
+        id: row.collection_item_id,
+        item: {
+          id: row.item_id,
+          type: row.item_type,
+          title: row.title,
+          description: row.description,
+          coverImageUrl: row.cover_image_url,
+          metadata: row.metadata
+        },
+        note: row.note,
+        rating: row.rating,
+        addedAt: row.added_at,
+        collection: {
+          id: row.collection_id,
+          name: row.collection_name
+        },
+        user: {
+          id: row.user_id,
+          username: row.username,
+          displayName: row.display_name,
+          avatarUrl: row.avatar_url
+        },
+        isFriend: row.is_friend,
+        activityText: getActivityText(row.item_type)
+      }));
+
+      res.json({
+        success: true,
+        data: feedItems,
+        pagination: {
+          page,
+          limit,
+          hasMore: feedItems.length === limit
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // Follow a user
   async followUser(req, res, next) {
     try {
@@ -451,6 +536,19 @@ class SocialController {
       next(error);
     }
   }
+}
+
+// Helper function for activity text
+function getActivityText(itemType) {
+  const texts = {
+    'music': 'is listening to a new song',
+    'movie': 'is watching a new movie',
+    'book': 'is reading a new book',
+    'game': 'is playing a new game',
+    'artist': 'added a new artist',
+    'other': 'added something new'
+  };
+  return texts[itemType] || texts['other'];
 }
 
 module.exports = new SocialController();

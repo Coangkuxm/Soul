@@ -9,8 +9,8 @@ data class ProfileResponse(
     @SerializedName("success")
     val success: Boolean,
     
-    @SerializedName("data")
-    val data: UserProfile?
+    @SerializedName("user")
+    val user: UserProfile?
 )
 
 data class UserProfile(

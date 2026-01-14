@@ -29,7 +29,7 @@ class HomeRepository(
                 val response = apiService.getCurrentUser("Bearer $token")
                 
                 if (response.isSuccessful) {
-                    val profile = response.body()?.data
+                    val profile = response.body()?.user
                     if (profile != null) {
                         Resource.Success(profile)
                     } else {

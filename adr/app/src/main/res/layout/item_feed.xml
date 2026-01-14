@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- User Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Avatar -->
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/ivAvatar"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@drawable/ic_default_avatar"
+                app:civ_border_color="@color/divider"
+                app:civ_border_width="1dp"/>
+
+            <!-- User Info -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <!-- Username + Activity -->
+                <TextView
+                    android:id="@+id/tvActivity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    tools:text="Hương Giang is listening to a new song"/>
+
+            </LinearLayout>
+
+            <!-- Time -->
+            <TextView
+                android:id="@+id/tvTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_hint"
+                android:textSize="12sp"
+                tools:text="11h"/>
+        </LinearLayout>
+
+        <!-- Item Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="#F0F0F0"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:gravity="center_horizontal">
+
+                <!-- Cover Image with Frame Effect -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="180dp"
+                    android:layout_height="180dp"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="4dp"
+                    app:cardElevation="4dp">
+
+                    <ImageView
+                        android:id="@+id/ivCover"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="8dp"
+                        android:scaleType="centerCrop"
+                        tools:src="@drawable/ic_default_cover"/>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Item Title -->
+                <TextView
+                    android:id="@+id/tvTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    tools:text="Exit Sign"/>
+
+                <!-- Artist/Subtitle -->
+                <TextView
+                    android:id="@+id/tvSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    tools:text="HIEUTHUHAI"/>
+
+                <!-- Play Count / Extra Info -->
+                <TextView
+                    android:id="@+id/tvExtraInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/primary"
+                    android:textSize="13sp"
+                    android:drawablePadding="4dp"
+                    android:visibility="gone"
+                    tools:text="▶ 1 play this week"
+                    tools:visibility="visible"/>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Reactions Row -->
+        <LinearLayout
+            android:id="@+id/layoutReactions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_rounded_outline"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp">
+
+            <ImageView
+                android:id="@+id/btnFire"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_fire"
+                android:padding="2dp"/>
+
+            <ImageView
+                android:id="@+id/btnCry"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="12dp"
+                android:src="@drawable/ic_cry"
+                android:padding="2dp"/>
+
+            <ImageView
+                android:id="@+id/btnGlobe"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="12dp"
+                android:src="@drawable/ic_globe"
+                android:padding="2dp"/>
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="20dp"
+                android:layout_marginHorizontal="12dp"
+                android:background="@color/divider"/>
+
+            <ImageView
+                android:id="@+id/btnAddReaction"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_add_reaction"
+                android:padding="2dp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

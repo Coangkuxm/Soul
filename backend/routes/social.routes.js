@@ -3,6 +3,11 @@ const router = express.Router();
 const socialController = require('../controllers/social.controller');
 const { authenticateToken } = require('../middlewares/auth.middleware');
 
+// Feed route - get random items from collection_items (friends first)
+router.get('/feed', authenticateToken, (req, res, next) => 
+  socialController.getFeed(req, res, next)
+);
+
 // Follow/Unfollow routes
 router.post('/users/:id/follow', authenticateToken, (req, res, next) => 
   socialController.followUser(req, res, next)

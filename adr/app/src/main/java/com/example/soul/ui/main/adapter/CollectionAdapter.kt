@@ -1,5 +1,6 @@
 package com.example.soul.ui.main.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +25,7 @@ class CollectionAdapter(
 ) : ListAdapter<CollectionAdapter.CollectionItem, RecyclerView.ViewHolder>(CollectionDiffCallback()) {
 
     companion object {
+        private const val TAG = "CollectionAdapter"
         private const val VIEW_TYPE_COLLECTION = 0
         private const val VIEW_TYPE_ADD = 1
         private const val MAX_ITEMS = 6 // 6 items in grid (including add placeholders)
@@ -67,10 +69,12 @@ class CollectionAdapter(
      * Submit collections and fill remaining slots with Add placeholders
      */
     fun submitCollections(collections: List<Collection>) {
+        Log.d(TAG, "submitCollections: received ${collections.size} collections")
         val items = mutableListOf<CollectionItem>()
         
         // Add existing collections
         collections.take(MAX_ITEMS).forEach { collection ->
+            Log.d(TAG, "Adding collection: ${collection.name}, cover: ${collection.coverImageUrl}")
             items.add(CollectionItem.Data(collection))
         }
         
@@ -79,6 +83,7 @@ class CollectionAdapter(
             items.add(CollectionItem.AddPlaceholder)
         }
         
+        Log.d(TAG, "Total items to display: ${items.size}")
         submitList(items)
     }
 
@@ -87,6 +92,7 @@ class CollectionAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(collection: Collection) {
+            Log.d(TAG, "Binding collection: ${collection.name}")
             binding.apply {
                 // Set collection name
                 tvCollectionName.text = collection.name

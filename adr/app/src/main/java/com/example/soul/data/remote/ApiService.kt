@@ -1,6 +1,7 @@
 package com.example.soul.data.remote
 
 import com.example.soul.data.model.CollectionsResponse
+import com.example.soul.data.model.FeedResponse
 import com.example.soul.data.model.HealthResponse
 import com.example.soul.data.model.ProfileResponse
 import com.example.soul.data.model.auth.LoginRequest
@@ -57,4 +58,14 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("id") userId: Int
     ): Response<ProfileResponse>
+    
+    /**
+     * Get news feed - random items from friends and others
+     */
+    @GET("/api/social/feed")
+    suspend fun getFeed(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 10
+    ): Response<FeedResponse>
 }
