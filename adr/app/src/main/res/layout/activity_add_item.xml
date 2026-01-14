@@ -65,6 +65,7 @@
                         android:layout_height="wrap_content"
                         android:text="🎵 Nhạc"
                         android:checked="true"
+                        android:textColor="@color/chip_text_color"
                         app:chipBackgroundColor="@color/chip_background_color"/>
 
                     <com.google.android.material.chip.Chip
@@ -73,6 +74,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="🎬 Phim"
+                        android:textColor="@color/chip_text_color"
                         app:chipBackgroundColor="@color/chip_background_color"/>
 
                     <com.google.android.material.chip.Chip
@@ -81,6 +83,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="📚 Sách"
+                        android:textColor="@color/chip_text_color"
                         app:chipBackgroundColor="@color/chip_background_color"/>
 
                     <com.google.android.material.chip.Chip
@@ -89,6 +92,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="🎮 Game"
+                        android:textColor="@color/chip_text_color"
                         app:chipBackgroundColor="@color/chip_background_color"/>
 
                     <com.google.android.material.chip.Chip
@@ -97,6 +101,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="🎤 Nghệ sĩ"
+                        android:textColor="@color/chip_text_color"
                         app:chipBackgroundColor="@color/chip_background_color"/>
 
                     <com.google.android.material.chip.Chip
@@ -105,6 +110,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="📦 Khác"
+                        android:textColor="@color/chip_text_color"
                         app:chipBackgroundColor="@color/chip_background_color"/>
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>
@@ -122,33 +128,31 @@
                 app:icon="@drawable/ic_search"
                 app:iconTint="@color/primary"/>
 
+            <!-- Content Container - Hidden until item selected for music/movie -->
+            <LinearLayout
+                android:id="@+id/layoutContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
             <!-- Cover Image -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardCover"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
+                android:layout_width="180dp"
+                android:layout_height="180dp"
+                android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="24dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
+                app:cardElevation="4dp">
 
-                <FrameLayout
+                <ImageView
+                    android:id="@+id/ivCover"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
-
-                    <ImageView
-                        android:id="@+id/ivCover"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/bg_placeholder_cover"/>
-
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_camera"
-                        app:tint="@color/white"/>
-                </FrameLayout>
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/bg_placeholder_cover" />
+                    
             </androidx.cardview.widget.CardView>
 
             <!-- Title -->
@@ -260,6 +264,9 @@
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
+            </LinearLayout>
+            <!-- End Content Container -->
+
             <!-- Select Collection -->
             <TextView
                 android:layout_width="wrap_content"
@@ -283,24 +290,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="none"/>
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Note for item in collection -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilNote"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:hint="Ghi chú (tùy chọn)">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etNote"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textMultiLine"
-                    android:minLines="2"
-                    android:gravity="top"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Rating -->

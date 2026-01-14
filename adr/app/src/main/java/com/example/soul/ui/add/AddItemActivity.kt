@@ -127,10 +127,16 @@ class AddItemActivity : AppCompatActivity() {
         binding.tilAuthor.visibility = View.GONE
         
         // Show/hide search button based on type
-        binding.btnSearch.visibility = if (selectedType == "music" || selectedType == "movie") {
-            View.VISIBLE
-        } else {
+        val needsSearch = selectedType == "music" || selectedType == "movie"
+        binding.btnSearch.visibility = if (needsSearch) View.VISIBLE else View.GONE
+        
+        // For music/movie: hide content until item selected from search
+        // For other types: always show content
+        val hasSelection = selectedSearchResult != null
+        binding.layoutContent.visibility = if (needsSearch && !hasSelection) {
             View.GONE
+        } else {
+            View.VISIBLE
         }
         
         // Update search button text based on type
@@ -145,6 +151,9 @@ class AddItemActivity : AppCompatActivity() {
                 binding.tilArtist.visibility = View.VISIBLE
                 binding.tilArtist.hint = "Nghệ sĩ"
                 binding.tilAlbum.visibility = View.VISIBLE
+                
+                // For music: Disable all fields until song is selected from Spotify
+                setMusicFieldsEnabled(hasSelection)
             }
             "movie" -> {
                 binding.tilDirector.visibility = View.VISIBLE
@@ -159,6 +168,21 @@ class AddItemActivity : AppCompatActivity() {
                 binding.tilDirector.visibility = View.VISIBLE
                 binding.tilDirector.hint = "Nhà phát triển"
             }
+        }
+    }
+    
+    private fun setMusicFieldsEnabled(enabled: Boolean) {
+        // Disable/enable input fields for music type
+        binding.etTitle.isEnabled = enabled
+        binding.etDescription.isEnabled = enabled
+        binding.etArtist.isEnabled = false // Always disabled - auto-filled from Spotify
+        binding.etAlbum.isEnabled = false // Always disabled - auto-filled from Spotify
+        
+        // Update hint to guide user
+        if (!enabled && selectedType == "music") {
+            binding.tilTitle.hint = "Tên bài hát (tìm kiếm từ Spotify)"
+        } else {
+            binding.tilTitle.hint = "Tên *"
         }
     }
 
@@ -210,6 +234,9 @@ class AddItemActivity : AppCompatActivity() {
         selectedCoverUrl = result.coverUrl
         selectedImageUri = null // Clear any manual image selection
         
+        // Show content container now that item is selected
+        binding.layoutContent.visibility = View.VISIBLE
+        
         // Fill title
         binding.etTitle.setText(result.title)
         
@@ -235,6 +262,8 @@ class AddItemActivity : AppCompatActivity() {
                 result.subtitle?.let { binding.etArtist.setText(it) }
                 // Fill album from metadata
                 result.metadata?.get("album")?.let { binding.etAlbum.setText(it.toString()) }
+                // Enable description field now that song is selected
+                setMusicFieldsEnabled(true)
             }
             "movie" -> {
                 // Nothing extra to fill for movie
@@ -280,10 +309,15 @@ class AddItemActivity : AppCompatActivity() {
     private fun addItem() {
         val title = binding.etTitle.text.toString().trim()
         val description = binding.etDescription.text.toString().trim()
-        val note = binding.etNote.text.toString().trim()
         val rating = binding.ratingBar.rating.toInt().takeIf { it > 0 }
 
-        // Validate
+        // Validate: For music, must select from Spotify
+        if (selectedType == "music" && selectedSearchResult == null) {
+            Toast.makeText(this, "Vui lòng tìm kiếm và chọn bài hát từ Spotify", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Validate title
         if (title.isEmpty()) {
             binding.tilTitle.error = "Vui lòng nhập tên"
             return
@@ -372,9 +406,6 @@ class AddItemActivity : AppCompatActivity() {
                 val collectionItemBody = mutableMapOf<String, Any?>(
                     "item_id" to itemId
                 )
-                if (note.isNotEmpty()) {
-                    collectionItemBody["note"] = note
-                }
                 if (rating != null) {
                     collectionItemBody["rating"] = rating
                 }

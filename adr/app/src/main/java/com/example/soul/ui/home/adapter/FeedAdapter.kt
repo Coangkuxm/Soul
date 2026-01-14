@@ -1,11 +1,15 @@
 package com.example.soul.ui.home.adapter
 
+import android.content.Intent
+import android.net.Uri
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.StyleSpan
 import android.graphics.Typeface
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -39,9 +43,9 @@ class FeedAdapter(
 
         fun bind(feedItem: FeedItem) {
             binding.apply {
-                // User activity text: "Username is listening to a new song"
+                // User activity text: "Username đang nghe một bài hát mới"
                 val displayName = feedItem.user.displayName ?: feedItem.user.username
-                val activityText = feedItem.activityText ?: "added something new"
+                val activityText = feedItem.activityText ?: "đã thêm một item mới"
                 val fullText = "$displayName $activityText"
                 
                 // Make username bold
@@ -95,10 +99,42 @@ class FeedAdapter(
                     ivCover.setImageResource(R.drawable.ic_default_cover)
                 }
 
+                // Show play button for music type with Spotify URL
+                val isMusic = feedItem.item.type == "music"
+                val spotifyUrl = feedItem.item.metadata?.spotifyUrl
+                
+                if (isMusic && !spotifyUrl.isNullOrEmpty()) {
+                    btnPlay.visibility = View.VISIBLE
+                    btnPlay.setImageResource(R.drawable.ic_spotify)
+                    btnPlay.setOnClickListener {
+                        openSpotify(spotifyUrl)
+                    }
+                } else {
+                    btnPlay.visibility = View.GONE
+                }
+
                 // Click listeners
                 root.setOnClickListener { onItemClick(feedItem) }
                 ivAvatar.setOnClickListener { onUserClick(feedItem.user.id) }
                 tvActivity.setOnClickListener { onUserClick(feedItem.user.id) }
+            }
+        }
+        
+        private fun openSpotify(spotifyUrl: String) {
+            val context = binding.root.context
+            try {
+                // Try to open in Spotify app first
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(spotifyUrl))
+                intent.setPackage("com.spotify.music")
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                // Fallback to browser
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(spotifyUrl))
+                    context.startActivity(intent)
+                } catch (e2: Exception) {
+                    Toast.makeText(context, "Không thể mở Spotify", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 

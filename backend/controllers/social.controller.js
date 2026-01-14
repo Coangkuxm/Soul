@@ -540,12 +540,12 @@ class SocialController {
 // Helper function for activity text
 function getActivityText(itemType) {
   const texts = {
-    'music': 'is listening to a new song',
-    'movie': 'is watching a new movie',
-    'book': 'is reading a new book',
-    'game': 'is playing a new game',
-    'artist': 'added a new artist',
-    'other': 'added something new'
+    'music': 'đang nghe một bài hát mới',
+    'movie': 'đang xem một bộ phim mới',
+    'book': 'đang đọc một cuốn sách mới',
+    'game': 'đang chơi một game mới',
+    'artist': 'đã thêm một nghệ sĩ mới',
+    'other': 'đã thêm một item mới'
   };
   return texts[itemType] || texts['other'];
 }
