@@ -124,7 +124,8 @@ router.get('/search', async (req, res) => {
         artists: track.artists.map(a => a.name).join(', '),
         album: track.album.name,
         preview_url: track.preview_url,
-        external_url: track.external_urls.spotify
+        external_url: track.external_urls.spotify,
+        cover_url: track.album.images?.[0]?.url || null // Lấy ảnh bìa album (size lớn nhất)
       }))
     });
   } catch (error) {

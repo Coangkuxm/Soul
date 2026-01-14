@@ -187,6 +187,25 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🟢 Server đang chạy tại http://localhost:${PORT}`);
+  
+  // Keep-alive: Tự ping server mỗi 14 phút để tránh Render spin down
+  if (process.env.NODE_ENV === 'production' && process.env.RENDER_EXTERNAL_URL) {
+    const KEEP_ALIVE_INTERVAL = 14 * 60 * 1000; // 14 phút
+    setInterval(async () => {
+      try {
+        const https = require('https');
+        const url = `${process.env.RENDER_EXTERNAL_URL}/health`;
+        https.get(url, (res) => {
+          console.log(`🏓 Keep-alive ping: ${res.statusCode}`);
+        }).on('error', (err) => {
+          console.error('Keep-alive ping failed:', err.message);
+        });
+      } catch (error) {
+        console.error('Keep-alive error:', error);
+      }
+    }, KEEP_ALIVE_INTERVAL);
+    console.log('🔄 Keep-alive enabled (ping every 14 minutes)');
+  }
 });
 
 // Handle unhandled promise rejections

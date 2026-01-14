@@ -8,11 +8,15 @@ import com.example.soul.data.model.SpotifySearchResponse
 import com.example.soul.data.model.TMDBSearchResponse
 import com.example.soul.data.model.auth.LoginRequest
 import com.example.soul.data.model.auth.LoginResponse
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -120,4 +124,17 @@ interface ApiService {
         @Query("query") query: String,
         @Query("page") page: Int = 1
     ): Response<TMDBSearchResponse>
+    
+    // ==================== UPLOAD API ====================
+    
+    /**
+     * Upload image to Cloudinary
+     */
+    @Multipart
+    @POST("/api/upload/image")
+    suspend fun uploadImage(
+        @Header("Authorization") token: String,
+        @Part image: MultipartBody.Part,
+        @Part("folder") folder: RequestBody
+    ): Response<Map<String, Any?>>
 }

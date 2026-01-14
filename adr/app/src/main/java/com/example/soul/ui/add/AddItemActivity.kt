@@ -1,10 +1,13 @@
 package com.example.soul.ui.add
 
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -14,7 +17,11 @@ import com.example.soul.data.model.Collection
 import com.example.soul.data.model.SearchResult
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.ActivityAddItemBinding
+import com.example.soul.utils.ImagePickerHelper
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 
 class AddItemActivity : AppCompatActivity() {
@@ -33,6 +40,25 @@ class AddItemActivity : AppCompatActivity() {
     // Store selected search result
     private var selectedSearchResult: SearchResult? = null
     private var selectedCoverUrl: String? = null
+    
+    // For manual image selection
+    private var selectedImageUri: Uri? = null
+    
+    // Image picker launcher
+    private val pickImage = registerForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            selectedImageUri = uri
+            selectedCoverUrl = null // Clear URL since we're using local image
+            selectedSearchResult = null // Clear search result
+            // Show selected image
+            Glide.with(this)
+                .load(uri)
+                .centerCrop()
+                .into(binding.ivCover)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,6 +115,8 @@ class AddItemActivity : AppCompatActivity() {
         binding.etAuthor.text?.clear()
         binding.ivCover.setImageResource(R.drawable.bg_placeholder_cover)
         selectedCoverUrl = null
+        selectedImageUri = null
+        selectedSearchResult = null
     }
 
     private fun updateMetadataFields() {
@@ -135,16 +163,23 @@ class AddItemActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        // Cover image picker / Search button
+        // Cover image picker - only allow for types WITHOUT API search (book, game, artist, other)
         binding.cardCover.setOnClickListener {
-            if (selectedType == "music" || selectedType == "movie") {
-                showSearchBottomSheet()
+            // If already selected from API (Spotify/TMDB), don't allow changing
+            if (selectedSearchResult != null) {
+                Toast.makeText(this, "Ảnh được lấy từ ${if (selectedType == "music") "Spotify" else "TMDB"}", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            // Only allow manual image selection for non-API types
+            if (selectedType != "music" && selectedType != "movie") {
+                pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             } else {
-                Toast.makeText(this, "Chọn ảnh bìa - sẽ cập nhật sau", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Hãy tìm kiếm từ ${if (selectedType == "music") "Spotify" else "TMDB"} để lấy ảnh", Toast.LENGTH_SHORT).show()
             }
         }
         
-        // Search button
+        // Search button (for music/movie types)
         binding.btnSearch.setOnClickListener {
             showSearchBottomSheet()
         }
@@ -173,6 +208,7 @@ class AddItemActivity : AppCompatActivity() {
     private fun fillFormFromSearchResult(result: SearchResult) {
         selectedSearchResult = result
         selectedCoverUrl = result.coverUrl
+        selectedImageUri = null // Clear any manual image selection
         
         // Fill title
         binding.etTitle.setText(result.title)
@@ -182,7 +218,7 @@ class AddItemActivity : AppCompatActivity() {
             binding.etDescription.setText(it.toString())
         }
         
-        // Load cover image
+        // Load cover image from API - this is locked, user cannot change
         result.coverUrl?.let { url ->
             Glide.with(this)
                 .load(url)
@@ -269,6 +305,21 @@ class AddItemActivity : AppCompatActivity() {
                     showLoading(false)
                     return@launch
                 }
+                
+                // Determine cover image URL
+                var coverImageUrl: String? = null
+                
+                if (selectedSearchResult != null) {
+                    // For music/movie from API - use the API cover URL directly
+                    coverImageUrl = selectedCoverUrl
+                } else if (selectedImageUri != null && selectedType != "music" && selectedType != "movie") {
+                    // For other types with manual image selection - upload to server
+                    Toast.makeText(this@AddItemActivity, "Đang upload ảnh...", Toast.LENGTH_SHORT).show()
+                    coverImageUrl = uploadImage(token, selectedImageUri!!)
+                    if (coverImageUrl == null) {
+                        Log.w(TAG, "Image upload failed, continuing without cover")
+                    }
+                }
 
                 // Build metadata based on type
                 val metadata = buildMetadata()
@@ -287,7 +338,7 @@ class AddItemActivity : AppCompatActivity() {
                 }
                 
                 // Add cover_image_url as separate field
-                selectedCoverUrl?.let { url ->
+                coverImageUrl?.let { url ->
                     itemBody["cover_image_url"] = url
                 }
 
@@ -398,5 +449,46 @@ class AddItemActivity : AppCompatActivity() {
     private fun showLoading(show: Boolean) {
         binding.loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
         binding.btnAdd.isEnabled = !show
+    }
+    
+    private suspend fun uploadImage(token: String, uri: Uri): String? {
+        return try {
+            // Check file size
+            if (!ImagePickerHelper.isFileSizeValid(this, uri)) {
+                Toast.makeText(this, "Ảnh quá lớn (tối đa 5MB)", Toast.LENGTH_SHORT).show()
+                return null
+            }
+            
+            // Read file bytes
+            val inputStream = contentResolver.openInputStream(uri)
+            val bytes = inputStream?.readBytes()
+            inputStream?.close()
+            
+            if (bytes == null) return null
+            
+            // Create multipart body
+            val requestBody = bytes.toRequestBody("image/*".toMediaTypeOrNull())
+            val imagePart = MultipartBody.Part.createFormData("image", "cover.jpg", requestBody)
+            val folderPart = "items".toRequestBody("text/plain".toMediaTypeOrNull())
+            
+            val response = RetrofitClient.apiService.uploadImage(
+                token = "Bearer $token",
+                image = imagePart,
+                folder = folderPart
+            )
+            
+            if (response.isSuccessful && response.body() != null) {
+                val data = response.body()!!
+                data["data"]?.let { dataMap ->
+                    (dataMap as? Map<*, *>)?.get("url") as? String
+                }
+            } else {
+                Log.e(TAG, "Upload failed: ${response.errorBody()?.string()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Upload error", e)
+            null
+        }
     }
 }
