@@ -8,12 +8,14 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.soul.R
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.FeedItem
+import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.ActivityFeedBinding
 import com.example.soul.ui.add.AddCollectionActivity
 import com.example.soul.ui.add.AddItemActivity
@@ -21,6 +23,7 @@ import com.example.soul.ui.add.AddOptionsBottomSheet
 import com.example.soul.ui.auth.LoginActivity
 import com.example.soul.ui.home.adapter.FeedAdapter
 import com.example.soul.utils.Resource
+import kotlinx.coroutines.launch
 
 class FeedActivity : AppCompatActivity() {
 
@@ -83,6 +86,9 @@ class FeedActivity : AppCompatActivity() {
             },
             onUserClick = { userId ->
                 onUserClicked(userId)
+            },
+            onLikeClick = { feedItem, isLiked ->
+                handleLikeClick(feedItem, isLiked)
             }
         )
 
@@ -248,6 +254,28 @@ class FeedActivity : AppCompatActivity() {
     private fun onUserClicked(userId: Int) {
         Toast.makeText(this, "Opening user profile", Toast.LENGTH_SHORT).show()
         // TODO: Navigate to user profile
+    }
+
+    private fun handleLikeClick(feedItem: FeedItem, isLiked: Boolean) {
+        lifecycleScope.launch {
+            try {
+                val body = mapOf(
+                    "targetId" to feedItem.item.id,
+                    "targetType" to "item"
+                )
+                
+                if (isLiked) {
+                    RetrofitClient.apiService.likeItem(body)
+                } else {
+                    RetrofitClient.apiService.unlikeItem(body)
+                }
+            } catch (e: Exception) {
+                // Revert on error
+                feedItem.isLiked = !isLiked
+                feedAdapter.notifyDataSetChanged()
+                Toast.makeText(this@FeedActivity, "Failed to update like", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun logout() {

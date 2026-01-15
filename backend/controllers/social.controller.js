@@ -30,12 +30,14 @@ class SocialController {
           u.username,
           u.display_name,
           u.avatar_url,
-          CASE WHEN uf.follower_id IS NOT NULL THEN true ELSE false END as is_friend
+          CASE WHEN uf.follower_id IS NOT NULL THEN true ELSE false END as is_friend,
+          CASE WHEN l.id IS NOT NULL THEN true ELSE false END as is_liked
         FROM collection_items ci
         JOIN items i ON ci.item_id = i.id
         JOIN collections c ON ci.collection_id = c.id
         JOIN users u ON c.owner_id = u.id
         LEFT JOIN user_follows uf ON uf.following_id = u.id AND uf.follower_id = $1
+        LEFT JOIN likes l ON l.target_id = i.id AND l.target_type = 'item' AND l.user_id = $1
         WHERE c.is_private = false
         ORDER BY 
           CASE WHEN uf.follower_id IS NOT NULL THEN 0 ELSE 1 END,
@@ -69,6 +71,7 @@ class SocialController {
           avatarUrl: row.avatar_url
         },
         isFriend: row.is_friend,
+        isLiked: row.is_liked,
         activityText: getActivityText(row.item_type)
       }));
 

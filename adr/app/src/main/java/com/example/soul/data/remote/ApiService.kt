@@ -76,6 +76,24 @@ interface ApiService {
     ): Response<FeedResponse>
 
     /**
+     * Like an item
+     */
+    @POST("/api/social/likes")
+    suspend fun likeItem(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Response<Map<String, Any?>>
+
+    /**
+     * Unlike an item
+     */
+    @HTTP(method = "DELETE", path = "/api/social/likes", hasBody = true)
+    suspend fun unlikeItem(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Response<Map<String, Any?>>
+
+    /**
      * Create a new collection
      */
     @POST("/api/collections")

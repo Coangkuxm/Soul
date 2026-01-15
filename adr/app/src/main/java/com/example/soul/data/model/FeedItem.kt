@@ -30,6 +30,9 @@ data class FeedItem(
     @SerializedName("isFriend")
     val isFriend: Boolean = false,
     
+    @SerializedName("isLiked")
+    var isLiked: Boolean = false,
+    
     @SerializedName("activityText")
     val activityText: String?
 )

@@ -151,54 +151,15 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Reactions Row -->
-        <LinearLayout
-            android:id="@+id/layoutReactions"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <!-- Like Button (Instagram style) -->
+        <ImageView
+            android:id="@+id/btnLike"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_rounded_outline"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp">
-
-            <ImageView
-                android:id="@+id/btnFire"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_fire"
-                android:padding="2dp"/>
-
-            <ImageView
-                android:id="@+id/btnCry"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_marginStart="12dp"
-                android:src="@drawable/ic_cry"
-                android:padding="2dp"/>
-
-            <ImageView
-                android:id="@+id/btnGlobe"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_marginStart="12dp"
-                android:src="@drawable/ic_globe"
-                android:padding="2dp"/>
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="20dp"
-                android:layout_marginHorizontal="12dp"
-                android:background="@color/divider"/>
-
-            <ImageView
-                android:id="@+id/btnAddReaction"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_add_reaction"
-                android:padding="2dp"/>
-        </LinearLayout>
+            android:src="@drawable/ic_heart_outline"
+            android:padding="4dp"/>
 
     </LinearLayout>
 

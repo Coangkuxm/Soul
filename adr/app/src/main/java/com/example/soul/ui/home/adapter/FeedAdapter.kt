@@ -9,6 +9,7 @@ import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -23,7 +24,8 @@ import java.util.*
 
 class FeedAdapter(
     private val onItemClick: (FeedItem) -> Unit,
-    private val onUserClick: (Int) -> Unit
+    private val onUserClick: (Int) -> Unit,
+    private val onLikeClick: (FeedItem, Boolean) -> Unit // itemId, isLike (true=like, false=unlike)
 ) : ListAdapter<FeedItem, FeedAdapter.FeedViewHolder>(FeedDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FeedViewHolder {
@@ -113,11 +115,47 @@ class FeedAdapter(
                     btnPlay.visibility = View.GONE
                 }
 
+                // Like button - Instagram style
+                updateLikeIcon(btnLike, feedItem.isLiked)
+                
+                btnLike.setOnClickListener {
+                    val willLike = !feedItem.isLiked
+                    feedItem.isLiked = willLike
+                    animateLike(btnLike, willLike)
+                    onLikeClick(feedItem, willLike)
+                }
+
                 // Click listeners
                 root.setOnClickListener { onItemClick(feedItem) }
                 ivAvatar.setOnClickListener { onUserClick(feedItem.user.id) }
                 tvActivity.setOnClickListener { onUserClick(feedItem.user.id) }
             }
+        }
+        
+        private fun updateLikeIcon(btn: ImageView, isLiked: Boolean) {
+            btn.setImageResource(
+                if (isLiked) R.drawable.ic_heart_filled 
+                else R.drawable.ic_heart_outline
+            )
+        }
+        
+        private fun animateLike(btn: ImageView, isLiked: Boolean) {
+            // Update icon
+            updateLikeIcon(btn, isLiked)
+            
+            // Bounce animation
+            btn.animate()
+                .scaleX(1.3f)
+                .scaleY(1.3f)
+                .setDuration(100)
+                .withEndAction {
+                    btn.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(100)
+                        .start()
+                }
+                .start()
         }
         
         private fun openSpotify(spotifyUrl: String) {
