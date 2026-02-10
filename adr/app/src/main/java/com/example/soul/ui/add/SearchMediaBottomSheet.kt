@@ -19,7 +19,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class SearchMediaBottomSheet private constructor() : BottomSheetDialogFragment() {
+class SearchMediaBottomSheet : BottomSheetDialogFragment() {
 
     companion object {
         const val TAG = "SearchMediaBottomSheet"

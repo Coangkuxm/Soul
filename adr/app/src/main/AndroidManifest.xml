@@ -46,7 +46,16 @@
             android:name=".ui.home.FeedActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="soul"
+                    android:host="spotify-callback" />
+            </intent-filter>
+        </activity>
 
         <!-- Add Collection Activity -->
         <activity
@@ -61,6 +70,12 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.Soul" />
+
+        <!-- Comments Activity -->
+        <activity
+            android:name=".ui.comments.CommentsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
             
     </application>
 </manifest>

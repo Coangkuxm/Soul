@@ -40,6 +40,9 @@ class HomeViewModel(
     private val _isRefreshing = MutableLiveData<Boolean>()
     val isRefreshing: LiveData<Boolean> = _isRefreshing
 
+    private val _sessionExpired = MutableLiveData<Boolean>()
+    val sessionExpired: LiveData<Boolean> = _sessionExpired
+
     init {
         loadData()
     }
@@ -81,6 +84,9 @@ class HomeViewModel(
                     } else {
                         _profile.value = Resource.Error("Failed to load profile")
                     }
+                } else if (response.code() == 401) {
+                    // Token expired
+                    _sessionExpired.value = true
                 } else {
                     _profile.value = Resource.Error(
                         response.errorBody()?.string() ?: "Failed to load profile"
@@ -122,6 +128,9 @@ class HomeViewModel(
                         Log.d(TAG, "Feed item: ${item.item.title} by ${item.user.username}")
                     }
                     _feedItems.value = Resource.Success(feedData)
+                } else if (response.code() == 401) {
+                    // Token expired
+                    _sessionExpired.value = true
                 } else {
                     _feedItems.value = Resource.Error(
                         response.errorBody()?.string() ?: "Failed to load feed"
@@ -165,6 +174,9 @@ class HomeViewModel(
                         Log.d(TAG, "Collection: ${c.name}, cover: ${c.coverImageUrl}")
                     }
                     _collections.value = Resource.Success(collections)
+                } else if (response.code() == 401) {
+                    // Token expired
+                    _sessionExpired.value = true
                 } else {
                     _collections.value = Resource.Error(
                         response.errorBody()?.string() ?: "Failed to load collections"

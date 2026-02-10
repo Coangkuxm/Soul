@@ -162,11 +162,6 @@ class HomeActivity : AppCompatActivity() {
             showSettingsMenu(it)
         }
 
-        // FAB - Add collection
-        binding.fabAdd.setOnClickListener {
-            onAddCollectionClicked()
-        }
-
         // Bottom navigation
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -176,6 +171,9 @@ class HomeActivity : AppCompatActivity() {
                 }
                 R.id.nav_explore -> {
                     Toast.makeText(this, "Explore coming soon", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                R.id.nav_notification -> {
                     true
                 }
                 R.id.nav_library -> {
@@ -269,3 +267,11 @@ class HomeActivity : AppCompatActivity() {
         finish()
     }
 }
+
+
+
+
+
+
+
+

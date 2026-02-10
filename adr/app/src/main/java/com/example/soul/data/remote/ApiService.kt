@@ -1,6 +1,8 @@
 package com.example.soul.data.remote
 
 import com.example.soul.data.model.CollectionsResponse
+import com.example.soul.data.model.CommentsResponse
+import com.example.soul.data.model.CreateCommentResponse
 import com.example.soul.data.model.FeedResponse
 import com.example.soul.data.model.HealthResponse
 import com.example.soul.data.model.ProfileResponse
@@ -13,6 +15,7 @@ import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -74,6 +77,26 @@ interface ApiService {
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 10
     ): Response<FeedResponse>
+
+    /**
+     * Get comments for a target (collection/item)
+     */
+    @GET("/api/social/comments/{targetType}/{targetId}")
+    suspend fun getComments(
+        @Path("targetType") targetType: String,
+        @Path("targetId") targetId: Int,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 50
+    ): Response<CommentsResponse>
+
+    /**
+     * Create a comment
+     */
+    @POST("/api/social/comments")
+    suspend fun createComment(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<CreateCommentResponse>
 
     /**
      * Like an item

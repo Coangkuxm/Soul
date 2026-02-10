@@ -19,6 +19,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        resValue("string", "spotify_client_id", "82355370414e43139adb470311e58d73")
+        resValue("string", "spotify_redirect_uri", "soul://spotify-callback")
+        manifestPlaceholders["redirectSchemeName"] = "soul"
+        manifestPlaceholders["redirectHostName"] = "spotify-callback"
     }
 
     buildTypes {
@@ -67,6 +72,7 @@ dependencies {
 
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation(files("libs/spotify-auth-release-2.1.0.aar"))
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
     // CircleImageView for avatar
@@ -77,6 +83,9 @@ dependencies {
 
     // RecyclerView
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    // Media3 ExoPlayer for audio preview playback
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

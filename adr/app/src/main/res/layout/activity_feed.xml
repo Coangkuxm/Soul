@@ -49,14 +49,14 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
 
-        <!-- Notification Bell (right) -->
+        <!-- Add Button (right) -->
         <ImageButton
-            android:id="@+id/btnNotification"
+            android:id="@+id/btnAdd"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_notification"
-            android:contentDescription="Notifications"
+            android:src="@drawable/ic_add"
+            android:contentDescription="Add"
             app:tint="@color/text_primary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -79,20 +79,10 @@
             android:clipToPadding="false"
             android:paddingTop="8dp"
             android:paddingBottom="8dp"
+            android:overScrollMode="never"
             tools:listitem="@layout/item_feed"/>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-    <!-- Loading -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
 
     <!-- Empty State -->
     <LinearLayout
@@ -142,31 +132,50 @@
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation">
 
+        <androidx.cardview.widget.CardView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            app:cardCornerRadius="6dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/white">
+
+            <ImageView
+                android:id="@+id/ivMiniPlayerCover"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_default_cover" />
+        </androidx.cardview.widget.CardView>
+
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_play_circle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/ivMiniPlayerPlay"
+            android:layout_marginStart="12dp"
+            android:src="@drawable/ic_pause_circle"
             app:tint="@color/text_primary"/>
+
+        <TextView
+            android:id="@+id/tvMiniPlayerTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="Song Title • Artist"/>
 
         <TextView
             android:id="@+id/tvMiniPlayerTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            tools:text="1:51/2:27"/>
+            android:layout_marginStart="12dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            tools:text="0:12/0:30"/>
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1"/>
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_volume"
-            app:tint="@color/text_secondary"/>
     </LinearLayout>
 
     <!-- Bottom Navigation -->
@@ -180,20 +189,5 @@
         app:labelVisibilityMode="unlabeled"
         app:menu="@menu/bottom_nav_menu"
         app:layout_constraintBottom_toBottomOf="parent"/>
-
-    <!-- FAB Add -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAdd"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:src="@drawable/ic_add"
-        android:contentDescription="Add"
-        app:backgroundTint="@color/primary"
-        app:tint="@color/white"
-        app:fabSize="normal"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

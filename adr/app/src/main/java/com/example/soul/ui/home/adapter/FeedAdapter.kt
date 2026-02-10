@@ -1,7 +1,5 @@
 package com.example.soul.ui.home.adapter
 
-import android.content.Intent
-import android.net.Uri
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.StyleSpan
@@ -10,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -25,7 +22,8 @@ import java.util.*
 class FeedAdapter(
     private val onItemClick: (FeedItem) -> Unit,
     private val onUserClick: (Int) -> Unit,
-    private val onLikeClick: (FeedItem, Boolean) -> Unit // itemId, isLike (true=like, false=unlike)
+    private val onLikeClick: (FeedItem, Boolean) -> Unit, // itemId, isLike (true=like, false=unlike)
+    private val onPlayClick: (FeedItem) -> Unit
 ) : ListAdapter<FeedItem, FeedAdapter.FeedViewHolder>(FeedDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FeedViewHolder {
@@ -101,15 +99,16 @@ class FeedAdapter(
                     ivCover.setImageResource(R.drawable.ic_default_cover)
                 }
 
-                // Show play button for music type with Spotify URL
+                // Show play button for music type with preview or Spotify URL
                 val isMusic = feedItem.item.type == "music"
+                val previewUrl = feedItem.item.metadata?.previewUrl
                 val spotifyUrl = feedItem.item.metadata?.spotifyUrl
                 
-                if (isMusic && !spotifyUrl.isNullOrEmpty()) {
+                if (isMusic && (!previewUrl.isNullOrEmpty() || !spotifyUrl.isNullOrEmpty())) {
                     btnPlay.visibility = View.VISIBLE
-                    btnPlay.setImageResource(R.drawable.ic_spotify)
+                    btnPlay.setImageResource(R.drawable.ic_play_circle)
                     btnPlay.setOnClickListener {
-                        openSpotify(spotifyUrl)
+                        onPlayClick(feedItem)
                     }
                 } else {
                     btnPlay.visibility = View.GONE
@@ -157,24 +156,6 @@ class FeedAdapter(
                 }
                 .start()
         }
-        
-        private fun openSpotify(spotifyUrl: String) {
-            val context = binding.root.context
-            try {
-                // Try to open in Spotify app first
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(spotifyUrl))
-                intent.setPackage("com.spotify.music")
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                // Fallback to browser
-                try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(spotifyUrl))
-                    context.startActivity(intent)
-                } catch (e2: Exception) {
-                    Toast.makeText(context, "Không thể mở Spotify", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
 
         private fun getTimeAgo(dateString: String?): String {
             if (dateString.isNullOrEmpty()) return ""
@@ -212,3 +193,6 @@ class FeedAdapter(
         }
     }
 }
+
+
+
