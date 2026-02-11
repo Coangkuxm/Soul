@@ -2,6 +2,8 @@ package com.example.soul.ui.comments
 
 import android.os.Bundle
 import android.widget.Toast
+import android.view.inputmethod.InputMethodManager
+import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -42,6 +44,10 @@ class CommentsActivity : AppCompatActivity() {
         binding.rvComments.layoutManager = LinearLayoutManager(this)
         binding.rvComments.adapter = adapter
 
+        binding.swipeRefresh.setOnRefreshListener {
+            loadComments()
+        }
+
         binding.btnSend.setOnClickListener {
             val content = binding.etComment.text.toString().trim()
             if (content.isEmpty()) return@setOnClickListener
@@ -52,6 +58,7 @@ class CommentsActivity : AppCompatActivity() {
     }
 
     private fun loadComments() {
+        binding.swipeRefresh.isRefreshing = true
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.apiService.getComments(
@@ -65,11 +72,16 @@ class CommentsActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 Toast.makeText(this@CommentsActivity, "Network error", Toast.LENGTH_SHORT).show()
+            } finally {
+                binding.swipeRefresh.isRefreshing = false
             }
         }
     }
 
     private fun createComment(content: String) {
+        binding.btnSend.isEnabled = false
+        hideKeyboard()
+        binding.swipeRefresh.isRefreshing = true
         lifecycleScope.launch {
             try {
                 val token = authPreferences.getToken()
@@ -85,16 +97,23 @@ class CommentsActivity : AppCompatActivity() {
                 )
 
                 val response = RetrofitClient.apiService.createComment("Bearer $token", body)
-                if (response.isSuccessful) {
+                if (response.isSuccessful && response.body() != null) {
                     binding.etComment.setText("")
                     loadComments()
-                    binding.rvComments.scrollToPosition(0)
                 } else {
                     Toast.makeText(this@CommentsActivity, "Failed to send", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(this@CommentsActivity, "Network error", Toast.LENGTH_SHORT).show()
+            } finally {
+                binding.btnSend.isEnabled = true
+                binding.swipeRefresh.isRefreshing = false
             }
         }
+    }
+
+    private fun hideKeyboard() {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(binding.etComment.windowToken, 0)
     }
 }

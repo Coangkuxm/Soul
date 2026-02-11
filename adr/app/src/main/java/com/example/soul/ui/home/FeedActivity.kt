@@ -94,8 +94,8 @@ class FeedActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         feedAdapter = FeedAdapter(
-            onItemClick = { feedItem -> 
-                onFeedItemClicked(feedItem) 
+            onItemClick = { feedItem ->
+                openComments(feedItem)
             },
             onUserClick = { userId ->
                 onUserClicked(userId)
@@ -105,6 +105,9 @@ class FeedActivity : AppCompatActivity() {
             },
             onPlayClick = { feedItem ->
                 handlePlayClick(feedItem)
+            },
+            onCommentClick = { feedItem ->
+                openComments(feedItem)
             }
         )
 
@@ -278,11 +281,14 @@ class FeedActivity : AppCompatActivity() {
         bottomSheet.show(supportFragmentManager, AddOptionsBottomSheet.TAG)
     }
 
-    private fun onFeedItemClicked(feedItem: FeedItem) {
-        Toast.makeText(this, "Opening ${feedItem.item.title}", Toast.LENGTH_SHORT).show()
-        // TODO: Navigate to item detail or play
+            private fun openComments(feedItem: FeedItem) {
+        val intent = Intent(this, com.example.soul.ui.comments.CommentsActivity::class.java).apply {
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_TARGET_TYPE, "item")
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_TARGET_ID, feedItem.item.id)
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_TITLE, feedItem.item.title)
+        }
+        startActivity(intent)
     }
-
     private fun onUserClicked(userId: Int) {
         Toast.makeText(this, "Opening user profile", Toast.LENGTH_SHORT).show()
         // TODO: Navigate to user profile
@@ -463,6 +469,8 @@ class FeedActivity : AppCompatActivity() {
         previewAudioPlayer.release()
     }
 }
+
+
 
 
 

@@ -554,3 +554,4 @@ function getActivityText(itemType) {
 }
 
 module.exports = new SocialController();
+

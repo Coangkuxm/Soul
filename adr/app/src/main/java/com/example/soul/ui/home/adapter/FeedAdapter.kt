@@ -23,7 +23,8 @@ class FeedAdapter(
     private val onItemClick: (FeedItem) -> Unit,
     private val onUserClick: (Int) -> Unit,
     private val onLikeClick: (FeedItem, Boolean) -> Unit, // itemId, isLike (true=like, false=unlike)
-    private val onPlayClick: (FeedItem) -> Unit
+    private val onPlayClick: (FeedItem) -> Unit,
+    private val onCommentClick: (FeedItem) -> Unit
 ) : ListAdapter<FeedItem, FeedAdapter.FeedViewHolder>(FeedDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FeedViewHolder {
@@ -122,6 +123,10 @@ class FeedAdapter(
                     feedItem.isLiked = willLike
                     animateLike(btnLike, willLike)
                     onLikeClick(feedItem, willLike)
+                }
+
+                btnComment.setOnClickListener {
+                    onCommentClick(feedItem)
                 }
 
                 // Click listeners
