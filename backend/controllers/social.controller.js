@@ -284,13 +284,15 @@ class SocialController {
 
       const comment = result.rows[0];
 
-      // Update comment count in the respective table
-      await db.query(
-        `UPDATE ${targetType}s 
-        SET comment_count = comment_count + 1 
-        WHERE id = $1`,
-        [targetId]
-      );
+      // Only collections currently have comment_count column.
+      if (targetType === 'collection') {
+        await db.query(
+          `UPDATE collections
+          SET comment_count = comment_count + 1
+          WHERE id = $1`,
+          [targetId]
+        );
+      }
 
       // Record activity
       await db.query(
@@ -436,14 +438,16 @@ class SocialController {
       // Delete comment
       await db.query('DELETE FROM comments WHERE id = $1', [id]);
 
-      // Update comment count in the respective table
+      // Only collections currently have comment_count column.
       const { target_id, target_type } = comment.rows[0];
-      await db.query(
-        `UPDATE ${target_type}s 
-        SET comment_count = GREATEST(0, comment_count - 1) 
-        WHERE id = $1`,
-        [target_id]
-      );
+      if (target_type === 'collection') {
+        await db.query(
+          `UPDATE collections
+          SET comment_count = GREATEST(0, comment_count - 1)
+          WHERE id = $1`,
+          [target_id]
+        );
+      }
 
       res.status(200).json({ success: true, message: 'Comment deleted successfully' });
     } catch (error) {

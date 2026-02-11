@@ -32,12 +32,13 @@ object RetrofitClient {
             val request = chain.request()
             Log.d(TAG, "Request: ${request.method} ${request.url}")
             
-            // Retry logic for cold start
+            // Retry logic for cold start: only retry GET to avoid duplicate POST/PUT side effects.
             var response = chain.proceed(request)
+            val canRetry = request.method.equals("GET", ignoreCase = true)
             var tryCount = 0
             val maxRetries = 2
             
-            while (!response.isSuccessful && tryCount < maxRetries) {
+            while (canRetry && !response.isSuccessful && tryCount < maxRetries) {
                 tryCount++
                 Log.d(TAG, "Retry attempt $tryCount for ${request.url}")
                 response.close()
