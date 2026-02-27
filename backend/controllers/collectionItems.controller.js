@@ -177,12 +177,12 @@ const collectionItemsController = {
             ci.spotify_id,
             ci.spotify_type,
             ci.metadata as spotify_metadata,
-            ci.created_at as added_at,
+            ci.added_at as added_at,
             i.*
           FROM collection_items ci
           LEFT JOIN items i ON i.id = ci.item_id
           ${whereClause}
-          ORDER BY ci.created_at DESC
+          ORDER BY ci.added_at DESC
           LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `,
         values: [...queryParams, limit, offset]
@@ -261,7 +261,7 @@ const collectionItemsController = {
         `INSERT INTO collection_items 
          (collection_id, spotify_id, spotify_type, metadata, created_by) 
          VALUES ($1, $2, $3, $4, $5) 
-         RETURNING id, collection_id, spotify_id, spotify_type, created_at`,
+         RETURNING id, collection_id, spotify_id, spotify_type, added_at`,
         [collection_id, spotify_id, spotify_type, metadata || null, user_id]
       );
 
@@ -368,7 +368,7 @@ const collectionItemsController = {
         `INSERT INTO collection_items 
          (collection_id, spotify_id, spotify_type, metadata, created_by) 
          VALUES ($1, $2, $3, $4, $5) 
-         RETURNING id, collection_id, spotify_id, spotify_type, created_at`,
+         RETURNING id, collection_id, spotify_id, spotify_type, added_at`,
         [collection_id, spotifyData.id, spotifyData.type, metadata, user_id]
       );
 
@@ -387,6 +387,8 @@ const collectionItemsController = {
 };
 
 module.exports = collectionItemsController;
+
+
 
 
 
