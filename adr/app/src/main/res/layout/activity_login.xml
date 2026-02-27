@@ -22,11 +22,11 @@
             <!-- App Logo -->
             <ImageView
                 android:id="@+id/ivLogo"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
                 android:layout_marginTop="16dp"
                 android:contentDescription="@string/app_logo"
-                android:src="@mipmap/ic_launcher_round"
+                android:src="@mipmap/soullogo"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -36,7 +36,7 @@
                 android:id="@+id/tvWelcome"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="14dp"
                 android:text="@string/welcome_back"
                 android:textColor="@color/primary"
                 android:textSize="24sp"
@@ -80,10 +80,16 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="@string/email"
+                        app:boxCornerRadiusTopStart="18dp"
+                        app:boxCornerRadiusTopEnd="18dp"
+                        app:boxCornerRadiusBottomStart="18dp"
+                        app:boxCornerRadiusBottomEnd="18dp"
                         app:boxStrokeColor="@color/primary"
                         app:endIconDrawable="@drawable/ic_email"
                         app:endIconTint="@color/primary"
-                        app:hintTextColor="@color/primary">
+                        app:hintTextColor="@color/primary"
+                        
+                        >
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etEmail"
@@ -102,6 +108,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:hint="@string/password"
+                        app:boxCornerRadiusTopStart="18dp"
+                        app:boxCornerRadiusTopEnd="18dp"
+                        app:boxCornerRadiusBottomStart="18dp"
+                        app:boxCornerRadiusBottomEnd="18dp"
                         app:boxStrokeColor="@color/primary"
                         app:endIconDrawable="@drawable/ic_lock"
                         app:endIconTint="@color/primary"
@@ -141,7 +151,8 @@
                         android:text="@string/sign_in"
                         android:textAllCaps="false"
                         android:textColor="@color/white"
-                        android:textSize="16sp" />
+                        android:textSize="16sp"
+                        app:cornerRadius="25dp" />
 
                     <!-- Divider -->
                     <TextView

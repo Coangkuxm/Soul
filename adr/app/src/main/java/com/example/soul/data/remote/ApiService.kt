@@ -1,6 +1,7 @@
 package com.example.soul.data.remote
 
 import com.example.soul.data.model.CollectionsResponse
+import com.example.soul.data.model.CollectionItemsResponse
 import com.example.soul.data.model.CommentsResponse
 import com.example.soul.data.model.CreateCommentResponse
 import com.example.soul.data.model.FeedResponse
@@ -58,6 +59,16 @@ interface ApiService {
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 10
     ): Response<CollectionsResponse>
+
+    /**
+     * Get items in a collection
+     */
+    @GET("/api/collection-items/{collectionId}/items")
+    suspend fun getCollectionItems(
+        @Path("collectionId") collectionId: Int,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 50
+    ): Response<CollectionItemsResponse>
     
     /**
      * Get user profile by ID

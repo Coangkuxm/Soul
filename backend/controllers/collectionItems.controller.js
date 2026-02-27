@@ -5,7 +5,7 @@ const { getSpotifyTrack, getSpotifyAlbum, parseSpotifyUrl } = require('../utils/
 // Helper function to check collection ownership
 async function checkCollectionOwnership(collectionId, userId) {
   const collectionCheck = await query(
-    'SELECT created_by, is_public FROM collections WHERE id = $1',
+    'SELECT owner_id, is_private FROM collections WHERE id = $1',
     [collectionId]
   );
 
@@ -16,13 +16,14 @@ async function checkCollectionOwnership(collectionId, userId) {
   const collection = collectionCheck.rows[0];
   
   // Allow access if collection is public and user is just viewing
-  if (collection.is_public && !userId) {
+  const isPublic = !collection.is_private;
+  if (isPublic && !userId) {
     return { isOwner: false, isPublic: true };
   }
 
   // If user is authenticated, check ownership
-  if (userId && collection.created_by === userId) {
-    return { isOwner: true, isPublic: collection.is_public };
+  if (userId && collection.owner_id === userId) {
+    return { isOwner: true, isPublic };
   }
 
   // If we get here, user doesn't have access
@@ -96,7 +97,7 @@ const collectionItemsController = {
 
       // Kiểm tra quyền sở hữu collection
       const collectionCheck = await query(
-        'SELECT created_by FROM collections WHERE id = $1',
+        'SELECT owner_id FROM collections WHERE id = $1',
         [collection_id]
       );
 
@@ -104,7 +105,7 @@ const collectionItemsController = {
         throw new NotFoundError('Không tìm thấy collection');
       }
 
-      if (collectionCheck.rows[0].created_by !== user_id) {
+      if (collectionCheck.rows[0].owner_id !== user_id) {
         throw new ForbiddenError('Bạn không có quyền xóa item khỏi collection này');
       }
 
@@ -386,3 +387,6 @@ const collectionItemsController = {
 };
 
 module.exports = collectionItemsController;
+
+
+

@@ -24,6 +24,7 @@ import com.example.soul.ui.add.AddItemActivity
 import com.example.soul.ui.add.AddOptionsBottomSheet
 import com.example.soul.ui.auth.LoginActivity
 import com.example.soul.ui.home.adapter.FeedAdapter
+import com.example.soul.ui.profile.ProfileActivity
 import com.example.soul.audio.PreviewAudioPlayer
 import com.example.soul.utils.Resource
 import kotlinx.coroutines.launch
@@ -206,7 +207,7 @@ class FeedActivity : AppCompatActivity() {
 
         // User avatar click - go to own profile
         binding.ivUserAvatar.setOnClickListener {
-            Toast.makeText(this, "Your profile coming soon", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, ProfileActivity::class.java))
         }
 
         // Filter dropdown
@@ -234,13 +235,11 @@ class FeedActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_library -> {
-                    // Navigate to library/collections
-                    startActivity(Intent(this, HomeActivity::class.java))
+                    Toast.makeText(this, "Library coming soon", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_profile -> {
-                    // Logout
-                    logout()
+                    startActivity(Intent(this, ProfileActivity::class.java))
                     true
                 }
                 else -> false
@@ -397,7 +396,7 @@ class FeedActivity : AppCompatActivity() {
     private fun startMiniPlayer() {
         val title = currentPreviewTitle ?: "Preview"
         val artist = currentPreviewArtist
-        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title • $artist" else title
+        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title ï¿½ $artist" else title
         val coverUrl = currentPreviewCoverUrl
         if (!coverUrl.isNullOrEmpty() && !coverUrl.contains("example.com")) {
             Glide.with(this)
@@ -469,6 +468,11 @@ class FeedActivity : AppCompatActivity() {
         previewAudioPlayer.release()
     }
 }
+
+
+
+
+
 
 
 

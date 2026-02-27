@@ -1,4 +1,4 @@
-package com.example.soul.ui.home
+package com.example.soul.ui.profile
 
 import android.content.Intent
 import android.os.Bundle
@@ -14,12 +14,15 @@ import com.example.soul.R
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.Collection
 import com.example.soul.databinding.ActivityHomeBinding
-import com.example.soul.ui.auth.LoginActivity
 import com.example.soul.ui.collection.CollectionItemsActivity
+import com.example.soul.ui.auth.LoginActivity
+import com.example.soul.ui.home.FeedActivity
+import com.example.soul.ui.home.HomeViewModel
+import com.example.soul.ui.home.HomeViewModelFactory
 import com.example.soul.ui.main.adapter.CollectionAdapter
 import com.example.soul.utils.Resource
 
-class HomeActivity : AppCompatActivity() {
+class ProfileActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityHomeBinding
     private lateinit var authPreferences: AuthPreferences
@@ -71,10 +74,12 @@ class HomeActivity : AppCompatActivity() {
         )
 
         binding.rvCollections.apply {
-            layoutManager = GridLayoutManager(this@HomeActivity, 2)
+            layoutManager = GridLayoutManager(this@ProfileActivity, 2)
             adapter = collectionAdapter
-            setHasFixedSize(true)
+            setHasFixedSize(false)
         }
+        // Always show placeholders first so profile is never blank.
+        collectionAdapter.submitCollections(emptyList())
     }
 
     private fun setupObservers() {
@@ -97,7 +102,7 @@ class HomeActivity : AppCompatActivity() {
                                 (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://"))
                             
                             if (isValidUrl) {
-                                Glide.with(this@HomeActivity)
+                                Glide.with(this@ProfileActivity)
                                     .load(avatarUrl)
                                     .placeholder(R.drawable.ic_default_avatar)
                                     .error(R.drawable.ic_default_avatar)
@@ -121,11 +126,15 @@ class HomeActivity : AppCompatActivity() {
             when (resource) {
                 is Resource.Loading -> {
                     binding.progressBar.visibility = View.VISIBLE
+                    if (collectionAdapter.itemCount == 0) {
+                        collectionAdapter.submitCollections(emptyList())
+                    }
                 }
                 is Resource.Success -> {
                     binding.progressBar.visibility = View.GONE
                     resource.data?.let { collections ->
                         collectionAdapter.submitCollections(collections)
+                        binding.rvCollections.requestLayout()
                     }
                 }
                 is Resource.Error -> {
@@ -133,6 +142,7 @@ class HomeActivity : AppCompatActivity() {
                     Toast.makeText(this, resource.message, Toast.LENGTH_SHORT).show()
                     // Show empty state with add placeholders
                     collectionAdapter.submitCollections(emptyList())
+                    binding.rvCollections.requestLayout()
                 }
             }
         }
@@ -211,11 +221,11 @@ class HomeActivity : AppCompatActivity() {
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.action_edit -> {
-                        Toast.makeText(this@HomeActivity, "Edit ${collection.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@ProfileActivity, "Edit ${collection.name}", Toast.LENGTH_SHORT).show()
                         true
                     }
                     R.id.action_delete -> {
-                        Toast.makeText(this@HomeActivity, "Delete ${collection.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@ProfileActivity, "Delete ${collection.name}", Toast.LENGTH_SHORT).show()
                         true
                     }
                     R.id.action_share -> {
@@ -273,6 +283,7 @@ class HomeActivity : AppCompatActivity() {
         finish()
     }
 }
+
 
 
 

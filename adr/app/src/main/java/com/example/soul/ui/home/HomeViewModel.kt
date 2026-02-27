@@ -50,6 +50,7 @@ class HomeViewModel(
     fun loadData() {
         loadProfile()
         loadFeed()
+        loadCollections()
     }
 
     fun refresh() {
