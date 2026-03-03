@@ -281,6 +281,7 @@ class AddItemActivity : AppCompatActivity() {
 
                 val response = RetrofitClient.apiService.getCollections(
                     token = "Bearer $token",
+                    userId = authPreferences.getUser()?.id,
                     limit = 50
                 )
 
@@ -384,11 +385,20 @@ class AddItemActivity : AppCompatActivity() {
                 if (!itemResponse.isSuccessful) {
                     val errorBody = itemResponse.errorBody()?.string()
                     val errorMessage = try {
-                        JSONObject(errorBody ?: "").optString("message", "Lỗi tạo item")
+                        val json = JSONObject(errorBody ?: "")
+                        json.optString("error").ifEmpty { json.optString("message", "Lỗi tạo item") }
                     } catch (e: Exception) {
                         "Lỗi tạo item"
                     }
-                    Toast.makeText(this@AddItemActivity, errorMessage, Toast.LENGTH_SHORT).show()
+                    if (errorMessage.contains("external_id", true) || errorMessage.contains("tồn tại", true)) {
+                        Toast.makeText(
+                            this@AddItemActivity,
+                            "Item đã tồn tại. Hãy chọn collection khác hoặc bỏ qua bản trùng.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        Toast.makeText(this@AddItemActivity, errorMessage, Toast.LENGTH_SHORT).show()
+                    }
                     showLoading(false)
                     return@launch
                 }

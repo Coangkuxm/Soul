@@ -83,14 +83,34 @@ app.get('/api-docs/oauth2-redirect.html', (req, res) => {
 });
 
 // Rate limiting
-const limiter = rateLimit({
+// Avoid strict global IP limits for mobile traffic (carrier NAT/shared IP).
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Quá nhiều yêu cầu từ địa chỉ IP này, vui lòng thử lại sau 15 phút'
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Qua nhieu yeu cau. Vui long thu lai sau 15 phut'
 });
 
-// Apply rate limiting to all requests
-app.use(limiter);
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Skip authenticated app requests to prevent false 429 on shared IPs.
+  skip: (req) => {
+    const hasAuthHeader = Boolean(req.headers.authorization);
+    const isAuthRoute = req.path.startsWith('/api/auth');
+    return hasAuthHeader && !isAuthRoute;
+  },
+  message: 'Qua nhieu yeu cau tu dia chi IP nay, vui long thu lai sau 15 phut'
+});
+
+const RATE_LIMIT_ENABLED = process.env.RATE_LIMIT_ENABLED !== 'false';
+if (RATE_LIMIT_ENABLED) {
+  app.use('/api/auth', authLimiter);
+  app.use('/api', apiLimiter);
+}
 
 // API Routes
 app.use('/api/spotify', spotifyRoutes);

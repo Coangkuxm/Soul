@@ -7,7 +7,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.soul.databinding.ActivityLoginBinding
-import com.example.soul.ui.home.FeedActivity
+import com.example.soul.ui.main.MainTabsActivity
 import com.example.soul.utils.Resource
 
 /**
@@ -122,7 +122,7 @@ class LoginActivity : AppCompatActivity() {
      * Navigate to Main screen
      */
     private fun navigateToMain() {
-        val intent = Intent(this, FeedActivity::class.java)
+        val intent = Intent(this, MainTabsActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()

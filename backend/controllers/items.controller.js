@@ -186,6 +186,33 @@ const itemsController = {
     }
   },
 
+  // Lấy item theo external_id
+  async getItemByExternalId(req, res, next) {
+    try {
+      const { externalId } = req.params;
+      const result = await query(
+        `SELECT i.*,
+                u.username as creator_username,
+                u.avatar_url as creator_avatar
+         FROM items i
+         LEFT JOIN users u ON i.created_by = u.id
+         WHERE i.external_id = $1`,
+        [externalId]
+      );
+
+      if (result.rows.length === 0) {
+        throw new NotFoundError('Không tìm thấy item với external_id này');
+      }
+
+      res.json({
+        success: true,
+        data: result.rows[0]
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   // Tạo mới item
   async createItem(req, res, next) {
     const client = await getClient();

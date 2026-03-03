@@ -76,14 +76,24 @@ class FeedActivity : AppCompatActivity() {
             return
         }
 
+        // Hiển thị avatar sẵn từ cache nếu có
+        setAvatarFromUrl(authPreferences.getUser()?.avatarUrl)
+
         setupUI()
         setupRecyclerView()
         setupObservers()
         setupListeners()
+        binding.bottomNavigation.selectedItemId = R.id.nav_home
         if (intent.getBooleanExtra("refresh", false)) {
             scrollToTopOnNextRefresh = true
             viewModel.refresh()
         }    }
+
+    override fun onResume() {
+        super.onResume()
+        // Đảm bảo avatar/header cập nhật mỗi lần quay lại Home
+        viewModel.refreshProfileOnly()
+    }
 
     private fun setupUI() {
         // Setup SwipeRefreshLayout
@@ -123,29 +133,10 @@ class FeedActivity : AppCompatActivity() {
         // Observe profile for header avatar
         viewModel.profile.observe(this) { resource ->
             when (resource) {
-                is Resource.Loading -> {
-                    // Show default avatar while loading
-                    binding.ivUserAvatar.setImageResource(R.drawable.ic_default_avatar)
-                }
+                is Resource.Loading -> { /* giữ nguyên avatar hiện tại để tránh nhấp nháy */ }
                 is Resource.Success -> {
                     resource.data?.let { profile ->
-                        // Load user avatar in header
-                        val avatarUrl = profile.avatarUrl
-                        val isValidUrl = !avatarUrl.isNullOrEmpty() && 
-                            !avatarUrl.contains("example.com") &&
-                            (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://"))
-                        
-                        if (isValidUrl) {
-                            Glide.with(this@FeedActivity)
-                                .load(avatarUrl)
-                                .placeholder(R.drawable.ic_default_avatar)
-                                .error(R.drawable.ic_default_avatar)
-                                .transition(DrawableTransitionOptions.withCrossFade())
-                                .circleCrop()
-                                .into(binding.ivUserAvatar)
-                        } else {
-                            binding.ivUserAvatar.setImageResource(R.drawable.ic_default_avatar)
-                        }
+                        setAvatarFromUrl(profile.avatarUrl)
                     }
                 }
                 is Resource.Error -> {
@@ -207,7 +198,7 @@ class FeedActivity : AppCompatActivity() {
 
         // User avatar click - go to own profile
         binding.ivUserAvatar.setOnClickListener {
-            startActivity(Intent(this, ProfileActivity::class.java))
+            navigateToProfileTab()
         }
 
         // Filter dropdown
@@ -239,7 +230,7 @@ class FeedActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_profile -> {
-                    startActivity(Intent(this, ProfileActivity::class.java))
+                    navigateToProfileTab()
                     true
                 }
                 else -> false
@@ -252,6 +243,24 @@ class FeedActivity : AppCompatActivity() {
             }
         }
 
+    }
+
+    private fun setAvatarFromUrl(avatarUrl: String?) {
+        val isValidUrl = !avatarUrl.isNullOrEmpty() &&
+            !avatarUrl.contains("example.com") &&
+            (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://"))
+
+        if (isValidUrl) {
+            Glide.with(this)
+                .load(avatarUrl)
+                .placeholder(R.drawable.ic_default_avatar)
+                .error(R.drawable.ic_default_avatar)
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .circleCrop()
+                .into(binding.ivUserAvatar)
+        } else {
+            binding.ivUserAvatar.setImageResource(R.drawable.ic_default_avatar)
+        }
     }
 
     private fun showFilterMenu(anchor: View) {
@@ -456,6 +465,20 @@ class FeedActivity : AppCompatActivity() {
     private fun navigateToLogin() {
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
+    }
+
+    private fun navigateToProfileTab() {
+        val intent = Intent(this, ProfileActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        startActivity(intent)
+        overridePendingTransition(0, 0)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Keep tab switch transition visually fixed like social apps.
+        overridePendingTransition(0, 0)
     }
 
     override fun onStop() {

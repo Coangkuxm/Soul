@@ -10,6 +10,7 @@ import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.Collection
 import com.example.soul.data.model.FeedItem
 import com.example.soul.data.model.Profile
+import com.example.soul.data.model.User
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.utils.Resource
 import kotlinx.coroutines.launch
@@ -58,6 +59,10 @@ class HomeViewModel(
         loadData()
     }
 
+    fun refreshProfileOnly() {
+        loadProfile()
+    }
+
     private fun loadProfile() {
         viewModelScope.launch {
             _profile.value = Resource.Loading()
@@ -73,6 +78,8 @@ class HomeViewModel(
                 if (response.isSuccessful && response.body() != null) {
                     val userProfile = response.body()!!.user
                     if (userProfile != null) {
+                        // Lưu lại user mới nhất để lần mở app kế tiếp có avatar ngay lập tức
+                        authPreferences.saveUser(userProfile.toUser())
                         val profileData = Profile(
                             id = userProfile.id,
                             username = userProfile.username,
@@ -163,8 +170,10 @@ class HomeViewModel(
                     return@launch
                 }
                 
+                val currentUserId = authPreferences.getUser()?.id
                 val response = apiService.getCollections(
                     token = "Bearer $token",
+                    userId = currentUserId,
                     limit = 20
                 )
                 
@@ -199,5 +208,19 @@ class HomeViewModel(
     
     fun logout() {
         authPreferences.clearSession()
+    }
+
+    private fun com.example.soul.data.model.UserProfile.toUser(): User {
+        return User(
+            id = id,
+            username = username,
+            email = email,
+            displayName = displayName,
+            avatarUrl = avatarUrl,
+            bio = bio,
+            followerCount = followerCount,
+            followingCount = followingCount,
+            collectionCount = collectionCount
+        )
     }
 }

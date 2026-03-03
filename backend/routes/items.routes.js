@@ -64,6 +64,15 @@ router.get(
   itemsController.getAllItems
 );
 
+// Get item by external_id (helper to reuse existing item)
+router.get(
+  '/external/:externalId',
+  validate([
+    param('externalId').notEmpty().withMessage('externalId không được trống')
+  ]),
+  itemsController.getItemByExternalId
+);
+
 // Get item by ID
 /**
  * @swagger

@@ -5,25 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3ad5c03c-f283-4601-a697-9377ddfb89b2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gradle/config.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/adr/app/src/androidTest/java/com/example/soul/ExampleInstrumentedTest.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/adr/app/src/test/java/com/example/soul/ExampleUnitTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/adr/.idea/.name" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/app/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/adr/app/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/app/src/androidTest/java/com/example/soulapp/ExampleInstrumentedTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/adr/.idea/deploymentTargetSelector.xml" beforeDir="false" afterPath="$PROJECT_DIR$/adr/.idea/deploymentTargetSelector.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/adr/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/adr/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/app/src/main/res/values-night/themes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/adr/app/src/main/res/values-night/themes.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/app/src/main/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/adr/app/src/main/res/values/strings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/app/src/main/res/values/themes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/adr/app/src/main/res/values/themes.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/app/src/test/java/com/example/soulapp/ExampleUnitTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/adr/gradle/libs.versions.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/adr/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/adr/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/adr/settings.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/config/swagger.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/config/swagger.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/server.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/adr/app/src/main/java/com/example/soul/data/remote/ApiService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/adr/app/src/main/java/com/example/soul/data/remote/ApiService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/adr/app/src/main/java/com/example/soul/ui/auth/LoginActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/adr/app/src/main/java/com/example/soul/ui/auth/LoginActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/adr/app/src/main/java/com/example/soul/ui/home/FeedActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/adr/app/src/main/java/com/example/soul/ui/home/FeedActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/adr/app/src/main/java/com/example/soul/ui/profile/ProfileActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/adr/app/src/main/java/com/example/soul/ui/profile/ProfileActivity.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,7 +38,6 @@
     "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "android.gradle.sync.needed": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "git-widget-placeholder": "main",

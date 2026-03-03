@@ -15,10 +15,10 @@ data class User(
     @SerializedName("email")
     val email: String,
     
-    @SerializedName("displayName")
+    @SerializedName(value = "displayName", alternate = ["display_name"])
     val displayName: String?,
     
-    @SerializedName("avatarUrl")
+    @SerializedName(value = "avatarUrl", alternate = ["avatar_url"])
     val avatarUrl: String?,
     
     @SerializedName("bio")

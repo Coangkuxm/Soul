@@ -13,6 +13,7 @@ import com.example.soul.data.model.auth.LoginRequest
 import com.example.soul.data.model.auth.LoginResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import com.google.gson.JsonObject
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -78,6 +79,32 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("id") userId: Int
     ): Response<ProfileResponse>
+
+    @GET("/api/users")
+    suspend fun searchUsers(
+        @Header("Authorization") token: String,
+        @Query("search") keyword: String? = null,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<JsonObject>
+
+    @POST("/api/users/{id}/follow")
+    suspend fun followUser(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int
+    ): Response<JsonObject>
+
+    @HTTP(method = "DELETE", path = "/api/users/{id}/unfollow", hasBody = false)
+    suspend fun unfollowUser(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int
+    ): Response<JsonObject>
+
+    @GET("/api/users/{id}/is-following")
+    suspend fun checkIsFollowing(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int
+    ): Response<JsonObject>
     
     /**
      * Get news feed - random items from friends and others
@@ -188,5 +215,11 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Part image: MultipartBody.Part,
         @Part("folder") folder: RequestBody
+    ): Response<Map<String, Any?>>
+
+    @GET("/api/items/external/{externalId}")
+    suspend fun getItemByExternalId(
+        @Header("Authorization") token: String,
+        @Path("externalId") externalId: String
     ): Response<Map<String, Any?>>
 }
