@@ -6,6 +6,7 @@ import com.example.soul.data.model.CommentsResponse
 import com.example.soul.data.model.CreateCommentResponse
 import com.example.soul.data.model.FeedResponse
 import com.example.soul.data.model.HealthResponse
+import com.example.soul.data.model.NotificationsResponse
 import com.example.soul.data.model.ProfileResponse
 import com.example.soul.data.model.SpotifySearchResponse
 import com.example.soul.data.model.TMDBSearchResponse
@@ -23,6 +24,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.PUT
 import retrofit2.http.Query
 
 /**
@@ -135,6 +137,20 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body body: Map<String, @JvmSuppressWildcards Any?>
     ): Response<CreateCommentResponse>
+
+    @GET("/api/social/notifications")
+    suspend fun getNotifications(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20,
+        @Query("unreadOnly") unreadOnly: Boolean = false
+    ): Response<NotificationsResponse>
+
+    @PUT("/api/social/notifications/{id}/read")
+    suspend fun markNotificationAsRead(
+        @Header("Authorization") token: String,
+        @Path("id") notificationId: Int
+    ): Response<Map<String, Any?>>
 
     /**
      * Like an item

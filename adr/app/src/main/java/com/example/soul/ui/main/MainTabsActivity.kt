@@ -7,6 +7,7 @@ import com.example.soul.R
 import com.example.soul.databinding.ActivityMainTabsBinding
 import com.example.soul.ui.explore.ExploreFragment
 import com.example.soul.ui.home.FeedFragment
+import com.example.soul.ui.notification.NotificationFragment
 import com.example.soul.ui.profile.ProfileFragment
 
 class MainTabsActivity : AppCompatActivity() {
@@ -53,12 +54,7 @@ class MainTabsActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_notification -> {
-                    switchTo(TAG_NOTIFICATION) {
-                        PlaceholderFragment.newInstance(
-                            title = "Notifications",
-                            subtitle = "Coming soon"
-                        )
-                    }
+                    switchTo(TAG_NOTIFICATION) { NotificationFragment() }
                     true
                 }
                 R.id.nav_library -> {
