@@ -1,5 +1,6 @@
 // server.js
 require('dotenv').config();
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -20,12 +21,15 @@ const accountRoutes = require('./routes/account.routes');
 const socialRoutes = require('./routes/social.routes');
 const tmdbRoutes = require('./routes/tmdb.routes');
 const uploadRoutes = require('./routes/upload.routes');
+const chatRoutes = require('./routes/chat.routes');
+const { initSocket } = require('./socket');
 // Import middlewares
 const { errorHandler } = require('./middlewares/errorHandler');
 const { authenticateToken } = require('./middlewares/auth.middleware');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 
@@ -123,6 +127,10 @@ app.use('/api/collection-items', collectionItemsRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/tmdb', tmdbRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/chat', chatRoutes);
+
+const io = initSocket(server);
+app.locals.io = io;
 // Health check endpoint
 app.get('/health', async (req, res) => {
   try {
@@ -205,7 +213,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🟢 Server đang chạy tại http://localhost:${PORT}`);
   
   // Keep-alive: Tự ping server mỗi 14 phút để tránh Render spin down

@@ -1,5 +1,6 @@
 package com.example.soul.ui.notification
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +13,8 @@ import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.NotificationItem
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.FragmentNotificationBinding
+import com.example.soul.ui.comments.CommentsActivity
+import com.example.soul.ui.profile.UserProfileActivity
 import kotlinx.coroutines.launch
 
 class NotificationFragment : Fragment() {
@@ -42,6 +45,7 @@ class NotificationFragment : Fragment() {
     private fun setupRecycler() {
         adapter = NotificationAdapter { item ->
             if (!item.isRead) markAsRead(item)
+            openNotificationTarget(item)
         }
         binding.rvNotifications.layoutManager = LinearLayoutManager(requireContext())
         binding.rvNotifications.adapter = adapter
@@ -92,6 +96,30 @@ class NotificationFragment : Fragment() {
         }
     }
 
+    private fun openNotificationTarget(item: NotificationItem) {
+        when (item.notificationType) {
+            "follow" -> {
+                startActivity(Intent(requireContext(), UserProfileActivity::class.java).apply {
+                    putExtra(UserProfileActivity.EXTRA_USER_ID, item.senderId)
+                })
+            }
+            "comment", "like" -> {
+                if (item.targetType == "collection" || item.targetType == "item") {
+                    startActivity(Intent(requireContext(), CommentsActivity::class.java).apply {
+                        putExtra(CommentsActivity.EXTRA_TARGET_TYPE, item.targetType)
+                        putExtra(CommentsActivity.EXTRA_TARGET_ID, item.targetId)
+                        putExtra(CommentsActivity.EXTRA_TITLE, "Comments")
+                    })
+                } else {
+                    Toast.makeText(requireContext(), "This notification detail is not supported yet", Toast.LENGTH_SHORT).show()
+                }
+            }
+            else -> {
+                Toast.makeText(requireContext(), "This notification detail is not supported yet", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     private fun showError(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
@@ -101,4 +129,3 @@ class NotificationFragment : Fragment() {
         super.onDestroyView()
     }
 }
-
