@@ -33,6 +33,19 @@
             android:textColor="@color/text_primary"
             android:textSize="20sp"
             android:textStyle="bold" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/btnMessage"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Message"
+            android:src="@drawable/ic_comment" />
     </LinearLayout>
 
     <LinearLayout

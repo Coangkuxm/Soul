@@ -4,6 +4,10 @@ import com.example.soul.data.model.CollectionsResponse
 import com.example.soul.data.model.CollectionItemsResponse
 import com.example.soul.data.model.CommentsResponse
 import com.example.soul.data.model.CreateCommentResponse
+import com.example.soul.data.model.ChatConversationsResponse
+import com.example.soul.data.model.ChatCreateConversationResponse
+import com.example.soul.data.model.ChatMessagesResponse
+import com.example.soul.data.model.ChatReadConversationResponse
 import com.example.soul.data.model.FeedResponse
 import com.example.soul.data.model.HealthResponse
 import com.example.soul.data.model.NotificationsResponse
@@ -151,6 +155,40 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("id") notificationId: Int
     ): Response<Map<String, Any?>>
+
+    @POST("/api/chat/conversations")
+    suspend fun createOrGetDirectConversation(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Response<ChatCreateConversationResponse>
+
+    @GET("/api/chat/conversations")
+    suspend fun getChatConversations(
+        @Header("Authorization") token: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<ChatConversationsResponse>
+
+    @GET("/api/chat/conversations/{id}/messages")
+    suspend fun getChatMessages(
+        @Header("Authorization") token: String,
+        @Path("id") conversationId: Int,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 30
+    ): Response<ChatMessagesResponse>
+
+    @POST("/api/chat/conversations/{id}/messages")
+    suspend fun sendChatMessage(
+        @Header("Authorization") token: String,
+        @Path("id") conversationId: Int,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any?>>
+
+    @PUT("/api/chat/conversations/{id}/read")
+    suspend fun markConversationRead(
+        @Header("Authorization") token: String,
+        @Path("id") conversationId: Int
+    ): Response<ChatReadConversationResponse>
 
     /**
      * Like an item

@@ -10,8 +10,8 @@
         android:title="Friends"/>
     <item
         android:id="@+id/nav_library"
-        android:icon="@drawable/ic_nav_library"
-        android:title="Library"/>
+        android:icon="@drawable/ic_comment"
+        android:title="Messenger"/>
     <item
         android:id="@+id/nav_notification"
         android:icon="@drawable/ic_notification"

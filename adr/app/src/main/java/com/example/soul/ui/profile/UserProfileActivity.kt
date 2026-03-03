@@ -12,6 +12,7 @@ import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.ActivityUserProfileBinding
 import com.example.soul.ui.collection.CollectionItemsActivity
+import com.example.soul.ui.messenger.ChatActivity
 import kotlinx.coroutines.launch
 
 class UserProfileActivity : AppCompatActivity() {
@@ -24,6 +25,8 @@ class UserProfileActivity : AppCompatActivity() {
     private lateinit var authPreferences: AuthPreferences
     private lateinit var adapter: UserCollectionAdapter
     private var userId: Int = -1
+    private var targetName: String? = null
+    private var targetAvatarUrl: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +55,7 @@ class UserProfileActivity : AppCompatActivity() {
         binding.rvCollections.adapter = adapter
 
         binding.btnBack.setOnClickListener { finish() }
+        binding.btnMessage.setOnClickListener { startDirectChat() }
         binding.swipeRefresh.setOnRefreshListener { loadData() }
     }
 
@@ -66,7 +70,9 @@ class UserProfileActivity : AppCompatActivity() {
                 if (profileRs.isSuccessful) {
                     val user = profileRs.body()?.user
                     if (user != null) {
-                        binding.tvUsername.text = user.displayName?.takeIf { it.isNotBlank() } ?: user.username
+                        targetName = user.displayName?.takeIf { it.isNotBlank() } ?: user.username
+                        targetAvatarUrl = user.avatarUrl
+                        binding.tvUsername.text = targetName
                         binding.tvLink.text = "shelf.im/${user.username}"
                         Glide.with(this@UserProfileActivity)
                             .load(user.avatarUrl)
@@ -98,6 +104,40 @@ class UserProfileActivity : AppCompatActivity() {
             } finally {
                 binding.progressBar.visibility = View.GONE
                 binding.swipeRefresh.isRefreshing = false
+            }
+        }
+    }
+
+    private fun startDirectChat() {
+        lifecycleScope.launch {
+            try {
+                val token = "Bearer ${authPreferences.getToken().orEmpty()}"
+                val response = RetrofitClient.apiService.createOrGetDirectConversation(
+                    token = token,
+                    body = mapOf("targetUserId" to userId)
+                )
+                if (!response.isSuccessful || response.body() == null) {
+                    Toast.makeText(
+                        this@UserProfileActivity,
+                        "Unable to open chat",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@launch
+                }
+
+                val conversationId = response.body()!!.data.id
+                startActivity(android.content.Intent(this@UserProfileActivity, ChatActivity::class.java).apply {
+                    putExtra(ChatActivity.EXTRA_CONVERSATION_ID, conversationId)
+                    putExtra(ChatActivity.EXTRA_TARGET_USER_ID, userId)
+                    putExtra(ChatActivity.EXTRA_TITLE, targetName ?: "Messages")
+                    putExtra(ChatActivity.EXTRA_AVATAR_URL, targetAvatarUrl)
+                })
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@UserProfileActivity,
+                    e.message ?: "Unable to open chat",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

@@ -87,6 +87,11 @@ dependencies {
     // Media3 ExoPlayer for audio preview playback
     implementation("androidx.media3:media3-exoplayer:1.3.1")
 
+    // Socket.IO realtime messaging
+    implementation("io.socket:socket.io-client:2.1.2") {
+        exclude(group = "org.json", module = "json")
+    }
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

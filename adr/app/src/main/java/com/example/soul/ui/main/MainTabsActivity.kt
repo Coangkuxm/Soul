@@ -7,6 +7,7 @@ import com.example.soul.R
 import com.example.soul.databinding.ActivityMainTabsBinding
 import com.example.soul.ui.explore.ExploreFragment
 import com.example.soul.ui.home.FeedFragment
+import com.example.soul.ui.messenger.MessengerFragment
 import com.example.soul.ui.notification.NotificationFragment
 import com.example.soul.ui.profile.ProfileFragment
 
@@ -29,10 +30,12 @@ class MainTabsActivity : AppCompatActivity() {
             currentTag = savedInstanceState.getString(KEY_CURRENT_TAG, TAG_HOME)
         }
 
-        binding.bottomNavigation.selectedItemId = if (currentTag == TAG_PROFILE) {
-            R.id.nav_profile
-        } else {
-            R.id.nav_home
+        binding.bottomNavigation.selectedItemId = when (currentTag) {
+            TAG_PROFILE -> R.id.nav_profile
+            TAG_EXPLORE -> R.id.nav_explore
+            TAG_NOTIFICATION -> R.id.nav_notification
+            TAG_LIBRARY -> R.id.nav_library
+            else -> R.id.nav_home
         }
 
         setupBottomNav()
@@ -58,12 +61,7 @@ class MainTabsActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_library -> {
-                    switchTo(TAG_LIBRARY) {
-                        PlaceholderFragment.newInstance(
-                            title = "Library",
-                            subtitle = "Coming soon"
-                        )
-                    }
+                    switchTo(TAG_LIBRARY) { MessengerFragment() }
                     true
                 }
                 else -> false
