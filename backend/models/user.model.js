@@ -48,6 +48,14 @@ const userModel = {
     return result.rows[0];
   },
 
+  async findByUsername(username) {
+    const result = await query(
+      'SELECT * FROM users WHERE username = $1',
+      [username]
+    );
+    return result.rows[0];
+  },
+
   // Tạo user mới
   async create({ username, email, password, displayName, avatarUrl, bio }) {
     const result = await query(
@@ -63,18 +71,23 @@ const userModel = {
   },
 
   // Cập nhật thông tin user
-  async update(id, { displayName, avatarUrl, bio }) {
+  async update(id, { username, email, displayName, avatarUrl, bio }) {
     const result = await query(
       `UPDATE users 
-       SET display_name = COALESCE($1, display_name),
-           avatar_url = COALESCE($2, avatar_url),
-           bio = COALESCE($3, bio),
+       SET username = COALESCE($1, username),
+           email = COALESCE($2, email),
+           display_name = COALESCE($3, display_name),
+           avatar_url = CASE 
+             WHEN $4 = '' THEN NULL
+             ELSE COALESCE($4, avatar_url)
+           END,
+           bio = COALESCE($5, bio),
            updated_at = NOW()
-       WHERE id = $4
+       WHERE id = $6
        RETURNING id, username, email, display_name as "displayName", 
                  avatar_url as "avatarUrl", bio, role,
                  account_status as "accountStatus", updated_at as "updatedAt"`,
-      [displayName, avatarUrl, bio, id]
+      [username, email, displayName, avatarUrl, bio, id]
     );
     return result.rows[0];
   },

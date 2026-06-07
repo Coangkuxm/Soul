@@ -91,9 +91,32 @@ const userController = {
   // Cập nhật thông tin người dùng
   async updateProfile(req, res, next) {
     try {
-      const { displayName, avatarUrl, bio } = req.body;
+      const { username, email, displayName, avatarUrl, bio } = req.body;
+
+      if (username) {
+        const existingUser = await userModel.findByUsername(username);
+        if (existingUser && existingUser.id !== parseInt(id)) {
+          throw new ConflictError('Ten dang nhap da duoc su dung boi nguoi dung khac');
+        }
+      }
+
+      if (username) {
+        const existingUser = await userModel.findByUsername(username);
+        if (existingUser && existingUser.id !== req.user.id) {
+          throw new ConflictError('Ten dang nhap da duoc su dung');
+        }
+      }
+
+      if (email) {
+        const existingUser = await userModel.findByEmail(email);
+        if (existingUser && existingUser.id !== req.user.id) {
+          throw new ConflictError('Email da duoc su dung');
+        }
+      }
       
       const updatedUser = await userModel.update(req.user.id, {
+        username,
+        email,
         displayName,
         avatarUrl,
         bio

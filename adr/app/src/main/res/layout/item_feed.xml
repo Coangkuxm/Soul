@@ -17,49 +17,45 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- User Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            <!-- Avatar -->
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/ivAvatar"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
                 android:src="@drawable/ic_default_avatar"
                 app:civ_border_color="@color/divider"
-                app:civ_border_width="1dp"/>
+                app:civ_border_width="1dp" />
 
-            <!-- User Info -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginStart="12dp"
+                android:layout_weight="1"
                 android:orientation="vertical">
 
-                <!-- Username + Activity -->
                 <TextView
                     android:id="@+id/tvActivity"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp"
-                    tools:text="Hương Giang đang nghe một bài hát mới"/>
+                    tools:text="Hương Giang đang nghe một bài hát mới" />
+
+                <TextView
+                    android:id="@+id/tvTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/text_hint"
+                    android:textSize="12sp"
+                    tools:text="11h" />
 
             </LinearLayout>
-
-            <!-- Time -->
-            <TextView
-                android:id="@+id/tvTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/text_hint"
-                android:textSize="12sp"
-                tools:text="11h"/>
 
             <ImageButton
                 android:id="@+id/btnMore"
@@ -67,12 +63,11 @@
                 android:layout_height="36dp"
                 android:layout_marginStart="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Tùy chọn bài viết"
+                android:contentDescription="Tuy chon bai viet"
                 android:padding="6dp"
                 android:src="@drawable/ic_more" />
         </LinearLayout>
 
-        <!-- Item Card -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cardItem"
             android:layout_width="match_parent"
@@ -85,12 +80,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
                 android:orientation="vertical"
-                android:padding="16dp"
+                android:padding="16dp">
 
-                android:gravity="center_horizontal">
-
-                <!-- Cover Image with Frame Effect -->
                 <FrameLayout
                     android:layout_width="180dp"
                     android:layout_height="190dp">
@@ -108,12 +101,11 @@
                             android:layout_height="match_parent"
                             android:layout_margin="8dp"
                             android:scaleType="centerCrop"
-                            tools:src="@drawable/ic_default_cover"/>
+                            tools:src="@drawable/ic_default_cover" />
                     </androidx.cardview.widget.CardView>
 
-                    <!-- Play Button for Music - positioned at bottom -->
-
                 </FrameLayout>
+
                 <ImageView
                     android:id="@+id/btnPlay"
                     android:layout_width="52dp"
@@ -123,46 +115,54 @@
                     android:src="@drawable/ic_play_circle"
                     android:visibility="gone"
                     tools:visibility="visible" />
-                <!-- Item Title -->
+
                 <TextView
                     android:id="@+id/tvTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
+                    android:gravity="center"
                     android:textColor="@color/white"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:gravity="center"
-                    tools:text="Exit Sign"/>
+                    tools:text="Exit Sign" />
 
-                <!-- Artist/Subtitle -->
                 <TextView
                     android:id="@+id/tvSubtitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
+                    android:gravity="center"
                     android:textColor="@color/white"
                     android:textSize="14sp"
-                    android:gravity="center"
-                    tools:text="HIEUTHUHAI"/>
+                    tools:text="HIEUTHUHAI" />
 
-                <!-- Play Count / Extra Info -->
                 <TextView
                     android:id="@+id/tvExtraInfo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    android:drawablePadding="4dp"
                     android:textColor="@color/primary"
                     android:textSize="13sp"
-                    android:drawablePadding="4dp"
                     android:visibility="gone"
-                    tools:text="• 1 play this week"
-                    tools:visibility="visible"/>
+                    tools:text="1 play this week"
+                    tools:visibility="visible" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Like Button (Instagram style) -->
+        <TextView
+            android:id="@+id/tvDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Mot bai hat minh nghe di nghe lai ca tuan nay."
+            tools:visibility="visible" />
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -174,16 +174,16 @@
                 android:id="@+id/btnLike"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
-                android:src="@drawable/ic_heart_outline"
+                android:layout_marginEnd="8dp"
                 android:padding="4dp"
-                android:layout_marginEnd="8dp"/>
+                android:src="@drawable/ic_heart_outline" />
 
             <ImageView
                 android:id="@+id/btnComment"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
-                android:src="@drawable/ic_comment"
-                android:padding="4dp"/>
+                android:padding="4dp"
+                android:src="@drawable/ic_comment" />
         </LinearLayout>
 
     </LinearLayout>

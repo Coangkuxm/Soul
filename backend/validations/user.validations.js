@@ -38,19 +38,36 @@ const userValidation = {
 
   // Validation cho cập nhật thông tin
   updateProfile: [
+    body('username')
+      .optional()
+      .trim()
+      .isLength({ min: 3, max: 30 }).withMessage('Ten dang nhap phai tu 3 den 30 ky tu')
+      .matches(/^[a-zA-Z0-9_]+$/).withMessage('Ten dang nhap chi duoc chua chu cai, so va dau gach duoi'),
+
+    body('email')
+      .optional()
+      .trim()
+      .isEmail().withMessage('Email khong hop le')
+      .normalizeEmail(),
+
     body('displayName')
       .optional()
       .trim()
-      .isLength({ max: 100 }).withMessage('Tên hiển thị không quá 100 ký tự'),
+      .isLength({ max: 100 }).withMessage('Ten hien thi khong qua 100 ky tu'),
       
     body('bio')
       .optional()
       .trim()
-      .isLength({ max: 500 }).withMessage('Tiểu sử không quá 500 ký tự'),
+      .isLength({ max: 500 }).withMessage('Tieu su khong qua 500 ky tu'),
       
     body('avatarUrl')
       .optional()
-      .isURL().withMessage('URL ảnh đại diện không hợp lệ'),
+      .custom((value) => {
+        if (value === '' || value === null) {
+          return true;
+        }
+        return /^https?:\/\/.+/i.test(value);
+      }).withMessage('URL anh dai dien khong hop le'),
   ],
 
   // Validation cho đổi mật khẩu

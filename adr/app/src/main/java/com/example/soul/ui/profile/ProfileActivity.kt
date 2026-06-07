@@ -17,6 +17,7 @@ import com.example.soul.databinding.ActivityHomeBinding
 import com.example.soul.ui.auth.ChangePasswordActivity
 import com.example.soul.ui.collection.CollectionItemsActivity
 import com.example.soul.ui.auth.LoginActivity
+import com.example.soul.ui.profile.EditProfileActivity
 import com.example.soul.ui.home.FeedActivity
 import com.example.soul.ui.home.HomeViewModel
 import com.example.soul.ui.home.HomeViewModelFactory
@@ -94,8 +95,16 @@ class ProfileActivity : AppCompatActivity() {
                 is Resource.Success -> {
                     resource.data?.let { profile ->
                         binding.apply {
-                            tvUsername.text = profile.username
-                            tvProfileLink.text = profile.profileUrl
+                            tvUsername.text = profile.displayName?.takeIf { it.isNotBlank() } ?: profile.username
+                            tvProfileLink.text = "@${profile.username}"
+                            val bio = profile.bio?.trim().orEmpty()
+                            if (bio.isNotEmpty()) {
+                                tvBio.visibility = View.VISIBLE
+                                tvBio.text = bio
+                            } else {
+                                tvBio.visibility = View.GONE
+                                tvBio.text = ""
+                            }
 
                             // Load avatar - check if URL is valid
                             val avatarUrl = profile.avatarUrl
@@ -163,7 +172,7 @@ class ProfileActivity : AppCompatActivity() {
 
         // Edit profile button
         binding.btnEdit.setOnClickListener {
-            Toast.makeText(this, "Tính năng chỉnh sửa hồ sơ sẽ có sớm", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, EditProfileActivity::class.java))
         }
 
         // Share button
@@ -303,6 +312,11 @@ class ProfileActivity : AppCompatActivity() {
         }
         startActivity(intent)
         overridePendingTransition(0, 0)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshProfileOnly()
     }
 
     override fun onPause() {

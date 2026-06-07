@@ -83,6 +83,7 @@ class HomeViewModel(
                         val profileData = Profile(
                             id = userProfile.id,
                             username = userProfile.username,
+                            displayName = userProfile.displayName,
                             email = userProfile.email,
                             avatarUrl = userProfile.avatarUrl,
                             profileUrl = "shelf.im/${userProfile.username}",

@@ -69,6 +69,12 @@ interface ApiService {
     suspend fun getCurrentUser(
         @Header("Authorization") token: String
     ): Response<ProfileResponse>
+
+    @PUT("/api/users/me")
+    suspend fun updateCurrentUser(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<ProfileResponse>
     
     /**
      * Get user's collections

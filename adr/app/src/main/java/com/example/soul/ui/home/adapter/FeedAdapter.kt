@@ -87,6 +87,15 @@ class FeedAdapter(
                     tvSubtitle.text = feedItem.collection.name
                 }
 
+                val description = feedItem.item.description?.trim()
+                if (!description.isNullOrEmpty()) {
+                    tvDescription.visibility = View.VISIBLE
+                    tvDescription.text = description
+                } else {
+                    tvDescription.visibility = View.GONE
+                    tvDescription.text = ""
+                }
+
                 // Load cover image
                 val coverUrl = feedItem.item.coverImageUrl
                 if (!coverUrl.isNullOrEmpty() && !coverUrl.contains("example.com")) {

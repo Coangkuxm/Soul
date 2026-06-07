@@ -113,6 +113,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ui.profile.EditProfileActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.admin.AdminReportsActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

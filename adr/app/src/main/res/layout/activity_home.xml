@@ -74,6 +74,18 @@
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp"
                             tools:text="shelf.im/huy12"/>
+
+                        <TextView
+                            android:id="@+id/tvBio"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:maxLines="3"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp"
+                            android:visibility="gone"
+                            tools:text="Nguoi nghe nhac, xem phim, va gom do yeu thich."
+                            tools:visibility="visible"/>
                     </LinearLayout>
 
                     <!-- Action Icons -->

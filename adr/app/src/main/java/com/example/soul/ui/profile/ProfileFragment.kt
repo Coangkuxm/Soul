@@ -19,6 +19,7 @@ import com.example.soul.databinding.ActivityHomeBinding
 import com.example.soul.ui.auth.ChangePasswordActivity
 import com.example.soul.ui.collection.CollectionItemsActivity
 import com.example.soul.ui.auth.LoginActivity
+import com.example.soul.ui.profile.EditProfileActivity
 import com.example.soul.ui.home.HomeViewModel
 import com.example.soul.ui.home.HomeViewModelFactory
 import com.example.soul.ui.admin.AdminReportsActivity
@@ -84,8 +85,16 @@ class ProfileFragment : Fragment() {
             when (resource) {
                 is Resource.Success -> {
                     resource.data?.let { profile ->
-                        binding.tvUsername.text = profile.username
-                        binding.tvProfileLink.text = profile.profileUrl
+                        binding.tvUsername.text = profile.displayName?.takeIf { it.isNotBlank() } ?: profile.username
+                        binding.tvProfileLink.text = "@${profile.username}"
+                        val bio = profile.bio?.trim().orEmpty()
+                        if (bio.isNotEmpty()) {
+                            binding.tvBio.visibility = View.VISIBLE
+                            binding.tvBio.text = bio
+                        } else {
+                            binding.tvBio.visibility = View.GONE
+                            binding.tvBio.text = ""
+                        }
                         val avatarUrl = profile.avatarUrl
                         val isValidUrl = !avatarUrl.isNullOrEmpty() &&
                             !avatarUrl.contains("example.com") &&
@@ -137,7 +146,7 @@ class ProfileFragment : Fragment() {
     private fun setupListeners() {
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
         binding.btnEdit.setOnClickListener {
-            Toast.makeText(requireContext(), "Tính năng chỉnh sửa hồ sơ sẽ có sớm", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(requireContext(), EditProfileActivity::class.java))
         }
         binding.btnShare.setOnClickListener { shareProfile() }
         binding.btnSettings.setOnClickListener { showSettingsMenu(it) }

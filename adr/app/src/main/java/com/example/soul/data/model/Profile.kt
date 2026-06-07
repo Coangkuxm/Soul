@@ -57,6 +57,7 @@ data class UserProfile(
 data class Profile(
     val id: Int,
     val username: String,
+    val displayName: String?,
     val email: String?,
     val avatarUrl: String?,
     val profileUrl: String,
