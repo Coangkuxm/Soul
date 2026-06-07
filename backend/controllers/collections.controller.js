@@ -71,7 +71,10 @@ const getCollections = async (req, res, next) => {
 
     // 2. Xây dựng câu truy vấn đếm tổng số bản ghi
     let countQuery = {
-      text: `SELECT COUNT(*) FROM collections c WHERE 1=1`,
+      text: `SELECT COUNT(*)
+             FROM collections c
+             JOIN users u ON c.owner_id = u.id
+             WHERE COALESCE(u.account_status, 'active') = 'active'`,
       values: []
     };
 
@@ -83,7 +86,7 @@ const getCollections = async (req, res, next) => {
         u.avatar_url as owner_avatar
       FROM collections c
       JOIN users u ON c.owner_id = u.id
-      WHERE 1=1
+      WHERE COALESCE(u.account_status, 'active') = 'active'
     `;
 
     const queryParams = [];
@@ -205,6 +208,7 @@ const getCollectionById = async (req, res, next) => {
        FROM collections c
        JOIN users u ON c.owner_id = u.id
        WHERE c.id = $1
+       AND COALESCE(u.account_status, 'active') = 'active'
        AND (c.is_private = false OR c.owner_id = $2)`,
       [id, req.user?.id]
     );
@@ -217,8 +221,9 @@ const getCollectionById = async (req, res, next) => {
       `SELECT i.*, ci.note, ci.rating, ci.added_at
        FROM items i
        JOIN collection_items ci ON i.id = ci.item_id
-       WHERE ci.collection_id = $1
-       ORDER BY ci.added_at DESC`,
+        WHERE ci.collection_id = $1
+         AND COALESCE(ci.moderation_status, 'active') = 'active'
+        ORDER BY ci.added_at DESC`,
       [id]
     );
 

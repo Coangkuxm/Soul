@@ -23,7 +23,7 @@ class PlaceholderFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.tvTitle.text = requireArguments().getString(ARG_TITLE, "Coming soon")
+        binding.tvTitle.text = requireArguments().getString(ARG_TITLE, "Sắp ra mắt")
         binding.tvSubtitle.text = requireArguments().getString(ARG_SUBTITLE, "")
     }
 

@@ -4,6 +4,7 @@ const {
   UnauthorizedError, 
   BadRequestError, 
   ConflictError,
+  ForbiddenError,
   ValidationError,
   DatabaseError
 } = require('../utils/errors');
@@ -84,7 +85,7 @@ const authController = {
       // 1. Find user by email with only necessary fields
       const result = await query(
         `SELECT id, username, email, password, display_name as "displayName", 
-                avatar_url as "avatarUrl"
+                avatar_url as "avatarUrl", role, account_status as "accountStatus"
          FROM users WHERE email = $1`,
         [email]
       );
@@ -94,6 +95,10 @@ const authController = {
       if (!user) {
         console.log('User not found with email:', email);
         throw new UnauthorizedError('Email hoặc mật khẩu không đúng');
+      }
+
+      if ((user.accountStatus || 'active') !== 'active') {
+        throw new ForbiddenError('Tài khoản đã bị khóa');
       }
 
       // Debug logging
@@ -135,7 +140,7 @@ if (!isMatch) {
           userId: user.id, 
           username: user.username,
           email: user.email,
-          role: 'user',
+          role: user.role || 'user',
           iat: Math.floor(Date.now() / 1000) // Issued at time
         },
         process.env.JWT_SECRET,
@@ -159,7 +164,7 @@ if (!isMatch) {
 
       // 6. Don't send password back
       delete user.password;
-      delete user.isActive;
+      delete user.accountStatus;
       
       // 7. Return user info and token (for clients that need it)
       res.json({
@@ -208,7 +213,8 @@ if (!isMatch) {
           `INSERT INTO users (username, email, password, display_name, avatar_url, bio)
            VALUES ($1, $2, $3, $4, $5, $6) 
            RETURNING id, username, email, display_name as "displayName", 
-                     avatar_url as "avatarUrl", bio, created_at as "createdAt"`,
+                     avatar_url as "avatarUrl", bio, role,
+                     account_status as "accountStatus", created_at as "createdAt"`,
           [username, email, hashedPassword, displayName, avatarUrl, bio]
         );
         
@@ -224,7 +230,7 @@ if (!isMatch) {
             userId: user.id, 
             username: user.username,
             email: user.email,
-            role: 'user',
+            role: user.role || 'user',
             iat: Math.floor(Date.now() / 1000) // Issued at time
           },
           process.env.JWT_SECRET || 'your-secret-key',

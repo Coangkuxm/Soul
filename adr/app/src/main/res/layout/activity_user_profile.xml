@@ -22,14 +22,14 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
-            android:contentDescription="Back" />
+            android:contentDescription="Quay lại" />
 
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Profile"
+            android:text="Hồ sơ"
             android:textColor="@color/text_primary"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -40,11 +40,20 @@
             android:layout_weight="1" />
 
         <ImageButton
+            android:id="@+id/btnReport"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Báo cáo tài khoản"
+            android:src="@drawable/ic_more" />
+
+        <ImageButton
             android:id="@+id/btnMessage"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Message"
+            android:contentDescription="Nhắn tin"
             android:src="@drawable/ic_comment" />
     </LinearLayout>
 
@@ -122,7 +131,7 @@
         android:id="@+id/tvEmpty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No collections"
+        android:text="Không có bộ sưu tập"
         android:textColor="@color/text_secondary"
         android:textSize="15sp"
         android:visibility="gone"
@@ -132,3 +141,4 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+

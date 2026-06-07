@@ -7,42 +7,40 @@
     android:padding="24dp"
     android:background="@drawable/bg_bottom_sheet">
 
-    <!-- Handle bar -->
     <View
         android:layout_width="40dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="16dp"
-        android:background="@drawable/bg_handle_bar"/>
+        android:background="@drawable/bg_handle_bar" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
         android:text="Thêm mới"
-        android:textSize="20sp"
-        android:textStyle="bold"
         android:textColor="@color/text_primary"
-        android:layout_marginBottom="20dp"/>
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
-    <!-- Add Collection Option -->
     <LinearLayout
         android:id="@+id/optionAddCollection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="16dp"
         android:background="?attr/selectableItemBackground"
         android:clickable="true"
-        android:focusable="true">
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="16dp">
 
         <ImageView
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:background="@drawable/bg_icon_circle"
             android:padding="12dp"
             android:src="@drawable/ic_collection"
-            android:background="@drawable/bg_icon_circle"
-            app:tint="@color/primary"/>
+            app:tint="@color/primary" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -54,51 +52,50 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tạo Collection"
+                android:text="Tạo bộ sưu tập"
+                android:textColor="@color/text_primary"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"/>
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tạo bộ sưu tập mới để lưu items"
-                android:textSize="14sp"
-                android:textColor="@color/text_secondary"/>
+                android:text="Tạo bộ sưu tập mới để lưu các mục"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
         </LinearLayout>
 
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_arrow_right"
-            app:tint="@color/text_hint"/>
+            app:tint="@color/text_hint" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginVertical="8dp"
-        android:background="@color/divider"/>
+        android:background="@color/divider" />
 
-    <!-- Add Item Option -->
     <LinearLayout
         android:id="@+id/optionAddItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="16dp"
         android:background="?attr/selectableItemBackground"
         android:clickable="true"
-        android:focusable="true">
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="16dp">
 
         <ImageView
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:background="@drawable/bg_icon_circle"
             android:padding="12dp"
             android:src="@drawable/ic_add_item"
-            android:background="@drawable/bg_icon_circle"
-            app:tint="@color/secondary"/>
+            app:tint="@color/secondary" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -110,24 +107,24 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Thêm Item"
+                android:text="Thêm mục"
+                android:textColor="@color/text_primary"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"/>
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Thêm phim, nhạc, sách vào collection"
-                android:textSize="14sp"
-                android:textColor="@color/text_secondary"/>
+                android:text="Thêm phim, nhạc, sách vào bộ sưu tập"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
         </LinearLayout>
 
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_arrow_right"
-            app:tint="@color/text_hint"/>
+            app:tint="@color/text_hint" />
     </LinearLayout>
 
 </LinearLayout>

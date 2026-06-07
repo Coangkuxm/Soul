@@ -90,7 +90,7 @@ class MessengerFragment : Fragment() {
                     limit = 50
                 )
                 if (!response.isSuccessful || response.body() == null) {
-                    showError("Unable to load conversations")
+                    showError("Không thể tải danh sách cuộc trò chuyện")
                     return@launch
                 }
                 conversations.clear()
@@ -98,7 +98,7 @@ class MessengerFragment : Fragment() {
                 adapter.submitList(conversations.toList())
                 binding.tvEmpty.visibility = if (conversations.isEmpty()) View.VISIBLE else View.GONE
             } catch (e: Exception) {
-                showError(e.message ?: "Network error")
+                showError(e.message ?: "Lỗi mạng")
             } finally {
                 binding.progressBar.visibility = View.GONE
                 binding.swipeRefresh.isRefreshing = false
@@ -142,7 +142,7 @@ class MessengerFragment : Fragment() {
                 ChatActivity.EXTRA_TITLE,
                 conversation.otherDisplayName?.takeIf { it.isNotBlank() }
                     ?: conversation.otherUsername
-                    ?: "Messages"
+                    ?: "Tin nhắn"
             )
             putExtra(ChatActivity.EXTRA_AVATAR_URL, conversation.otherAvatarUrl)
             putExtra(ChatActivity.EXTRA_TARGET_USER_ID, conversation.otherUserId ?: -1)

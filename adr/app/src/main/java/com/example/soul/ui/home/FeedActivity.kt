@@ -1,4 +1,4 @@
-package com.example.soul.ui.home
+﻿package com.example.soul.ui.home
 
 import android.content.Intent
 import android.os.Bundle
@@ -25,6 +25,7 @@ import com.example.soul.ui.add.AddOptionsBottomSheet
 import com.example.soul.ui.auth.LoginActivity
 import com.example.soul.ui.home.adapter.FeedAdapter
 import com.example.soul.ui.profile.ProfileActivity
+import com.example.soul.ui.profile.UserProfileActivity
 import com.example.soul.audio.PreviewAudioPlayer
 import com.example.soul.utils.Resource
 import kotlinx.coroutines.launch
@@ -119,6 +120,9 @@ class FeedActivity : AppCompatActivity() {
             },
             onCommentClick = { feedItem ->
                 openComments(feedItem)
+            },
+            onReportClick = { feedItem, anchor ->
+                showFeedItemMenu(feedItem, anchor)
             }
         )
 
@@ -219,14 +223,14 @@ class FeedActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_explore -> {
-                    Toast.makeText(this, "Explore coming soon", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Tính năng khám phá sẽ có sớm", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_notification -> {
                     true
                 }
                 R.id.nav_library -> {
-                    Toast.makeText(this, "Library coming soon", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Tính năng thư viện sẽ có sớm", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_profile -> {
@@ -265,8 +269,8 @@ class FeedActivity : AppCompatActivity() {
 
     private fun showFilterMenu(anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("Everyone")
-            menu.add("Friends Only")
+            menu.add("Mọi người")
+            menu.add("Chỉ bạn bè")
             setOnMenuItemClickListener { item ->
                 binding.btnFilter.text = item.title
                 // TODO: Filter feed based on selection
@@ -298,8 +302,73 @@ class FeedActivity : AppCompatActivity() {
         startActivity(intent)
     }
     private fun onUserClicked(userId: Int) {
-        Toast.makeText(this, "Opening user profile", Toast.LENGTH_SHORT).show()
-        // TODO: Navigate to user profile
+        startActivity(Intent(this, UserProfileActivity::class.java).apply {
+            putExtra(UserProfileActivity.EXTRA_USER_ID, userId)
+        })
+    }
+
+    private fun showFeedItemMenu(feedItem: FeedItem, anchor: View) {
+        PopupMenu(this, anchor).apply {
+            menu.add("Báo cáo bài viết")
+            setOnMenuItemClickListener {
+                showReportDialog(
+                    targetType = "collection_item",
+                    targetId = feedItem.id,
+                    title = "Báo cáo bài viết"
+                )
+                true
+            }
+            show()
+        }
+    }
+
+    private fun showReportDialog(targetType: String, targetId: Int, title: String) {
+        val reasonCodes = listOf(
+            "spam" to "Spam",
+            "harassment" to "Quấy rối",
+            "hate_speech" to "Ngôn từ thù ghét",
+            "nudity" to "Nội dung nhạy cảm",
+            "misleading" to "Thông tin sai lệch",
+            "other" to "Lý do khác"
+        )
+        val labels = reasonCodes.map { it.second }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setItems(labels) { _, which ->
+                submitReport(targetType, targetId, reasonCodes[which].first, reasonCodes[which].second)
+            }
+            .setNegativeButton("Hủy", null)
+            .show()
+    }
+
+    private fun submitReport(targetType: String, targetId: Int, reasonCode: String, reasonLabel: String) {
+        lifecycleScope.launch {
+            try {
+                val token = "Bearer ${authPreferences.getToken().orEmpty()}"
+                val response = RetrofitClient.apiService.createReport(
+                    token = token,
+                    body = mapOf(
+                        "targetType" to targetType,
+                        "targetId" to targetId,
+                        "reasonCode" to reasonCode,
+                        "reasonDetail" to reasonLabel
+                    )
+                )
+
+                if (response.isSuccessful) {
+                    Toast.makeText(this@FeedActivity, "Đã gửi báo cáo", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        this@FeedActivity,
+                        response.errorBody()?.string() ?: "Không thể gửi báo cáo",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@FeedActivity, e.message ?: "Không thể gửi báo cáo", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private var pendingSpotifyUrlForPreview: String? = null
@@ -376,7 +445,7 @@ class FeedActivity : AppCompatActivity() {
     private fun promptOpenSpotifyOrNotify(spotifyUrl: String?) {
         if (!spotifyUrl.isNullOrEmpty()) {
             AlertDialog.Builder(this)
-                .setTitle("Hết preview")
+                .setTitle("Hết đoạn xem trước")
                 .setMessage("Bạn muốn mở Spotify để nghe cả bài không?")
                 .setPositiveButton("Mở Spotify") { _, _ ->
                     openSpotify(spotifyUrl)
@@ -403,9 +472,9 @@ class FeedActivity : AppCompatActivity() {
         }
     }
     private fun startMiniPlayer() {
-        val title = currentPreviewTitle ?: "Preview"
+        val title = currentPreviewTitle ?: "Xem trước"
         val artist = currentPreviewArtist
-        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title � $artist" else title
+        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title • $artist" else title
         val coverUrl = currentPreviewCoverUrl
         if (!coverUrl.isNullOrEmpty() && !coverUrl.contains("example.com")) {
             Glide.with(this)
@@ -452,7 +521,7 @@ class FeedActivity : AppCompatActivity() {
                 // Revert on error
                 feedItem.isLiked = !isLiked
                 feedAdapter.notifyDataSetChanged()
-                Toast.makeText(this@FeedActivity, "Failed to update like", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@FeedActivity, "Không thể cập nhật lượt thích", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -491,6 +560,8 @@ class FeedActivity : AppCompatActivity() {
         previewAudioPlayer.release()
     }
 }
+
+
 
 
 

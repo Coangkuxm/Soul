@@ -50,7 +50,7 @@ class ChatActivity : AppCompatActivity() {
         conversationId = intent.getIntExtra(EXTRA_CONVERSATION_ID, -1)
 
         if (conversationId <= 0) {
-            showError("Conversation not found")
+            showError("Không tìm thấy cuộc trò chuyện")
             finish()
             return
         }
@@ -75,7 +75,7 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun setupUi() {
-        val title = intent.getStringExtra(EXTRA_TITLE).orEmpty().ifBlank { "Messages" }
+        val title = intent.getStringExtra(EXTRA_TITLE).orEmpty().ifBlank { "Tin nhắn" }
         val avatarUrl = intent.getStringExtra(EXTRA_AVATAR_URL)
         binding.tvTitle.text = title
 
@@ -115,7 +115,7 @@ class ChatActivity : AppCompatActivity() {
                     limit = 100
                 )
                 if (!response.isSuccessful || response.body() == null) {
-                    showError("Unable to load messages")
+                    showError("Không thể tải tin nhắn")
                     return@launch
                 }
 
@@ -125,7 +125,7 @@ class ChatActivity : AppCompatActivity() {
                 adapter.submitList(messages.toList())
                 scrollToBottom()
             } catch (e: Exception) {
-                showError(e.message ?: "Network error")
+                showError(e.message ?: "Lỗi mạng")
             } finally {
                 binding.progressBar.visibility = View.GONE
             }
@@ -138,16 +138,25 @@ class ChatActivity : AppCompatActivity() {
 
         binding.btnSend.isEnabled = false
         hideKeyboard()
-
-        ChatSocketManager.sendMessage(conversationId, content) { success, error ->
-            runOnUiThread {
-                binding.btnSend.isEnabled = true
-                if (success) {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.apiService.sendChatMessage(
+                    token = "Bearer $token",
+                    conversationId = conversationId,
+                    body = mapOf("content" to content)
+                )
+                if (response.isSuccessful) {
                     binding.etMessage.setText("")
+                    // Refresh from server to avoid waiting for socket ack/buffer.
+                    loadMessages()
                     markConversationRead()
                 } else {
-                    showError(error ?: "Unable to send message")
+                    showError("Không thể gửi tin nhắn")
                 }
+            } catch (e: Exception) {
+                showError(e.message ?: "Không thể gửi tin nhắn")
+            } finally {
+                binding.btnSend.isEnabled = true
             }
         }
     }

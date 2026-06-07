@@ -1,4 +1,4 @@
-package com.example.soul.ui.explore
+﻿package com.example.soul.ui.explore
 
 import android.content.Intent
 import android.os.Bundle
@@ -124,7 +124,7 @@ class ExploreFragment : Fragment() {
                 )
 
                 if (!response.isSuccessful || response.body() == null) {
-                    showError("Unable to load users")
+                    showError("Không thể tải danh sách người dùng")
                     return@launch
                 }
 
@@ -137,7 +137,7 @@ class ExploreFragment : Fragment() {
                 binding.tvEmpty.visibility = if (usersCache.isEmpty()) View.VISIBLE else View.GONE
                 saveFollowCache() // keep cache updated with latest follow states
             } catch (e: Exception) {
-                showError(e.message ?: "Network error")
+                showError(e.message ?: "Lỗi mạng")
             } finally {
                 binding.progressBar.visibility = View.GONE
                 binding.swipeRefresh.isRefreshing = false
@@ -188,7 +188,7 @@ class ExploreFragment : Fragment() {
             } catch (e: Exception) {
                 user.isFollowing = before
                 adapter.submitList(usersCache.toList())
-                showError(e.message ?: "Follow action failed")
+                showError(e.message ?: "Thao tác theo dõi thất bại")
             }
         }
     }
@@ -219,3 +219,4 @@ class ExploreFragment : Fragment() {
         followCache.edit().putStringSet("ids", followedIds.map { it.toString() }.toSet()).apply()
     }
 }
+

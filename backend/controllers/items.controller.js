@@ -91,7 +91,11 @@ const itemsController = {
 
       // Xây dựng câu query đếm tổng số bản ghi
       const countQuery = {
-        text: `SELECT COUNT(*) FROM items i WHERE ${whereClauses.join(' AND ')}`,
+        text: `SELECT COUNT(*)
+               FROM items i
+               LEFT JOIN users u ON i.created_by = u.id
+               WHERE (${whereClauses.join(' AND ')})
+                 AND (i.created_by IS NULL OR COALESCE(u.account_status, 'active') = 'active')`,
         values: [...queryParams]
       };
 
@@ -104,7 +108,8 @@ const itemsController = {
             u.avatar_url as creator_avatar
           FROM items i
           LEFT JOIN users u ON i.created_by = u.id
-          WHERE ${whereClauses.join(' AND ')}
+          WHERE (${whereClauses.join(' AND ')})
+            AND (i.created_by IS NULL OR COALESCE(u.account_status, 'active') = 'active')
           ORDER BY i.${sortColumn} ${sortOrder}
           LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
         `,
@@ -169,7 +174,8 @@ const itemsController = {
                 u.avatar_url as creator_avatar
          FROM items i
          LEFT JOIN users u ON i.created_by = u.id
-         WHERE i.id = $1`,
+         WHERE i.id = $1
+           AND (i.created_by IS NULL OR COALESCE(u.account_status, 'active') = 'active')`,
         [id]
       );
 
@@ -196,7 +202,8 @@ const itemsController = {
                 u.avatar_url as creator_avatar
          FROM items i
          LEFT JOIN users u ON i.created_by = u.id
-         WHERE i.external_id = $1`,
+         WHERE i.external_id = $1
+           AND (i.created_by IS NULL OR COALESCE(u.account_status, 'active') = 'active')`,
         [externalId]
       );
 
@@ -447,15 +454,18 @@ const itemsController = {
 
       // Tìm kiếm items
       let queryText = `
-        SELECT * FROM items 
-        WHERE ${whereClauses.join(' AND ')}
+        SELECT i.*
+        FROM items i
+        LEFT JOIN users u ON i.created_by = u.id
+        WHERE (${whereClauses.join(' AND ')})
+          AND (i.created_by IS NULL OR COALESCE(u.account_status, 'active') = 'active')
         ORDER BY 
           CASE 
-            WHEN title ILIKE $1 THEN 1
-            WHEN description ILIKE $1 THEN 2
+            WHEN i.title ILIKE $1 THEN 1
+            WHEN i.description ILIKE $1 THEN 2
             ELSE 3
           END,
-          created_at DESC
+          i.created_at DESC
         LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
       `;
 
@@ -465,9 +475,11 @@ const itemsController = {
 
       // Đếm tổng số kết quả
       const countQuery = `
-        SELECT COUNT(*) 
-        FROM items 
-        WHERE ${whereClauses.join(' AND ')}
+        SELECT COUNT(*)
+        FROM items i
+        LEFT JOIN users u ON i.created_by = u.id
+        WHERE (${whereClauses.join(' AND ')})
+          AND (i.created_by IS NULL OR COALESCE(u.account_status, 'active') = 'active')
       `;
       
       const countResult = await query(countQuery, queryParams.slice(0, -2));

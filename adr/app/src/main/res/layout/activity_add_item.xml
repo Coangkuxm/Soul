@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout 
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -8,7 +8,6 @@
     android:background="@color/background"
     tools:context=".ui.add.AddItemActivity">
 
-    <!-- AppBar -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,8 +18,8 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_close"
-            app:title="Thêm Item"
-            app:titleTextColor="@color/text_primary"/>
+            app:title="Thêm mục"
+            app:titleTextColor="@color/text_primary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -35,100 +34,78 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Item Type Selection -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Loại item *"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_secondary"
-                android:layout_marginBottom="12dp"/>
+                android:layout_marginBottom="12dp"
+                android:text="Loại mục"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-            <HorizontalScrollView
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupType"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:scrollbars="none"
-                android:layout_marginBottom="24dp">
+                android:layout_marginBottom="16dp"
+                app:selectionRequired="true"
+                app:singleSelection="true">
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/chipGroupType"
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipMusic"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:singleSelection="true"
-                    app:selectionRequired="true">
+                    android:checked="true"
+                    android:text="Nhạc" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipMusic"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🎵 Nhạc"
-                        android:checked="true"
-                        android:textColor="@color/chip_text_color"
-                        app:chipBackgroundColor="@color/chip_background_color"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipMovie"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Phim" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipMovie"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🎬 Phim"
-                        android:textColor="@color/chip_text_color"
-                        app:chipBackgroundColor="@color/chip_background_color"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipBook"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sách" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipBook"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="📚 Sách"
-                        android:textColor="@color/chip_text_color"
-                        app:chipBackgroundColor="@color/chip_background_color"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipGame"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Game" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipGame"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🎮 Game"
-                        android:textColor="@color/chip_text_color"
-                        app:chipBackgroundColor="@color/chip_background_color"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipArtist"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nghệ sĩ" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipArtist"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🎤 Nghệ sĩ"
-                        android:textColor="@color/chip_text_color"
-                        app:chipBackgroundColor="@color/chip_background_color"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipOther"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Khác" />
+            </com.google.android.material.chip.ChipGroup>
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipOther"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="📦 Khác"
-                        android:textColor="@color/chip_text_color"
-                        app:chipBackgroundColor="@color/chip_background_color"/>
-                </com.google.android.material.chip.ChipGroup>
-            </HorizontalScrollView>
-
-            <!-- Search from API Button (for Music/Movie) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSearch"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:text="🔍 Tìm kiếm từ Spotify / TMDB"
-                android:textColor="@color/primary"
-                app:strokeColor="@color/primary"
+                android:text="Tìm kiếm từ Spotify / TMDB"
+                android:visibility="visible"
                 app:icon="@drawable/ic_search"
-                app:iconTint="@color/primary"/>
+                app:iconPadding="8dp" />
 
-            <!-- Content Container - Hidden until item selected for music/movie -->
             <LinearLayout
                 android:id="@+id/layoutContent"
                 android:layout_width="match_parent"
@@ -136,209 +113,194 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-            <!-- Cover Image -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardCover"
-                android:layout_width="180dp"
-                android:layout_height="180dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="24dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
-
-                <ImageView
-                    android:id="@+id/ivCover"
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardCover"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/bg_placeholder_cover" />
-                    
-            </androidx.cardview.widget.CardView>
+                    android:layout_height="180dp"
+                    android:layout_marginBottom="20dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
 
-            <!-- Title -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilTitle"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:hint="Tên *"
-                app:counterEnabled="true"
-                app:counterMaxLength="255">
+                    <ImageView
+                        android:id="@+id/ivCover"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/bg_placeholder_cover" />
+                </androidx.cardview.widget.CardView>
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:maxLength="255"/>
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Description -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilDescription"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:hint="Mô tả">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etDescription"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textMultiLine"
-                    android:minLines="2"
-                    android:gravity="top"/>
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Dynamic Metadata Section - changes based on type -->
-            <LinearLayout
-                android:id="@+id/layoutMetadata"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <!-- For Music -->
                 <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilArtist"
+                    android:id="@+id/tilTitle"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:hint="Nghệ sĩ">
+                    android:hint="Tên *">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etArtist"
+                        android:id="@+id/etTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="text"/>
+                        android:inputType="textCapSentences"
+                        tools:text="Lạc Trôi" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilAlbum"
+                    android:id="@+id/tilDescription"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:hint="Album">
+                    android:hint="Mô tả">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etAlbum"
+                        android:id="@+id/etDescription"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="text"/>
+                        android:gravity="top"
+                        android:inputType="textMultiLine"
+                        android:minLines="3" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- For Movie/Book -->
+                <LinearLayout
+                    android:id="@+id/layoutMetadata"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilArtist"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:hint="Nghệ sĩ"
+                        android:visibility="gone">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etArtist"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapWords" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilAlbum"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:hint="Album"
+                        android:visibility="gone">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etAlbum"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapWords" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilDirector"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:hint="Đạo diễn"
+                        android:visibility="gone">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDirector"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapWords" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilAuthor"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:hint="Tác giả"
+                        android:visibility="gone">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etAuthor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapWords" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Thêm vào bộ sưu tập"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
                 <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilDirector"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:id="@+id/tilCollection"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:hint="Đạo diễn"
-                    android:visibility="gone">
+                    android:hint="Chọn bộ sưu tập">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etDirector"
+                    <AutoCompleteTextView
+                        android:id="@+id/actvCollection"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="text"/>
+                        android:inputType="none"
+                        tools:text="Nhạc yêu thích" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilAuthor"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Tác giả"
-                    android:visibility="gone">
+                    android:layout_marginBottom="8dp"
+                    android:text="Đánh giá"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etAuthor"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="text"/>
-                </com.google.android.material.textfield.TextInputLayout>
+                <RatingBar
+                    android:id="@+id/ratingBar"
+                    style="?android:attr/ratingBarStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:numStars="5"
+                    android:stepSize="1" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAdd"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Thêm mục"
+                    android:textSize="16sp"
+                    app:cornerRadius="12dp" />
             </LinearLayout>
-
-            </LinearLayout>
-            <!-- End Content Container -->
-
-            <!-- Select Collection -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Thêm vào Collection"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_secondary"
-                android:layout_marginBottom="12dp"/>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilCollection"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:hint="Chọn Collection">
-
-                <AutoCompleteTextView
-                    android:id="@+id/actvCollection"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="none"/>
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Rating -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Đánh giá"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_secondary"
-                android:layout_marginBottom="8dp"/>
-
-            <RatingBar
-                android:id="@+id/ratingBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:numStars="5"
-                android:stepSize="1"
-                android:rating="0"
-                android:layout_marginBottom="24dp"
-                style="@style/Widget.AppCompat.RatingBar.Indicator"
-                android:isIndicator="false"/>
-
-            <!-- Add Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAdd"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="Thêm Item"
-                android:textSize="16sp"
-                app:cornerRadius="12dp"/>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Loading Overlay -->
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#80000000"
-        android:visibility="gone"
         android:clickable="true"
-        android:focusable="true">
+        android:focusable="true"
+        android:visibility="gone">
 
         <ProgressBar
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center" />
     </FrameLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

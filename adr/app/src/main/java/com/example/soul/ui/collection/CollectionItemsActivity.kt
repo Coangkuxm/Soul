@@ -32,7 +32,7 @@ class CollectionItemsActivity : AppCompatActivity() {
         collectionName = intent.getStringExtra(EXTRA_COLLECTION_NAME).orEmpty().ifBlank { "Collection" }
 
         if (collectionId <= 0) {
-            Toast.makeText(this, "Collection không hợp lệ", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Collection khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -47,7 +47,7 @@ class CollectionItemsActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener { finish() }
 
         adapter = CollectionContentAdapter {
-            Toast.makeText(this, "Opening item", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Ã„Âang mÃ¡Â»Å¸ mÃ¡Â»Â¥c", Toast.LENGTH_SHORT).show()
         }
         binding.rvItems.layoutManager = GridLayoutManager(this, 2)
         binding.rvItems.adapter = adapter
@@ -75,7 +75,7 @@ class CollectionItemsActivity : AppCompatActivity() {
                 } else {
                     adapter.submitList(emptyList())
                     binding.tvEmpty.visibility = View.VISIBLE
-                    Toast.makeText(this@CollectionItemsActivity, "Không tải được item", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@CollectionItemsActivity, "KhÃ´ng táº£i Ä‘Æ°á»£c item", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 adapter.submitList(emptyList())
@@ -88,3 +88,4 @@ class CollectionItemsActivity : AppCompatActivity() {
         }
     }
 }
+

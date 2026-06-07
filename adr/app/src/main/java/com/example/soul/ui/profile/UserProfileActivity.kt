@@ -3,6 +3,7 @@ package com.example.soul.ui.profile
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -56,6 +57,7 @@ class UserProfileActivity : AppCompatActivity() {
 
         binding.btnBack.setOnClickListener { finish() }
         binding.btnMessage.setOnClickListener { startDirectChat() }
+        binding.btnReport.setOnClickListener { showReportAccountDialog() }
         binding.swipeRefresh.setOnRefreshListener { loadData() }
     }
 
@@ -100,7 +102,7 @@ class UserProfileActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 adapter.submitList(emptyList())
                 binding.tvEmpty.visibility = View.VISIBLE
-                Toast.makeText(this@UserProfileActivity, e.message ?: "Network error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@UserProfileActivity, e.message ?: "Lỗi mạng", Toast.LENGTH_SHORT).show()
             } finally {
                 binding.progressBar.visibility = View.GONE
                 binding.swipeRefresh.isRefreshing = false
@@ -119,7 +121,7 @@ class UserProfileActivity : AppCompatActivity() {
                 if (!response.isSuccessful || response.body() == null) {
                     Toast.makeText(
                         this@UserProfileActivity,
-                        "Unable to open chat",
+                        "Không thể mở đoạn chat",
                         Toast.LENGTH_SHORT
                     ).show()
                     return@launch
@@ -129,13 +131,65 @@ class UserProfileActivity : AppCompatActivity() {
                 startActivity(android.content.Intent(this@UserProfileActivity, ChatActivity::class.java).apply {
                     putExtra(ChatActivity.EXTRA_CONVERSATION_ID, conversationId)
                     putExtra(ChatActivity.EXTRA_TARGET_USER_ID, userId)
-                    putExtra(ChatActivity.EXTRA_TITLE, targetName ?: "Messages")
+                    putExtra(ChatActivity.EXTRA_TITLE, targetName ?: "Tin nhắn")
                     putExtra(ChatActivity.EXTRA_AVATAR_URL, targetAvatarUrl)
                 })
             } catch (e: Exception) {
                 Toast.makeText(
                     this@UserProfileActivity,
-                    e.message ?: "Unable to open chat",
+                    e.message ?: "Không thể mở đoạn chat",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private fun showReportAccountDialog() {
+        val reasonCodes = listOf(
+            "spam" to "Spam",
+            "impersonation" to "Mạo danh",
+            "harassment" to "Quấy rối",
+            "hate_speech" to "Ngôn từ thù ghét",
+            "other" to "Lý do khác"
+        )
+        val labels = reasonCodes.map { it.second }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle("Báo cáo tài khoản")
+            .setItems(labels) { _, which ->
+                submitUserReport(reasonCodes[which].first, reasonCodes[which].second)
+            }
+            .setNegativeButton("Hủy", null)
+            .show()
+    }
+
+    private fun submitUserReport(reasonCode: String, reasonLabel: String) {
+        lifecycleScope.launch {
+            try {
+                val token = "Bearer ${authPreferences.getToken().orEmpty()}"
+                val response = RetrofitClient.apiService.createReport(
+                    token = token,
+                    body = mapOf(
+                        "targetType" to "user",
+                        "targetId" to userId,
+                        "reasonCode" to reasonCode,
+                        "reasonDetail" to reasonLabel
+                    )
+                )
+
+                if (response.isSuccessful) {
+                    Toast.makeText(this@UserProfileActivity, "Đã gửi báo cáo", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        this@UserProfileActivity,
+                        response.errorBody()?.string() ?: "Không thể gửi báo cáo",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@UserProfileActivity,
+                    e.message ?: "Không thể gửi báo cáo",
                     Toast.LENGTH_SHORT
                 ).show()
             }

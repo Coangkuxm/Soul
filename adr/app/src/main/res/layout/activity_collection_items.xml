@@ -23,7 +23,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
+            android:contentDescription="Quay lại"
             android:src="@drawable/ic_back" />
 
         <TextView
@@ -70,7 +70,7 @@
         android:id="@+id/tvEmpty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Collection chưa có item"
+        android:text="Bộ sưu tập chưa có mục nào"
         android:textColor="@color/text_secondary"
         android:textSize="15sp"
         android:visibility="gone"
@@ -80,3 +80,4 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+

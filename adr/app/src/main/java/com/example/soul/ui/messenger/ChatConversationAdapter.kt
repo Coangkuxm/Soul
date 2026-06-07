@@ -38,10 +38,10 @@ class ChatConversationAdapter(
                 ?.takeIf { it.isNotBlank() }
                 ?: item.otherUsername
                 ?: item.title
-                ?: "Unknown"
+                ?: "Không rõ"
 
             binding.tvName.text = displayName
-            binding.tvLastMessage.text = item.lastMessageContent?.takeIf { it.isNotBlank() } ?: "No messages yet"
+            binding.tvLastMessage.text = item.lastMessageContent?.takeIf { it.isNotBlank() } ?: "Chưa có tin nhắn"
             binding.tvTime.text = RelativeTime.format(item.lastMessageAt ?: item.createdAt)
 
             val unread = item.unreadCount.coerceAtLeast(0)

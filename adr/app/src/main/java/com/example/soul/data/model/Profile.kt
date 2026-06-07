@@ -31,6 +31,12 @@ data class UserProfile(
     
     @SerializedName("bio")
     val bio: String?,
+
+    @SerializedName("role")
+    val role: String? = "user",
+
+    @SerializedName("accountStatus")
+    val accountStatus: String? = "active",
     
     @SerializedName("followerCount")
     val followerCount: Int = 0,
@@ -54,5 +60,7 @@ data class Profile(
     val email: String?,
     val avatarUrl: String?,
     val profileUrl: String,
-    val bio: String?
+    val bio: String?,
+    val role: String? = "user",
+    val accountStatus: String? = "active"
 )

@@ -1,4 +1,4 @@
-package com.example.soul.ui.comments
+﻿package com.example.soul.ui.comments
 
 import android.os.Bundle
 import android.widget.Toast
@@ -35,7 +35,7 @@ class CommentsActivity : AppCompatActivity() {
         authPreferences = AuthPreferences(this)
         targetType = intent.getStringExtra(EXTRA_TARGET_TYPE) ?: ""
         targetId = intent.getIntExtra(EXTRA_TARGET_ID, 0)
-        val title = intent.getStringExtra(EXTRA_TITLE) ?: "Comments"
+        val title = intent.getStringExtra(EXTRA_TITLE) ?: "Bình luận"
 
         binding.tvTitle.text = title
         binding.btnBack.setOnClickListener { finish() }
@@ -68,10 +68,10 @@ class CommentsActivity : AppCompatActivity() {
                 if (response.isSuccessful && response.body() != null) {
                     adapter.submitList(response.body()!!.data)
                 } else {
-                    Toast.makeText(this@CommentsActivity, "Failed to load comments", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@CommentsActivity, "Không thể tải bình luận", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@CommentsActivity, "Network error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@CommentsActivity, "Lỗi mạng", Toast.LENGTH_SHORT).show()
             } finally {
                 binding.swipeRefresh.isRefreshing = false
             }
@@ -86,7 +86,7 @@ class CommentsActivity : AppCompatActivity() {
             try {
                 val token = authPreferences.getToken()
                 if (token.isNullOrEmpty()) {
-                    Toast.makeText(this@CommentsActivity, "Not logged in", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@CommentsActivity, "Bạn chưa đăng nhập", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
 
@@ -101,10 +101,10 @@ class CommentsActivity : AppCompatActivity() {
                     binding.etComment.setText("")
                     loadComments()
                 } else {
-                    Toast.makeText(this@CommentsActivity, "Failed to send", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@CommentsActivity, "Không thể gửi", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@CommentsActivity, "Network error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@CommentsActivity, "Lỗi mạng", Toast.LENGTH_SHORT).show()
             } finally {
                 binding.btnSend.isEnabled = true
                 binding.swipeRefresh.isRefreshing = false
@@ -117,3 +117,4 @@ class CommentsActivity : AppCompatActivity() {
         imm.hideSoftInputFromWindow(binding.etComment.windowToken, 0)
     }
 }
+

@@ -23,6 +23,12 @@ data class User(
     
     @SerializedName("bio")
     val bio: String?,
+
+    @SerializedName("role")
+    val role: String? = "user",
+
+    @SerializedName("accountStatus")
+    val accountStatus: String? = "active",
     
     @SerializedName("followerCount")
     val followerCount: Int = 0,

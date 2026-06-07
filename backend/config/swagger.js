@@ -47,6 +47,14 @@ const options = {
             bio: {
               type: 'string'
             },
+            role: {
+              type: 'string',
+              enum: ['user', 'admin']
+            },
+            accountStatus: {
+              type: 'string',
+              enum: ['active', 'locked']
+            },
             createdAt: {
               type: 'string',
               format: 'date-time'
@@ -81,7 +89,55 @@ const options = {
             item_id: { type: 'integer', format: 'int64' },
             note: { type: 'string' },
             rating: { type: 'integer', minimum: 1, maximum: 5 },
-            added_at: { type: 'string', format: 'date-time' }
+            added_at: { type: 'string', format: 'date-time' },
+            moderation_status: {
+              type: 'string',
+              enum: ['active', 'locked']
+            }
+          }
+        },
+        ReportCreateRequest: {
+          type: 'object',
+          required: ['targetType', 'targetId', 'reasonCode'],
+          properties: {
+            targetType: {
+              type: 'string',
+              enum: ['user', 'collection_item']
+            },
+            targetId: {
+              type: 'integer'
+            },
+            reasonCode: {
+              type: 'string',
+              example: 'spam'
+            },
+            reasonDetail: {
+              type: 'string',
+              nullable: true
+            }
+          }
+        },
+        ReportStatusUpdateRequest: {
+          type: 'object',
+          required: ['status'],
+          properties: {
+            status: {
+              type: 'string',
+              enum: ['reviewed', 'dismissed', 'actioned']
+            },
+            resolutionNote: {
+              type: 'string',
+              nullable: true
+            }
+          }
+        },
+        ModerationReasonRequest: {
+          type: 'object',
+          properties: {
+            reason: {
+              type: 'string',
+              nullable: true
+            }
           }
         },
         Tag: {

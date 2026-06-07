@@ -22,7 +22,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
+            android:contentDescription="Quay lại"
             android:src="@drawable/ic_back" />
 
         <de.hdodenhof.circleimageview.CircleImageView
@@ -40,7 +40,7 @@
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
-            android:text="Messages"
+            android:text="Tin nhắn"
             android:textColor="@color/text_primary"
             android:textSize="17sp"
             android:textStyle="bold" />
@@ -78,7 +78,7 @@
             android:layout_height="40dp"
             android:layout_weight="1"
             android:background="@drawable/bg_rounded_outline"
-            android:hint="Type a message..."
+            android:hint="Nhập tin nhắn..."
             android:imeOptions="actionSend"
             android:inputType="textCapSentences|textMultiLine"
             android:maxLines="4"
@@ -93,7 +93,7 @@
             android:layout_height="42dp"
             android:layout_marginStart="8dp"
             android:background="@drawable/bg_rounded_primary"
-            android:contentDescription="Send"
+            android:contentDescription="Gửi"
             android:padding="10dp"
             android:src="@drawable/ic_arrow_right"
             app:tint="@color/white" />

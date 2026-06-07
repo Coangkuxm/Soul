@@ -33,7 +33,7 @@
             android:layout_marginStart="10dp"
             android:layout_weight="1"
             android:background="@android:color/transparent"
-            android:hint="Add or search friends"
+            android:hint="Thêm hoặc tìm kiếm bạn bè"
             android:imeOptions="actionSearch"
             android:inputType="text"
             android:maxLines="1"
@@ -82,7 +82,7 @@
         android:id="@+id/tvEmpty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No users found"
+        android:text="Không tìm thấy người dùng"
         android:textColor="@color/text_secondary"
         android:textSize="15sp"
         android:visibility="gone"
@@ -92,3 +92,4 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+

@@ -5,83 +5,73 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.soul.databinding.ActivityLoginBinding
 import com.example.soul.ui.main.MainTabsActivity
 import com.example.soul.utils.Resource
+import com.example.soul.utils.SessionManager
 
-/**
- * Login Activity - handles user authentication
- * Uses MVVM pattern with LoginViewModel
- */
 class LoginActivity : AppCompatActivity() {
-    
+
     private lateinit var binding: ActivityLoginBinding
-    
+
     private val viewModel: LoginViewModel by viewModels {
         LoginViewModelFactory(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Check if already logged in
+
         if (viewModel.isLoggedIn()) {
             navigateToMain()
             return
         }
-        
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupClickListeners()
         observeViewModel()
+        showLogoutReasonIfNeeded()
     }
 
-    /**
-     * Setup click listeners for UI elements
-     */
     private fun setupClickListeners() {
-        // Login button click
         binding.btnLogin.setOnClickListener {
             val email = binding.etEmail.text.toString().trim()
             val password = binding.etPassword.text.toString().trim()
             viewModel.login(email, password)
         }
 
-        // Forgot password click
         binding.tvForgotPassword.setOnClickListener {
             showToast("Tính năng quên mật khẩu sẽ được cập nhật sau")
         }
 
-        // Social login buttons
         binding.btnGoogle.setOnClickListener {
-            showToast("Đăng nhập bằng Google sẽ được cập nhật sau")
+            showToast("Đăng nhập Google sẽ được cập nhật sau")
         }
 
         binding.btnFacebook.setOnClickListener {
-            showToast("Đăng nhập bằng Facebook sẽ được cập nhật sau")
+            showToast("Đăng nhập Facebook sẽ được cập nhật sau")
         }
 
         binding.btnApple.setOnClickListener {
-            showToast("Đăng nhập bằng Apple sẽ được cập nhật sau")
+            showToast("Đăng nhập Apple sẽ được cập nhật sau")
+        }
+
+        binding.tvSignUp.setOnClickListener {
+            startActivity(Intent(this, RegisterActivity::class.java))
         }
     }
 
-    /**
-     * Observe ViewModel LiveData
-     */
     private fun observeViewModel() {
-        // Observe login state
         viewModel.loginState.observe(this) { state ->
             when (state) {
-                is Resource.Loading -> {
-                    // Loading handled by isLoading LiveData
-                }
+                is Resource.Loading -> Unit
                 is Resource.Success -> {
                     val user = state.data?.user
                     val displayName = user?.displayName ?: user?.username ?: "User"
-                    showToast("Đăng nhập thành công! Xin chào $displayName")
+                    showToast("Đăng nhập thành công. Xin chào $displayName")
                     navigateToMain()
                 }
                 is Resource.Error -> {
@@ -89,25 +79,20 @@ class LoginActivity : AppCompatActivity() {
                 }
             }
         }
-        
-        // Observe loading state
+
         viewModel.isLoading.observe(this) { isLoading ->
             showLoading(isLoading)
         }
-        
-        // Observe validation errors
+
         viewModel.emailError.observe(this) { error ->
             binding.tilEmail.error = error
         }
-        
+
         viewModel.passwordError.observe(this) { error ->
             binding.tilPassword.error = error
         }
     }
-    
-    /**
-     * Show/hide loading state
-     */
+
     private fun showLoading(isLoading: Boolean) {
         binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         binding.btnLogin.isEnabled = !isLoading
@@ -116,16 +101,30 @@ class LoginActivity : AppCompatActivity() {
         binding.btnGoogle.isEnabled = !isLoading
         binding.btnFacebook.isEnabled = !isLoading
         binding.btnApple.isEnabled = !isLoading
+        binding.tvSignUp.isEnabled = !isLoading
     }
 
-    /**
-     * Navigate to Main screen
-     */
     private fun navigateToMain() {
         val intent = Intent(this, MainTabsActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
+    }
+
+    private fun showLogoutReasonIfNeeded() {
+        when (intent.getStringExtra(SessionManager.EXTRA_LOGOUT_REASON)) {
+            SessionManager.REASON_ACCOUNT_LOCKED -> {
+                AlertDialog.Builder(this)
+                    .setTitle("Tài khoản đã bị khóa")
+                    .setMessage("Phiên đăng nhập đã bị hủy vì tài khoản của bạn hiện đang bị khóa.")
+                    .setPositiveButton("Đã hiểu", null)
+                    .show()
+            }
+            SessionManager.REASON_UNAUTHORIZED -> {
+                showToast("Phiên đăng nhập đã hết hạn")
+            }
+        }
+        intent.removeExtra(SessionManager.EXTRA_LOGOUT_REASON)
     }
 
     private fun showToast(message: String) {

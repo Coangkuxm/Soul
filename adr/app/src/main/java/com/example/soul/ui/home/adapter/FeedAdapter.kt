@@ -24,7 +24,8 @@ class FeedAdapter(
     private val onUserClick: (Int) -> Unit,
     private val onLikeClick: (FeedItem, Boolean) -> Unit, // itemId, isLike (true=like, false=unlike)
     private val onPlayClick: (FeedItem) -> Unit,
-    private val onCommentClick: (FeedItem) -> Unit
+    private val onCommentClick: (FeedItem) -> Unit,
+    private val onReportClick: (FeedItem, View) -> Unit
 ) : ListAdapter<FeedItem, FeedAdapter.FeedViewHolder>(FeedDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FeedViewHolder {
@@ -46,7 +47,7 @@ class FeedAdapter(
             binding.apply {
                 // User activity text: "Username đang nghe một bài hát mới"
                 val displayName = feedItem.user.displayName ?: feedItem.user.username
-                val activityText = feedItem.activityText ?: "đã thêm một item mới"
+                val activityText = feedItem.activityText ?: "đã thêm một mục mới"
                 val fullText = "$displayName $activityText"
                 
                 // Make username bold
@@ -129,6 +130,10 @@ class FeedAdapter(
                     onCommentClick(feedItem)
                 }
 
+                btnMore.setOnClickListener {
+                    onReportClick(feedItem, it)
+                }
+
                 // Click listeners
                 root.setOnClickListener { onItemClick(feedItem) }
                 ivAvatar.setOnClickListener { onUserClick(feedItem.user.id) }
@@ -180,7 +185,7 @@ class FeedAdapter(
                     days > 0 -> "${days}d"
                     hours > 0 -> "${hours}h"
                     minutes > 0 -> "${minutes}m"
-                    else -> "now"
+                    else -> "vừa xong"
                 }
             } catch (e: Exception) {
                 ""

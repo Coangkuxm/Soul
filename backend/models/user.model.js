@@ -4,11 +4,13 @@ const { query } = require('../config/db-connection');
 const userModel = {
   // Đếm tổng số người dùng (có thể lọc theo tìm kiếm)
   async countUsers(search = '') {
-    let queryText = 'SELECT COUNT(*) FROM users';
+    let queryText = `SELECT COUNT(*)
+                     FROM users
+                     WHERE COALESCE(account_status, 'active') = 'active'`;
     const queryParams = [];
     
     if (search) {
-      queryText += ' WHERE username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1';
+      queryText += ' AND (username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1)';
       queryParams.push(`%${search}%`);
     }
     
@@ -25,10 +27,13 @@ const userModel = {
         display_name as "displayName", 
         avatar_url as "avatarUrl", 
         bio, 
+        role,
+        account_status as "accountStatus",
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM users 
-      WHERE id = $1`,
+      WHERE id = $1
+        AND COALESCE(account_status, 'active') = 'active'`,
       [id]
     );
     return result.rows[0];
@@ -50,7 +55,8 @@ const userModel = {
         username, email, password, display_name, avatar_url, bio
       ) VALUES ($1, $2, $3, $4, $5, $6) 
       RETURNING id, username, email, display_name as "displayName", 
-                avatar_url as "avatarUrl", bio, created_at as "createdAt"`,
+                avatar_url as "avatarUrl", bio, role,
+                account_status as "accountStatus", created_at as "createdAt"`,
       [username, email, password, displayName, avatarUrl, bio]
     );
     return result.rows[0];
@@ -66,7 +72,8 @@ const userModel = {
            updated_at = NOW()
        WHERE id = $4
        RETURNING id, username, email, display_name as "displayName", 
-                 avatar_url as "avatarUrl", bio, updated_at as "updatedAt"`,
+                 avatar_url as "avatarUrl", bio, role,
+                 account_status as "accountStatus", updated_at as "updatedAt"`,
       [displayName, avatarUrl, bio, id]
     );
     return result.rows[0];
@@ -92,6 +99,8 @@ const userModel = {
         display_name as "displayName", 
         avatar_url as "avatarUrl", 
         bio, 
+        role,
+        account_status as "accountStatus",
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM users
@@ -100,8 +109,11 @@ const userModel = {
     const queryParams = [];
     
     if (search) {
-      queryText += ' WHERE username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1';
+      queryText += ` WHERE COALESCE(account_status, 'active') = 'active'
+                     AND (username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1)`;
       queryParams.push(`%${search}%`);
+    } else {
+      queryText += ` WHERE COALESCE(account_status, 'active') = 'active'`;
     }
     
     queryText += ` ORDER BY created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
@@ -163,7 +175,8 @@ const userModel = {
         u.avatar_url as "avatarUrl"
        FROM user_follows uf
        JOIN users u ON uf.follower_id = u.id
-       WHERE uf.following_id = $1`,
+       WHERE uf.following_id = $1
+         AND COALESCE(u.account_status, 'active') = 'active'`,
       [userId]
     );
     return result.rows;
@@ -177,7 +190,8 @@ const userModel = {
         u.avatar_url as "avatarUrl"
        FROM user_follows uf
        JOIN users u ON uf.following_id = u.id
-       WHERE uf.follower_id = $1`,
+       WHERE uf.follower_id = $1
+         AND COALESCE(u.account_status, 'active') = 'active'`,
       [userId]
     );
     return result.rows;

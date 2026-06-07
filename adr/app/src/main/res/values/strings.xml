@@ -1,39 +1,39 @@
-<resources>
+﻿<resources>
     <!-- App Name -->
     <string name="app_name">Soul</string>
-    <string name="app_logo">App Logo</string>
-    
+    <string name="app_logo">Logo ứng dụng</string>
+
     <!-- Login Screen -->
-    <string name="welcome_back">Welcome back</string>
-    <string name="sign_in_to_continue">Sign in to continue to Soul</string>
+    <string name="welcome_back">Chào mừng bạn quay lại</string>
+    <string name="sign_in_to_continue">Đăng nhập để tiếp tục với Soul</string>
     <string name="email">Email</string>
-    <string name="password">Password</string>
-    <string name="forgot_password">Forgot password?</string>
-    <string name="sign_in">Sign In</string>
-    <string name="or_continue_with">or continue with</string>
-    <string name="dont_have_account">Don\'t have an account? <b>Sign up</b></string>
-    
+    <string name="password">Mật khẩu</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+    <string name="sign_in">Đăng nhập</string>
+    <string name="or_continue_with">hoặc tiếp tục với</string>
+    <string name="dont_have_account">Chưa có tài khoản? <b>Đăng ký</b></string>
+
     <!-- Validation Messages -->
-    <string name="error_field_required">This field is required</string>
-    <string name="error_invalid_email">Please enter a valid email address</string>
-    <string name="error_short_password">Password must be at least 6 characters</string>
-    
+    <string name="error_field_required">Trường này là bắt buộc</string>
+    <string name="error_invalid_email">Vui lòng nhập email hợp lệ</string>
+    <string name="error_short_password">Mật khẩu phải có ít nhất 6 ký tự</string>
+
     <!-- API Messages -->
-    <string name="error_network">Network error. Please check your connection</string>
-    <string name="error_server">Server error. Please try again later</string>
-    <string name="error_invalid_credentials">Invalid email or password</string>
-    
+    <string name="error_network">Lỗi mạng. Vui lòng kiểm tra kết nối</string>
+    <string name="error_server">Lỗi máy chủ. Vui lòng thử lại sau</string>
+    <string name="error_invalid_credentials">Email hoặc mật khẩu không đúng</string>
+
     <!-- Social Login -->
-    <string name="sign_in_with_google">Sign in with Google</string>
-    <string name="sign_in_with_facebook">Sign in with Facebook</string>
-    <string name="sign_in_with_apple">Sign in with Apple</string>
-    
+    <string name="sign_in_with_google">Đăng nhập với Google</string>
+    <string name="sign_in_with_facebook">Đăng nhập với Facebook</string>
+    <string name="sign_in_with_apple">Đăng nhập với Apple</string>
+
     <!-- Main Screen -->
-    <string name="logout">Logout</string>
-    <string name="welcome_user">Welcome!</string>
-    <string name="loading_user_info">Loading user info...</string>
-    <string name="test_connection">Test Server Connection</string>
-    <string name="test_connection_hint">Press button to test connection to server</string>
-    <string name="login_success">Login successful!</string>
-    <string name="login_failed">Login failed</string>
+    <string name="logout">Đăng xuất</string>
+    <string name="welcome_user">Xin chào!</string>
+    <string name="loading_user_info">Đang tải thông tin người dùng...</string>
+    <string name="test_connection">Kiểm tra kết nối máy chủ</string>
+    <string name="test_connection_hint">Nhấn nút để kiểm tra kết nối đến máy chủ</string>
+    <string name="login_success">Đăng nhập thành công!</string>
+    <string name="login_failed">Đăng nhập thất bại</string>
 </resources>

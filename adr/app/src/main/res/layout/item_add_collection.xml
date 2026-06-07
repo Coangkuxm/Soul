@@ -34,7 +34,7 @@
             android:layout_width="wrap_content"
             android:layout_height="40dp"
             android:backgroundTint="@color/primary"
-            android:text="+ Add"
+            android:text="+ Thêm"
             android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="14sp"
@@ -47,3 +47,4 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.google.android.material.card.MaterialCardView>
+

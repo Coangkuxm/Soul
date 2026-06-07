@@ -16,10 +16,12 @@ import com.example.soul.R
 import com.example.soul.data.model.Collection
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.databinding.ActivityHomeBinding
+import com.example.soul.ui.auth.ChangePasswordActivity
 import com.example.soul.ui.collection.CollectionItemsActivity
 import com.example.soul.ui.auth.LoginActivity
 import com.example.soul.ui.home.HomeViewModel
 import com.example.soul.ui.home.HomeViewModelFactory
+import com.example.soul.ui.admin.AdminReportsActivity
 import com.example.soul.ui.main.adapter.CollectionAdapter
 import com.example.soul.utils.Resource
 
@@ -135,7 +137,7 @@ class ProfileFragment : Fragment() {
     private fun setupListeners() {
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
         binding.btnEdit.setOnClickListener {
-            Toast.makeText(requireContext(), "Edit profile coming soon", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Tính năng chỉnh sửa hồ sơ sẽ có sớm", Toast.LENGTH_SHORT).show()
         }
         binding.btnShare.setOnClickListener { shareProfile() }
         binding.btnSettings.setOnClickListener { showSettingsMenu(it) }
@@ -149,7 +151,7 @@ class ProfileFragment : Fragment() {
     }
 
     private fun onAddCollectionClicked() {
-        Toast.makeText(requireContext(), "Add collection coming soon", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), "Tính năng thêm bộ sưu tập sẽ có sớm", Toast.LENGTH_SHORT).show()
     }
 
     private fun showCollectionMenu(collection: Collection, anchor: View) {
@@ -158,11 +160,11 @@ class ProfileFragment : Fragment() {
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.action_edit -> {
-                        Toast.makeText(requireContext(), "Edit ${collection.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Chỉnh sửa ${collection.name}", Toast.LENGTH_SHORT).show()
                         true
                     }
                     R.id.action_delete -> {
-                        Toast.makeText(requireContext(), "Delete ${collection.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Xóa ${collection.name}", Toast.LENGTH_SHORT).show()
                         true
                     }
                     R.id.action_share -> {
@@ -179,27 +181,43 @@ class ProfileFragment : Fragment() {
     private fun shareProfile() {
         startActivity(Intent.createChooser(Intent().apply {
             action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, "Check out my profile: ${binding.tvProfileLink.text}")
+            putExtra(Intent.EXTRA_TEXT, "Xem hồ sơ của tôi: ${binding.tvProfileLink.text}")
             type = "text/plain"
-        }, "Share profile"))
+        }, "Chia sẻ hồ sơ"))
     }
 
     private fun shareCollection(collection: Collection) {
         startActivity(Intent.createChooser(Intent().apply {
             action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, "Check out my ${collection.name} collection!")
+            putExtra(Intent.EXTRA_TEXT, "Xem bộ sưu tập ${collection.name} của tôi!")
             type = "text/plain"
-        }, "Share collection"))
+        }, "Chia sẻ bộ sưu tập"))
     }
 
     private fun showSettingsMenu(anchor: View) {
         PopupMenu(requireContext(), anchor).apply {
-            menu.add("Logout")
+            val prefs = AuthPreferences(requireContext())
+            menu.add("Đổi mật khẩu")
+            if (prefs.getUser()?.role == "admin") {
+                menu.add("Quản trị báo cáo")
+            }
+            menu.add("Đăng xuất")
             setOnMenuItemClickListener { item ->
-                if (item.title == "Logout") {
-                    performLogout()
-                    true
-                } else false
+                when (item.title) {
+                    "Đổi mật khẩu" -> {
+                        startActivity(Intent(requireContext(), ChangePasswordActivity::class.java))
+                        true
+                    }
+                    "Quản trị báo cáo" -> {
+                        startActivity(Intent(requireContext(), AdminReportsActivity::class.java))
+                        true
+                    }
+                    "Đăng xuất" -> {
+                        performLogout()
+                        true
+                    }
+                    else -> false
+                }
             }
             show()
         }

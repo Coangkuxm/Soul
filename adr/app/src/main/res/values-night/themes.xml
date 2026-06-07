@@ -15,6 +15,7 @@
         <!-- Status bar -->
         <item name="android:statusBarColor">@color/primary</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
         <!-- Text colors - Force dark text on light background -->
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>

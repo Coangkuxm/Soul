@@ -22,6 +22,7 @@ const socialRoutes = require('./routes/social.routes');
 const tmdbRoutes = require('./routes/tmdb.routes');
 const uploadRoutes = require('./routes/upload.routes');
 const chatRoutes = require('./routes/chat.routes');
+const reportsRoutes = require('./routes/reports.routes');
 const { initSocket } = require('./socket');
 // Import middlewares
 const { errorHandler } = require('./middlewares/errorHandler');
@@ -128,6 +129,7 @@ app.use('/api/items', itemsRoutes);
 app.use('/api/tmdb', tmdbRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/reports', reportsRoutes);
 
 const io = initSocket(server);
 app.locals.io = io;

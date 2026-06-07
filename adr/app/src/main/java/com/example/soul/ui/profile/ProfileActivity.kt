@@ -14,11 +14,13 @@ import com.example.soul.R
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.Collection
 import com.example.soul.databinding.ActivityHomeBinding
+import com.example.soul.ui.auth.ChangePasswordActivity
 import com.example.soul.ui.collection.CollectionItemsActivity
 import com.example.soul.ui.auth.LoginActivity
 import com.example.soul.ui.home.FeedActivity
 import com.example.soul.ui.home.HomeViewModel
 import com.example.soul.ui.home.HomeViewModelFactory
+import com.example.soul.ui.admin.AdminReportsActivity
 import com.example.soul.ui.main.adapter.CollectionAdapter
 import com.example.soul.utils.Resource
 
@@ -161,7 +163,7 @@ class ProfileActivity : AppCompatActivity() {
 
         // Edit profile button
         binding.btnEdit.setOnClickListener {
-            Toast.makeText(this, "Edit profile coming soon", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Tính năng chỉnh sửa hồ sơ sẽ có sớm", Toast.LENGTH_SHORT).show()
         }
 
         // Share button
@@ -182,14 +184,14 @@ class ProfileActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_explore -> {
-                    Toast.makeText(this, "Explore coming soon", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Tính năng khám phá sẽ có sớm", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_notification -> {
                     true
                 }
                 R.id.nav_library -> {
-                    Toast.makeText(this, "Library coming soon", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Tính năng thư viện sẽ có sớm", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_profile -> {
@@ -211,7 +213,7 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun onAddCollectionClicked() {
-        Toast.makeText(this, "Add collection coming soon", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Tính năng thêm bộ sưu tập sẽ có sớm", Toast.LENGTH_SHORT).show()
         // TODO: Navigate to add collection screen
     }
 
@@ -221,11 +223,11 @@ class ProfileActivity : AppCompatActivity() {
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.action_edit -> {
-                        Toast.makeText(this@ProfileActivity, "Edit ${collection.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@ProfileActivity, "Chỉnh sửa ${collection.name}", Toast.LENGTH_SHORT).show()
                         true
                     }
                     R.id.action_delete -> {
-                        Toast.makeText(this@ProfileActivity, "Delete ${collection.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@ProfileActivity, "Xóa ${collection.name}", Toast.LENGTH_SHORT).show()
                         true
                     }
                     R.id.action_share -> {
@@ -242,27 +244,39 @@ class ProfileActivity : AppCompatActivity() {
     private fun shareProfile() {
         val shareIntent = Intent().apply {
             action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, "Check out my profile: ${binding.tvProfileLink.text}")
+            putExtra(Intent.EXTRA_TEXT, "Xem hồ sơ của tôi: ${binding.tvProfileLink.text}")
             type = "text/plain"
         }
-        startActivity(Intent.createChooser(shareIntent, "Share profile"))
+        startActivity(Intent.createChooser(shareIntent, "Chia sẻ hồ sơ"))
     }
 
     private fun shareCollection(collection: Collection) {
         val shareIntent = Intent().apply {
             action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, "Check out my ${collection.name} collection!")
+            putExtra(Intent.EXTRA_TEXT, "Xem bộ sưu tập ${collection.name} của tôi!")
             type = "text/plain"
         }
-        startActivity(Intent.createChooser(shareIntent, "Share collection"))
+        startActivity(Intent.createChooser(shareIntent, "Chia sẻ bộ sưu tập"))
     }
 
     private fun showSettingsMenu(anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("Logout")
+            menu.add("Đổi mật khẩu")
+            if (authPreferences.getUser()?.role == "admin") {
+                menu.add("Quản trị báo cáo")
+            }
+            menu.add("Đăng xuất")
             setOnMenuItemClickListener { item ->
                 when (item.title) {
-                    "Logout" -> {
+                    "Đổi mật khẩu" -> {
+                        startActivity(Intent(this@ProfileActivity, ChangePasswordActivity::class.java))
+                        true
+                    }
+                    "Quản trị báo cáo" -> {
+                        startActivity(Intent(this@ProfileActivity, AdminReportsActivity::class.java))
+                        true
+                    }
+                    "Đăng xuất" -> {
                         logout()
                         true
                     }

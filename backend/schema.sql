@@ -19,8 +19,13 @@ CREATE TABLE "collection_items" (
 	"note" text,
 	"rating" integer,
 	"added_at" timestamp with time zone DEFAULT now(),
+	"moderation_status" varchar(20) NOT NULL DEFAULT 'active',
+	"locked_at" timestamp with time zone,
+	"locked_reason" text,
+	"locked_by" integer,
 	CONSTRAINT "collection_items_collection_id_item_id_key" UNIQUE("collection_id","item_id"),
-	CONSTRAINT "collection_items_rating_check" CHECK (CHECK (((rating >= 1) AND (rating <= 5))))
+	CONSTRAINT "collection_items_rating_check" CHECK (CHECK (((rating >= 1) AND (rating <= 5)))),
+	CONSTRAINT "collection_items_moderation_status_check" CHECK (CHECK (((moderation_status)::text = ANY ((ARRAY['active'::character varying, 'locked'::character varying])::text[]))))
 );
 CREATE TABLE "collection_tags" (
 	"collection_id" integer,
@@ -84,6 +89,22 @@ CREATE TABLE "notifications" (
 	"created_at" timestamp with time zone DEFAULT now(),
 	CONSTRAINT "notifications_notification_type_check" CHECK (CHECK (((notification_type)::text = ANY ((ARRAY['like'::character varying, 'comment'::character varying, 'follow'::character varying, 'mention'::character varying])::text[]))))
 );
+CREATE TABLE "reports" (
+	"id" serial PRIMARY KEY,
+	"reporter_id" integer NOT NULL,
+	"target_type" varchar(30) NOT NULL,
+	"target_id" integer NOT NULL,
+	"reason_code" varchar(30) NOT NULL,
+	"reason_detail" text,
+	"status" varchar(20) NOT NULL DEFAULT 'pending',
+	"reviewed_by" integer,
+	"reviewed_at" timestamp with time zone,
+	"resolution_note" text,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "reports_target_type_check" CHECK (CHECK (((target_type)::text = ANY ((ARRAY['user'::character varying, 'collection_item'::character varying])::text[])))),
+	CONSTRAINT "reports_status_check" CHECK (CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'reviewed'::character varying, 'dismissed'::character varying, 'actioned'::character varying])::text[]))))
+);
 CREATE TABLE "tags" (
 	"id" serial PRIMARY KEY,
 	"name" varchar(50) NOT NULL CONSTRAINT "tags_name_key" UNIQUE
@@ -103,8 +124,15 @@ CREATE TABLE "users" (
 	"display_name" varchar(100),
 	"avatar_url" text,
 	"bio" text,
+	"role" varchar(20) NOT NULL DEFAULT 'user',
+	"account_status" varchar(20) NOT NULL DEFAULT 'active',
+	"locked_at" timestamp with time zone,
+	"locked_reason" text,
+	"locked_by" integer,
 	"created_at" timestamp with time zone DEFAULT now(),
-	"updated_at" timestamp with time zone DEFAULT now()
+	"updated_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "users_role_check" CHECK (CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'admin'::character varying])::text[])))),
+	CONSTRAINT "users_account_status_check" CHECK (CHECK (((account_status)::text = ANY ((ARRAY['active'::character varying, 'locked'::character varying])::text[]))))
 );
 ALTER TABLE "activities" ADD CONSTRAINT "activities_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "collections"("id") ON DELETE SET NULL;
 ALTER TABLE "activities" ADD CONSTRAINT "activities_comment_id_fkey" FOREIGN KEY ("comment_id") REFERENCES "comments"("id") ON DELETE SET NULL;
@@ -113,6 +141,7 @@ ALTER TABLE "activities" ADD CONSTRAINT "activities_target_user_id_fkey" FOREIGN
 ALTER TABLE "activities" ADD CONSTRAINT "activities_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
 ALTER TABLE "collection_items" ADD CONSTRAINT "collection_items_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "collections"("id") ON DELETE CASCADE;
 ALTER TABLE "collection_items" ADD CONSTRAINT "collection_items_item_id_fkey" FOREIGN KEY ("item_id") REFERENCES "items"("id") ON DELETE CASCADE;
+ALTER TABLE "collection_items" ADD CONSTRAINT "collection_items_locked_by_fkey" FOREIGN KEY ("locked_by") REFERENCES "users"("id") ON DELETE SET NULL;
 ALTER TABLE "collection_tags" ADD CONSTRAINT "collection_tags_collection_id_fkey" FOREIGN KEY ("collection_id") REFERENCES "collections"("id") ON DELETE CASCADE;
 ALTER TABLE "collection_tags" ADD CONSTRAINT "collection_tags_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE;
 ALTER TABLE "collections" ADD CONSTRAINT "collections_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "users"("id") ON DELETE CASCADE;
@@ -122,10 +151,14 @@ ALTER TABLE "items" ADD CONSTRAINT "items_created_by_fkey" FOREIGN KEY ("created
 ALTER TABLE "likes" ADD CONSTRAINT "likes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE;
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "users"("id") ON DELETE CASCADE;
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "reports" ADD CONSTRAINT "reports_reporter_id_fkey" FOREIGN KEY ("reporter_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "reports" ADD CONSTRAINT "reports_reviewed_by_fkey" FOREIGN KEY ("reviewed_by") REFERENCES "users"("id") ON DELETE SET NULL;
 ALTER TABLE "user_follows" ADD CONSTRAINT "user_follows_follower_id_fkey" FOREIGN KEY ("follower_id") REFERENCES "users"("id") ON DELETE CASCADE;
 ALTER TABLE "user_follows" ADD CONSTRAINT "user_follows_following_id_fkey" FOREIGN KEY ("following_id") REFERENCES "users"("id") ON DELETE CASCADE;
+ALTER TABLE "users" ADD CONSTRAINT "users_locked_by_fkey" FOREIGN KEY ("locked_by") REFERENCES "users"("id") ON DELETE SET NULL;
 CREATE UNIQUE INDEX "activities_pkey" ON "activities" ("id");
 CREATE INDEX "idx_activities_user" ON "activities" ("user_id","created_at");
+CREATE INDEX "idx_collection_items_moderation_status" ON "collection_items" ("moderation_status");
 CREATE UNIQUE INDEX "collection_items_collection_id_item_id_key" ON "collection_items" ("collection_id","item_id");
 CREATE UNIQUE INDEX "collection_items_pkey" ON "collection_items" ("id");
 CREATE UNIQUE INDEX "collection_tags_pkey" ON "collection_tags" ("collection_id","tag_id");
@@ -143,9 +176,15 @@ CREATE UNIQUE INDEX "likes_pkey" ON "likes" ("id");
 CREATE UNIQUE INDEX "likes_user_id_target_id_target_type_key" ON "likes" ("user_id","target_id","target_type");
 CREATE INDEX "idx_notifications_recipient" ON "notifications" ("recipient_id","is_read","created_at");
 CREATE UNIQUE INDEX "notifications_pkey" ON "notifications" ("id");
+CREATE UNIQUE INDEX "reports_pkey" ON "reports" ("id");
+CREATE INDEX "idx_reports_target" ON "reports" ("target_type","target_id");
+CREATE INDEX "idx_reports_status_created_at" ON "reports" ("status","created_at" DESC);
+CREATE INDEX "idx_reports_reporter_created_at" ON "reports" ("reporter_id","created_at" DESC);
+CREATE UNIQUE INDEX "idx_reports_one_pending_per_reporter_target" ON "reports" ("reporter_id","target_type","target_id") WHERE ((status)::text = 'pending'::text);
 CREATE UNIQUE INDEX "tags_name_key" ON "tags" ("name");
 CREATE UNIQUE INDEX "tags_pkey" ON "tags" ("id");
 CREATE UNIQUE INDEX "user_follows_pkey" ON "user_follows" ("follower_id","following_id");
+CREATE INDEX "idx_users_account_status" ON "users" ("account_status");
 CREATE UNIQUE INDEX "users_email_key" ON "users" ("email");
 CREATE UNIQUE INDEX "users_pkey" ON "users" ("id");
 CREATE UNIQUE INDEX "users_username_key" ON "users" ("username");

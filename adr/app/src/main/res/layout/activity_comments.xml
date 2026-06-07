@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:layout_weight="1"
-            android:text="Comments"
+            android:text="Bình luận"
             android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -72,7 +72,7 @@
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
-            android:hint="Write a comment..."
+            android:hint="Viết bình luận..."
             android:paddingHorizontal="12dp"
             android:background="@drawable/bg_rounded_outline"
             android:textColor="@color/text_primary"
@@ -83,9 +83,10 @@
             android:layout_width="wrap_content"
             android:layout_height="40dp"
             android:layout_marginStart="8dp"
-            android:text="Send"
+            android:text="Gửi"
             app:backgroundTint="@color/primary"
             android:textColor="@color/white" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+

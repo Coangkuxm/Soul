@@ -1,7 +1,9 @@
 package com.example.soul.data.remote
 
 import android.util.Log
+import com.example.soul.SoulApplication
 import com.google.gson.GsonBuilder
+import com.example.soul.utils.SessionManager
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -44,6 +46,23 @@ object RetrofitClient {
                 response.close()
                 Thread.sleep(2000) // Wait 2s before retry
                 response = chain.proceed(request)
+            }
+
+            val hasAuthHeader = !request.header("Authorization").isNullOrBlank()
+            if (hasAuthHeader && response.code == 401) {
+                Log.w(TAG, "Unauthorized response detected, forcing re-login")
+                SessionManager.handleUnauthorized(SoulApplication.app)
+            } else if (hasAuthHeader && response.code == 403) {
+                val errorBody = response.peekBody(Long.MAX_VALUE).string()
+                if (errorBody.contains("bị khóa", ignoreCase = true) ||
+                    errorBody.contains("account locked", ignoreCase = true)
+                ) {
+                    Log.w(TAG, "Locked account response detected, forcing logout")
+                    SessionManager.handleUnauthorized(
+                        SoulApplication.app,
+                        SessionManager.REASON_ACCOUNT_LOCKED
+                    )
+                }
             }
             
             response

@@ -12,7 +12,7 @@
         android:paddingHorizontal="16dp"
         android:paddingTop="16dp"
         android:paddingBottom="8dp"
-        android:text="Notifications"
+        android:text="Thông báo"
         android:textColor="@color/text_primary"
         android:textSize="24sp"
         android:textStyle="bold"
@@ -51,7 +51,7 @@
         android:id="@+id/tvEmpty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No notifications yet"
+        android:text="Chưa có thông báo nào"
         android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:visibility="gone"
@@ -61,4 +61,5 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
 

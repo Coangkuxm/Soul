@@ -8,6 +8,8 @@ import com.example.soul.data.model.ChatConversationsResponse
 import com.example.soul.data.model.ChatCreateConversationResponse
 import com.example.soul.data.model.ChatMessagesResponse
 import com.example.soul.data.model.ChatReadConversationResponse
+import com.example.soul.data.model.AdminReportedPostsResponse
+import com.example.soul.data.model.AdminReportedUsersResponse
 import com.example.soul.data.model.FeedResponse
 import com.example.soul.data.model.HealthResponse
 import com.example.soul.data.model.NotificationsResponse
@@ -16,6 +18,9 @@ import com.example.soul.data.model.SpotifySearchResponse
 import com.example.soul.data.model.TMDBSearchResponse
 import com.example.soul.data.model.auth.LoginRequest
 import com.example.soul.data.model.auth.LoginResponse
+import com.example.soul.data.model.auth.RegisterRequest
+import com.example.soul.data.model.auth.ChangePasswordRequest
+import com.example.soul.data.model.auth.SimpleResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import com.google.gson.JsonObject
@@ -47,6 +52,15 @@ interface ApiService {
      */
     @POST("/api/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+    @POST("/api/auth/register")
+    suspend fun register(@Body request: RegisterRequest): Response<LoginResponse>
+
+    @POST("/api/account/change-password")
+    suspend fun changePassword(
+        @Header("Authorization") token: String,
+        @Body request: ChangePasswordRequest
+    ): Response<SimpleResponse>
     
     /**
      * Get current user profile
@@ -189,6 +203,50 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("id") conversationId: Int
     ): Response<ChatReadConversationResponse>
+
+    @POST("/api/reports")
+    suspend fun createReport(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any?>>
+
+    @GET("/api/reports/posts")
+    suspend fun getReportedPosts(
+        @Header("Authorization") token: String,
+        @Query("status") status: String = "pending"
+    ): Response<AdminReportedPostsResponse>
+
+    @GET("/api/reports/users")
+    suspend fun getReportedUsers(
+        @Header("Authorization") token: String,
+        @Query("status") status: String = "pending"
+    ): Response<AdminReportedUsersResponse>
+
+    @retrofit2.http.PATCH("/api/reports/posts/{id}/lock")
+    suspend fun lockReportedPost(
+        @Header("Authorization") token: String,
+        @Path("id") collectionItemId: Int,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any?>>
+
+    @retrofit2.http.PATCH("/api/reports/posts/{id}/unlock")
+    suspend fun unlockReportedPost(
+        @Header("Authorization") token: String,
+        @Path("id") collectionItemId: Int
+    ): Response<Map<String, Any?>>
+
+    @retrofit2.http.PATCH("/api/reports/users/{id}/lock")
+    suspend fun lockReportedUser(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any?>>
+
+    @retrofit2.http.PATCH("/api/reports/users/{id}/unlock")
+    suspend fun unlockReportedUser(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int
+    ): Response<Map<String, Any?>>
 
     /**
      * Like an item

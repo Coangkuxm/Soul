@@ -26,7 +26,7 @@
             android:textColor="@color/text_primary"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:text="User" />
+            android:text="Người dùng" />
 
         <TextView
             android:id="@+id/tvContent"
@@ -35,7 +35,8 @@
             android:layout_marginTop="2dp"
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
-            android:text="Comment content" />
+            android:text="Nội dung bình luận" />
     </LinearLayout>
 
 </LinearLayout>
+

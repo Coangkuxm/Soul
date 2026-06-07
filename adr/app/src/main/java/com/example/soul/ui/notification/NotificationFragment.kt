@@ -63,14 +63,14 @@ class NotificationFragment : Fragment() {
                     limit = 50
                 )
                 if (!response.isSuccessful || response.body() == null) {
-                    showError("Unable to load notifications")
+                    showError("Không thể tải thông báo")
                     return@launch
                 }
                 items = response.body()!!.data.toMutableList()
                 adapter.submitList(items.toList())
                 binding.tvEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
             } catch (e: Exception) {
-                showError(e.message ?: "Network error")
+                showError(e.message ?: "Lỗi mạng")
             } finally {
                 binding.progressBar.visibility = View.GONE
                 binding.swipeRefresh.isRefreshing = false
@@ -108,14 +108,14 @@ class NotificationFragment : Fragment() {
                     startActivity(Intent(requireContext(), CommentsActivity::class.java).apply {
                         putExtra(CommentsActivity.EXTRA_TARGET_TYPE, item.targetType)
                         putExtra(CommentsActivity.EXTRA_TARGET_ID, item.targetId)
-                        putExtra(CommentsActivity.EXTRA_TITLE, "Comments")
+                        putExtra(CommentsActivity.EXTRA_TITLE, "Bình luận")
                     })
                 } else {
-                    Toast.makeText(requireContext(), "This notification detail is not supported yet", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Thông báo này chưa hỗ trợ mở chi tiết", Toast.LENGTH_SHORT).show()
                 }
             }
             else -> {
-                Toast.makeText(requireContext(), "This notification detail is not supported yet", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Thông báo này chưa hỗ trợ mở chi tiết", Toast.LENGTH_SHORT).show()
             }
         }
     }

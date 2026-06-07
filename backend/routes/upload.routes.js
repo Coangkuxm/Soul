@@ -42,7 +42,7 @@ const upload = multer({
  *       content:
  *         multipart/form-data:
  *           schema:
- *             type: object
+ *             type: object  
  *             required:
  *               - image
  *             properties:

@@ -35,7 +35,7 @@
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
-            android:text="Everyone"
+            android:text="Mọi người"
             android:textColor="@color/text_primary"
             android:textSize="14sp"
             app:icon="@drawable/ic_people"
@@ -56,7 +56,7 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_add"
-            android:contentDescription="Add"
+            android:contentDescription="Thêm"
             app:tint="@color/text_primary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -107,7 +107,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="No items in feed yet"
+            android:text="Chưa có mục nào trong bảng tin"
             android:textColor="@color/text_secondary"
             android:textSize="16sp"/>
 
@@ -115,7 +115,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Follow people to see their collections"
+            android:text="Hãy theo dõi người khác để xem bộ sưu tập của họ"
             android:textColor="@color/text_hint"
             android:textSize="14sp"/>
     </LinearLayout>
@@ -191,3 +191,4 @@
         app:layout_constraintBottom_toBottomOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+

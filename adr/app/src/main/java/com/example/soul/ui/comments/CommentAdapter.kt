@@ -1,4 +1,4 @@
-package com.example.soul.ui.comments
+﻿package com.example.soul.ui.comments
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -27,7 +27,7 @@ class CommentAdapter : ListAdapter<Comment, CommentAdapter.CommentViewHolder>(Di
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(comment: Comment) {
-            binding.tvUsername.text = comment.username ?: "User"
+            binding.tvUsername.text = comment.username ?: "Người dùng"
             binding.tvContent.text = comment.content
 
             val avatarUrl = comment.avatarUrl
@@ -54,3 +54,4 @@ class CommentAdapter : ListAdapter<Comment, CommentAdapter.CommentViewHolder>(Di
         }
     }
 }
+

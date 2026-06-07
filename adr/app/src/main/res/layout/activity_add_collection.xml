@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout 
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -8,7 +8,6 @@
     android:background="@color/background"
     tools:context=".ui.add.AddCollectionActivity">
 
-    <!-- AppBar -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,8 +18,8 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_close"
-            app:title="Tạo Collection"
-            app:titleTextColor="@color/text_primary"/>
+            app:title="Tạo bộ sưu tập"
+            app:titleTextColor="@color/text_primary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -35,7 +34,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Cover Image -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardCover"
                 android:layout_width="match_parent"
@@ -53,21 +51,21 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:scaleType="centerCrop"
-                        android:src="@drawable/bg_placeholder_cover"/>
+                        android:src="@drawable/bg_placeholder_cover" />
 
                     <LinearLayout
                         android:id="@+id/ivCameraIcon"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:orientation="vertical"
-                        android:gravity="center">
+                        android:gravity="center"
+                        android:orientation="vertical">
 
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
                             android:src="@drawable/ic_camera"
-                            app:tint="@color/white"/>
+                            app:tint="@color/white" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -75,19 +73,18 @@
                             android:layout_marginTop="8dp"
                             android:text="Thêm ảnh bìa"
                             android:textColor="@color/white"
-                            android:textSize="14sp"/>
+                            android:textSize="14sp" />
                     </LinearLayout>
                 </FrameLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Collection Name -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilName"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="Tên Collection *"
+                android:hint="Tên bộ sưu tập *"
                 app:counterEnabled="true"
                 app:counterMaxLength="100">
 
@@ -96,10 +93,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
-                    android:maxLength="100"/>
+                    android:maxLength="100" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Description -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilDescription"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -114,26 +110,25 @@
                     android:id="@+id/etDescription"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="top"
                     android:inputType="textMultiLine"
                     android:maxLength="500"
-                    android:minLines="3"
-                    android:gravity="top"/>
+                    android:minLines="3" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Privacy Switch -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="@color/card_background"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:cardBackgroundColor="@color/card_background">
+                app:cardElevation="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
                     android:gravity="center_vertical"
+                    android:orientation="horizontal"
                     android:padding="16dp">
 
                     <ImageView
@@ -141,65 +136,63 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_public"
-                        app:tint="@color/text_secondary"/>
+                        app:tint="@color/text_secondary" />
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:layout_marginHorizontal="16dp"
+                        android:layout_weight="1"
                         android:orientation="vertical">
 
                         <TextView
                             android:id="@+id/tvPrivacyTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Collection công khai"
-                            android:textSize="16sp"
-                            android:textColor="@color/text_primary"/>
+                            android:text="Bộ sưu tập công khai"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp" />
 
                         <TextView
                             android:id="@+id/tvPrivacyDesc"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Mọi người có thể xem collection này"
-                            android:textSize="13sp"
-                            android:textColor="@color/text_secondary"/>
+                            android:text="Mọi người có thể xem bộ sưu tập này"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
                     </LinearLayout>
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/switchPrivate"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Create Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCreate"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Tạo Collection"
+                android:text="Tạo bộ sưu tập"
                 android:textSize="16sp"
-                app:cornerRadius="12dp"/>
+                app:cornerRadius="12dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Loading Overlay -->
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#80000000"
-        android:visibility="gone"
         android:clickable="true"
-        android:focusable="true">
+        android:focusable="true"
+        android:visibility="gone">
 
         <ProgressBar
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center" />
     </FrameLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

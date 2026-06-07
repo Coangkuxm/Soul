@@ -1,4 +1,4 @@
-package com.example.soul.ui.explore
+﻿package com.example.soul.ui.explore
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -69,7 +69,7 @@ class ExploreUserAdapter(
                 context.getColor(R.color.white)
             }
 
-            binding.btnFollow.text = if (isFollowing) "Following" else "+ Follow"
+            binding.btnFollow.text = if (isFollowing) "Đang theo dõi" else "+ Theo dõi"
 
             if (!animate) {
                 binding.btnFollow.backgroundTintList = ColorStateList.valueOf(endBg)
@@ -114,3 +114,4 @@ class ExploreUserAdapter(
         }
     }
 }
+

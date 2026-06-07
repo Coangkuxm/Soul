@@ -1,4 +1,4 @@
-package com.example.soul.ui.home
+﻿package com.example.soul.ui.home
 
 import android.content.Intent
 import android.os.Bundle
@@ -28,6 +28,7 @@ import com.example.soul.ui.add.AddOptionsBottomSheet
 import com.example.soul.ui.comments.CommentsActivity
 import com.example.soul.ui.home.adapter.FeedAdapter
 import com.example.soul.ui.main.MainTabsActivity
+import com.example.soul.ui.profile.UserProfileActivity
 import com.example.soul.utils.Resource
 import kotlinx.coroutines.launch
 
@@ -97,7 +98,8 @@ class FeedFragment : Fragment() {
             onUserClick = { onUserClicked(it) },
             onLikeClick = { feedItem, isLiked -> handleLikeClick(feedItem, isLiked) },
             onPlayClick = { handlePlayClick(it) },
-            onCommentClick = { openComments(it) }
+            onCommentClick = { openComments(it) },
+            onReportClick = { feedItem, anchor -> showFeedItemMenu(feedItem, anchor) }
         )
         binding.rvFeed.apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -187,8 +189,8 @@ class FeedFragment : Fragment() {
 
     private fun showFilterMenu(anchor: View) {
         PopupMenu(requireContext(), anchor).apply {
-            menu.add("Everyone")
-            menu.add("Friends Only")
+            menu.add("Mọi người")
+            menu.add("Chỉ bạn bè")
             setOnMenuItemClickListener {
                 binding.btnFilter.text = it.title
                 viewModel.refresh()
@@ -219,7 +221,69 @@ class FeedFragment : Fragment() {
     }
 
     private fun onUserClicked(userId: Int) {
-        Toast.makeText(requireContext(), "Opening user profile", Toast.LENGTH_SHORT).show()
+        startActivity(Intent(requireContext(), UserProfileActivity::class.java).apply {
+            putExtra(UserProfileActivity.EXTRA_USER_ID, userId)
+        })
+    }
+
+    private fun showFeedItemMenu(feedItem: FeedItem, anchor: View) {
+        PopupMenu(requireContext(), anchor).apply {
+            menu.add("Báo cáo bài viết")
+            setOnMenuItemClickListener {
+                showReportDialog("collection_item", feedItem.id, "Báo cáo bài viết")
+                true
+            }
+            show()
+        }
+    }
+
+    private fun showReportDialog(targetType: String, targetId: Int, title: String) {
+        val reasonCodes = listOf(
+            "spam" to "Spam",
+            "harassment" to "Quấy rối",
+            "hate_speech" to "Ngôn từ thù ghét",
+            "nudity" to "Nội dung nhạy cảm",
+            "misleading" to "Thông tin sai lệch",
+            "other" to "Lý do khác"
+        )
+        val labels = reasonCodes.map { it.second }.toTypedArray()
+
+        AlertDialog.Builder(requireContext())
+            .setTitle(title)
+            .setItems(labels) { _, which ->
+                submitReport(targetType, targetId, reasonCodes[which].first, reasonCodes[which].second)
+            }
+            .setNegativeButton("Hủy", null)
+            .show()
+    }
+
+    private fun submitReport(targetType: String, targetId: Int, reasonCode: String, reasonLabel: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val token = "Bearer ${authPreferences.getToken().orEmpty()}"
+                val response = RetrofitClient.apiService.createReport(
+                    token = token,
+                    body = mapOf(
+                        "targetType" to targetType,
+                        "targetId" to targetId,
+                        "reasonCode" to reasonCode,
+                        "reasonDetail" to reasonLabel
+                    )
+                )
+
+                if (response.isSuccessful) {
+                    Toast.makeText(requireContext(), "Đã gửi báo cáo", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        response.errorBody()?.string() ?: "Không thể gửi báo cáo",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), e.message ?: "Không thể gửi báo cáo", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private var pendingSpotifyUrlForPreview: String? = null
@@ -289,14 +353,14 @@ class FeedFragment : Fragment() {
 
     private fun promptOpenSpotifyOrNotify(spotifyUrl: String?) {
         if (spotifyUrl.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Khong co nguon phat", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Không có nguồn phát", Toast.LENGTH_SHORT).show()
             return
         }
         AlertDialog.Builder(requireContext())
-            .setTitle("Het preview")
-            .setMessage("Ban muon mo Spotify de nghe ca bai khong?")
-            .setPositiveButton("Mo Spotify") { _, _ -> openSpotify(spotifyUrl) }
-            .setNegativeButton("Huy", null)
+            .setTitle("Hết đoạn xem trước")
+            .setMessage("Bạn muốn mở Spotify để nghe cả bài không?")
+            .setPositiveButton("Mở Spotify") { _, _ -> openSpotify(spotifyUrl) }
+            .setNegativeButton("Hủy", null)
             .show()
     }
 
@@ -309,13 +373,13 @@ class FeedFragment : Fragment() {
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(spotifyUrl)))
             } catch (_: Exception) {
-                Toast.makeText(requireContext(), "Khong the mo Spotify", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Không thể mở Spotify", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun startMiniPlayer() {
-        val title = currentPreviewTitle ?: "Preview"
+        val title = currentPreviewTitle ?: "Xem trước"
         val artist = currentPreviewArtist
         binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title • $artist" else title
         val coverUrl = currentPreviewCoverUrl
@@ -360,7 +424,7 @@ class FeedFragment : Fragment() {
             } catch (_: Exception) {
                 feedItem.isLiked = !isLiked
                 feedAdapter.notifyDataSetChanged()
-                Toast.makeText(requireContext(), "Failed to update like", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Không thể cập nhật lượt thích", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -372,3 +436,4 @@ class FeedFragment : Fragment() {
         super.onDestroyView()
     }
 }
+

@@ -39,6 +39,8 @@ class SocialController {
         LEFT JOIN user_follows uf ON uf.following_id = u.id AND uf.follower_id = $1
         LEFT JOIN likes l ON l.target_id = i.id AND l.target_type = 'item' AND l.user_id = $1
         WHERE c.is_private = false
+          AND COALESCE(u.account_status, 'active') = 'active'
+          AND COALESCE(ci.moderation_status, 'active') = 'active'
         ORDER BY 
           CASE WHEN uf.follower_id IS NOT NULL THEN 0 ELSE 1 END,
           RANDOM()
@@ -348,7 +350,9 @@ class SocialController {
         `SELECT c.*, u.username, u.avatar_url 
         FROM comments c
         JOIN users u ON c.user_id = u.id
-        WHERE c.target_id = $1 AND c.target_type = $2
+        WHERE c.target_id = $1
+          AND c.target_type = $2
+          AND COALESCE(u.account_status, 'active') = 'active'
         ORDER BY c.created_at DESC
         LIMIT $3 OFFSET $4`,
         [targetId, targetType, limit, offset]
@@ -356,7 +360,12 @@ class SocialController {
 
       // Get total count for pagination
       const countResult = await db.query(
-        'SELECT COUNT(*) FROM comments WHERE target_id = $1 AND target_type = $2',
+        `SELECT COUNT(*)
+         FROM comments c
+         JOIN users u ON c.user_id = u.id
+         WHERE c.target_id = $1
+           AND c.target_type = $2
+           AND COALESCE(u.account_status, 'active') = 'active'`,
         [targetId, targetType]
       );
 
@@ -469,6 +478,7 @@ class SocialController {
         FROM notifications n
         JOIN users u ON n.sender_id = u.id
         WHERE n.recipient_id = $1
+          AND COALESCE(u.account_status, 'active') = 'active'
       `;
 
       const params = [userId];
@@ -491,7 +501,12 @@ class SocialController {
       const result = await db.query(query, params);
 
       // Get total count for pagination
-      let countQuery = 'SELECT COUNT(*) FROM notifications WHERE recipient_id = $1';
+      let countQuery = `
+        SELECT COUNT(*)
+        FROM notifications n
+        JOIN users u ON u.id = n.sender_id
+        WHERE n.recipient_id = $1
+          AND COALESCE(u.account_status, 'active') = 'active'`;
       const countParams = [userId];
       
       if (unreadOnly === 'true') {

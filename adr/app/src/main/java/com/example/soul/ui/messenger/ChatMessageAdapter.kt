@@ -60,7 +60,7 @@ class ChatMessageAdapter(
             binding.tvContent.text = item.content
             binding.tvSender.text = item.senderDisplayName?.takeIf { it.isNotBlank() }
                 ?: item.senderUsername
-                ?: "User"
+                ?: "Người dùng"
             binding.tvTime.text = RelativeTime.format(item.createdAt)
 
             Glide.with(binding.ivAvatar.context)

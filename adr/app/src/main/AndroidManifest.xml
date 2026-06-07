@@ -71,6 +71,16 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.auth.RegisterActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.auth.ChangePasswordActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Add Collection Activity -->
         <activity
             android:name=".ui.add.AddCollectionActivity"
@@ -99,6 +109,11 @@
 
         <activity
             android:name=".ui.profile.UserProfileActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.admin.AdminReportsActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 

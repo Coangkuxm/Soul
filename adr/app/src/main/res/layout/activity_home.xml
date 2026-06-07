@@ -91,7 +91,7 @@
                             android:layout_height="40dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:src="@drawable/ic_edit"
-                            android:contentDescription="Edit"
+                            android:contentDescription="Chỉnh sửa"
                             app:tint="@color/text_secondary"/>
 
                         <ImageButton
@@ -100,7 +100,7 @@
                             android:layout_height="40dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:src="@drawable/ic_share"
-                            android:contentDescription="Share"
+                            android:contentDescription="Chia sẻ"
                             app:tint="@color/text_secondary"/>
 
                         <ImageButton
@@ -109,7 +109,7 @@
                             android:layout_height="40dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:src="@drawable/ic_settings"
-                            android:contentDescription="Settings"
+                            android:contentDescription="Cài đặt"
                             app:tint="@color/text_secondary"/>
                     </LinearLayout>
 
@@ -179,7 +179,7 @@
         android:layout_marginBottom="80dp"
         android:layout_marginEnd="16dp"
         android:src="@drawable/ic_add"
-        android:contentDescription="Add"
+        android:contentDescription="Thêm"
         app:backgroundTint="@color/primary"
         app:tint="@color/white"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
@@ -199,4 +199,5 @@
         tools:layout_editor_absoluteX="0dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
 

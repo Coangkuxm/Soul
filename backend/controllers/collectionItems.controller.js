@@ -146,7 +146,8 @@ const collectionItemsController = {
       }
 
       // Xây dựng điều kiện WHERE dựa trên type
-      let whereClause = 'WHERE ci.collection_id = $1';
+      let whereClause = `WHERE ci.collection_id = $1
+        AND COALESCE(ci.moderation_status, 'active') = 'active'`;
       const queryParams = [collection_id];
       let paramIndex = 2;
 

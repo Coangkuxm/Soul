@@ -2,8 +2,11 @@ package com.example.soul.data.repository
 
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.User
+import com.example.soul.data.model.auth.ChangePasswordRequest
 import com.example.soul.data.model.auth.LoginRequest
 import com.example.soul.data.model.auth.LoginResponse
+import com.example.soul.data.model.auth.RegisterRequest
+import com.example.soul.data.model.auth.SimpleResponse
 import com.example.soul.data.remote.ApiService
 import com.example.soul.utils.Resource
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +61,78 @@ class AuthRepository(
                 Resource.Error("❌ Không tìm thấy server.\nKiểm tra kết nối mạng của bạn.")
             } catch (e: Exception) {
                 Resource.Error("❌ Lỗi: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun register(
+        username: String,
+        email: String,
+        password: String,
+        displayName: String?
+    ): Resource<LoginResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = RegisterRequest(
+                    username = username,
+                    email = email,
+                    password = password,
+                    displayName = displayName?.takeIf { it.isNotBlank() }
+                )
+                val response = apiService.register(request)
+                if (response.isSuccessful) {
+                    val registerResponse = response.body()
+                    if (registerResponse?.success == true && registerResponse.token != null && registerResponse.user != null) {
+                        authPreferences.saveLoginSession(registerResponse.token, registerResponse.user)
+                        Resource.Success(registerResponse)
+                    } else {
+                        val message = registerResponse?.message ?: registerResponse?.error ?: "Register failed"
+                        
+                        Resource.Error(message)
+                    }
+                } else {
+                    val message = when (response.code()) {
+                        400 -> "Dữ liệu đăng ký không hợp lệ"
+                        409 -> "Email hoặc tên đăng nhập đã tồn tại"
+                        429 -> "Quá nhiều yêu cầu. Vui lòng thử lại sau."
+                        else -> "Đăng ký thất bại: ${response.code()}"
+                    }
+                    Resource.Error(message)
+                }
+            } catch (e: Exception) {
+                Resource.Error(e.message ?: "Đăng ký thất bại")
+            }
+        }
+    }
+
+    suspend fun changePassword(currentPassword: String, newPassword: String): Resource<SimpleResponse> {
+        return withContext(Dispatchers.IO) {
+            val token = authPreferences.getToken()
+            if (token.isNullOrEmpty()) {
+                return@withContext Resource.Error("Bạn chưa đăng nhập")
+            }
+            try {
+                val response = apiService.changePassword(
+                    token = "Bearer $token",
+                    request = ChangePasswordRequest(currentPassword, newPassword)
+                )
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true) {
+                        Resource.Success(body)
+                    } else {
+                        Resource.Error(body?.error ?: body?.message ?: "Change password failed")
+                    }
+                } else {
+                    val message = when (response.code()) {
+                        400 -> "Yêu cầu không hợp lệ"
+                        401 -> "Mật khẩu hiện tại không đúng"
+                        else -> "Đổi mật khẩu thất bại: ${response.code()}"
+                    }
+                    Resource.Error(message)
+                }
+            } catch (e: Exception) {
+                Resource.Error(e.message ?: "Đổi mật khẩu thất bại")
             }
         }
     }

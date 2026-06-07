@@ -35,11 +35,11 @@ class NotificationAdapter(
 
         fun bind(item: NotificationItem) {
             binding.root.setOnClickListener { onClick(item) }
-            binding.tvTitle.text = "${item.senderUsername ?: "User"} ${typeText(item.notificationType)}"
+            binding.tvTitle.text = "${item.senderUsername ?: "Người dùng"} ${typeText(item.notificationType)}"
             binding.tvSubtitle.text = when (item.targetType) {
-                "collection" -> "Collection #${item.targetId}"
-                "item" -> "Item #${item.targetId}"
-                "user" -> "User #${item.targetId}"
+                "collection" -> "Bộ sưu tập #${item.targetId}"
+                "item" -> "Mục #${item.targetId}"
+                "user" -> "Người dùng #${item.targetId}"
                 else -> item.targetType
             }
             binding.tvTime.text = RelativeTime.format(item.createdAt)
@@ -54,11 +54,11 @@ class NotificationAdapter(
 
         private fun typeText(type: String): String {
             return when (type) {
-                "follow" -> "started following you"
-                "like" -> "liked your content"
-                "comment" -> "commented on your content"
-                "mention" -> "mentioned you"
-                else -> "sent a notification"
+                "follow" -> "đã theo dõi bạn"
+                "like" -> "đã thích nội dung của bạn"
+                "comment" -> "đã bình luận về nội dung của bạn"
+                "mention" -> "đã nhắc đến bạn"
+                else -> "đã gửi một thông báo"
             }
         }
     }
@@ -73,4 +73,3 @@ class NotificationAdapter(
         }
     }
 }
-

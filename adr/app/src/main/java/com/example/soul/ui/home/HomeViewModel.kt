@@ -1,4 +1,4 @@
-package com.example.soul.ui.home
+﻿package com.example.soul.ui.home
 
 import android.content.Context
 import android.util.Log
@@ -69,7 +69,7 @@ class HomeViewModel(
             try {
                 val token = authPreferences.getToken()
                 if (token.isNullOrEmpty()) {
-                    _profile.value = Resource.Error("Not logged in")
+                    _profile.value = Resource.Error("Bạn chưa đăng nhập")
                     return@launch
                 }
                 
@@ -86,28 +86,29 @@ class HomeViewModel(
                             email = userProfile.email,
                             avatarUrl = userProfile.avatarUrl,
                             profileUrl = "shelf.im/${userProfile.username}",
-                            bio = userProfile.bio
+                            bio = userProfile.bio,
+                            role = userProfile.role,
+                            accountStatus = userProfile.accountStatus
                         )
                         _profile.value = Resource.Success(profileData)
                     } else {
-                        _profile.value = Resource.Error("Failed to load profile")
+                        _profile.value = Resource.Error("Không thể tải hồ sơ")
                     }
-                } else if (response.code() == 401) {
-                    // Token expired
+                } else if (response.code() == 401 || response.code() == 403) {
                     _sessionExpired.value = true
                 } else {
                     _profile.value = Resource.Error(
-                        response.errorBody()?.string() ?: "Failed to load profile"
+                        response.errorBody()?.string() ?: "Không thể tải hồ sơ"
                     )
                 }
             } catch (e: SocketTimeoutException) {
-                _profile.value = Resource.Error("⏳ Server đang khởi động...")
+                _profile.value = Resource.Error("Server đang khởi động...")
             } catch (e: ConnectException) {
-                _profile.value = Resource.Error("❌ Không thể kết nối server")
+                _profile.value = Resource.Error("Không thể kết nối server")
             } catch (e: UnknownHostException) {
-                _profile.value = Resource.Error("❌ Kiểm tra kết nối mạng")
+                _profile.value = Resource.Error("Kiểm tra kết nối mạng")
             } catch (e: Exception) {
-                _profile.value = Resource.Error(e.message ?: "Network error occurred")
+                _profile.value = Resource.Error(e.message ?: "Đã xảy ra lỗi mạng")
             }
         }
     }
@@ -118,7 +119,7 @@ class HomeViewModel(
             try {
                 val token = authPreferences.getToken()
                 if (token.isNullOrEmpty()) {
-                    _feedItems.value = Resource.Error("Not logged in")
+                    _feedItems.value = Resource.Error("Bạn chưa đăng nhập")
                     _isRefreshing.value = false
                     return@launch
                 }
@@ -136,8 +137,7 @@ class HomeViewModel(
                         Log.d(TAG, "Feed item: ${item.item.title} by ${item.user.username}")
                     }
                     _feedItems.value = Resource.Success(feedData)
-                } else if (response.code() == 401) {
-                    // Token expired
+                } else if (response.code() == 401 || response.code() == 403) {
                     _sessionExpired.value = true
                 } else {
                     _feedItems.value = Resource.Error(
@@ -145,14 +145,14 @@ class HomeViewModel(
                     )
                 }
             } catch (e: SocketTimeoutException) {
-                _feedItems.value = Resource.Error("⏳ Server đang khởi động...")
+                _feedItems.value = Resource.Error("Server đang khởi động...")
             } catch (e: ConnectException) {
-                _feedItems.value = Resource.Error("❌ Không thể kết nối server")
+                _feedItems.value = Resource.Error("Không thể kết nối server")
             } catch (e: UnknownHostException) {
-                _feedItems.value = Resource.Error("❌ Kiểm tra kết nối mạng")
+                _feedItems.value = Resource.Error("Kiểm tra kết nối mạng")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading feed", e)
-                _feedItems.value = Resource.Error(e.message ?: "Network error occurred")
+                _feedItems.value = Resource.Error(e.message ?: "Đã xảy ra lỗi mạng")
             } finally {
                 _isRefreshing.value = false
             }
@@ -165,7 +165,7 @@ class HomeViewModel(
             try {
                 val token = authPreferences.getToken()
                 if (token.isNullOrEmpty()) {
-                    _collections.value = Resource.Error("Not logged in")
+                    _collections.value = Resource.Error("Bạn chưa đăng nhập")
                     _isRefreshing.value = false
                     return@launch
                 }
@@ -184,8 +184,7 @@ class HomeViewModel(
                         Log.d(TAG, "Collection: ${c.name}, cover: ${c.coverImageUrl}")
                     }
                     _collections.value = Resource.Success(collections)
-                } else if (response.code() == 401) {
-                    // Token expired
+                } else if (response.code() == 401 || response.code() == 403) {
                     _sessionExpired.value = true
                 } else {
                     _collections.value = Resource.Error(
@@ -193,13 +192,13 @@ class HomeViewModel(
                     )
                 }
             } catch (e: SocketTimeoutException) {
-                _collections.value = Resource.Error("⏳ Server đang khởi động...")
+                _collections.value = Resource.Error("Server đang khởi động...")
             } catch (e: ConnectException) {
-                _collections.value = Resource.Error("❌ Không thể kết nối server")
+                _collections.value = Resource.Error("Không thể kết nối server")
             } catch (e: UnknownHostException) {
-                _collections.value = Resource.Error("❌ Kiểm tra kết nối mạng")
+                _collections.value = Resource.Error("Kiểm tra kết nối mạng")
             } catch (e: Exception) {
-                _collections.value = Resource.Error(e.message ?: "Network error occurred")
+                _collections.value = Resource.Error(e.message ?: "Đã xảy ra lỗi mạng")
             } finally {
                 _isRefreshing.value = false
             }
@@ -218,9 +217,13 @@ class HomeViewModel(
             displayName = displayName,
             avatarUrl = avatarUrl,
             bio = bio,
+            role = role,
+            accountStatus = accountStatus,
             followerCount = followerCount,
             followingCount = followingCount,
             collectionCount = collectionCount
         )
     }
 }
+
+

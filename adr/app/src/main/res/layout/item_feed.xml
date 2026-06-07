@@ -48,7 +48,7 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp"
-                    tools:text="Hương Giang is listening to a new song"/>
+                    tools:text="Hương Giang đang nghe một bài hát mới"/>
 
             </LinearLayout>
 
@@ -60,6 +60,16 @@
                 android:textColor="@color/text_hint"
                 android:textSize="12sp"
                 tools:text="11h"/>
+
+            <ImageButton
+                android:id="@+id/btnMore"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Tùy chọn bài viết"
+                android:padding="6dp"
+                android:src="@drawable/ic_more" />
         </LinearLayout>
 
         <!-- Item Card -->
@@ -146,7 +156,7 @@
                     android:textSize="13sp"
                     android:drawablePadding="4dp"
                     android:visibility="gone"
-                    tools:text="▶ 1 play this week"
+                    tools:text="• 1 play this week"
                     tools:visibility="visible"/>
 
             </LinearLayout>

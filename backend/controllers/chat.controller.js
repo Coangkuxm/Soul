@@ -33,7 +33,10 @@ const createOrGetDirectConversation = async (req, res, next) => {
     }
 
     const userExists = await client.query(
-      'SELECT id FROM users WHERE id = $1',
+      `SELECT id
+       FROM users
+       WHERE id = $1
+         AND COALESCE(account_status, 'active') = 'active'`,
       [targetUserId]
     );
     if (userExists.rows.length === 0) {
@@ -102,7 +105,11 @@ const getConversations = async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     const countRs = await query(
-      'SELECT COUNT(*)::int AS total FROM conversation_members WHERE user_id = $1',
+      `SELECT COUNT(*)::int AS total
+       FROM conversation_members cm
+       JOIN users self ON self.id = cm.user_id
+       WHERE cm.user_id = $1
+         AND COALESCE(self.account_status, 'active') = 'active'`,
       [userId]
     );
     const total = countRs.rows[0]?.total || 0;
@@ -127,13 +134,14 @@ const getConversations = async (req, res, next) => {
        JOIN conversations c ON c.id = cm.conversation_id
        LEFT JOIN messages lm ON lm.id = c.last_message_id
        LEFT JOIN LATERAL (
-         SELECT u.id, u.username, u.display_name, u.avatar_url
-         FROM conversation_members cm2
-         JOIN users u ON u.id = cm2.user_id
-         WHERE cm2.conversation_id = c.id
-           AND cm2.user_id <> $1
-         LIMIT 1
-       ) other ON true
+          SELECT u.id, u.username, u.display_name, u.avatar_url
+          FROM conversation_members cm2
+          JOIN users u ON u.id = cm2.user_id
+          WHERE cm2.conversation_id = c.id
+            AND cm2.user_id <> $1
+            AND COALESCE(u.account_status, 'active') = 'active'
+          LIMIT 1
+        ) other ON true
        LEFT JOIN LATERAL (
          SELECT COUNT(*)::int AS unread_count
          FROM messages m
@@ -141,9 +149,10 @@ const getConversations = async (req, res, next) => {
            AND m.sender_id <> $1
            AND (cm.last_read_at IS NULL OR m.created_at > cm.last_read_at)
        ) unread ON true
-       WHERE cm.user_id = $1
-       ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
-       LIMIT $2 OFFSET $3`,
+        WHERE cm.user_id = $1
+          AND other.id IS NOT NULL
+        ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
+        LIMIT $2 OFFSET $3`,
       [userId, limit, offset]
     );
 
@@ -200,9 +209,10 @@ const getMessages = async (req, res, next) => {
          u.display_name AS sender_display_name,
          u.avatar_url AS sender_avatar_url
        FROM messages m
-       JOIN users u ON u.id = m.sender_id
-       WHERE m.conversation_id = $1
-       ORDER BY m.created_at DESC
+        JOIN users u ON u.id = m.sender_id
+        WHERE m.conversation_id = $1
+          AND COALESCE(u.account_status, 'active') = 'active'
+        ORDER BY m.created_at DESC
        LIMIT $2 OFFSET $3`,
       [conversationId, limit, offset]
     );
@@ -261,7 +271,8 @@ const sendMessage = async (req, res, next) => {
     const senderRs = await query(
       `SELECT username, display_name, avatar_url
        FROM users
-       WHERE id = $1`,
+       WHERE id = $1
+         AND COALESCE(account_status, 'active') = 'active'`,
       [userId]
     );
 
@@ -314,4 +325,3 @@ module.exports = {
   sendMessage,
   markConversationRead
 };
-

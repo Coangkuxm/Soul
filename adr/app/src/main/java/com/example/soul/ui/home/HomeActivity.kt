@@ -1,4 +1,4 @@
-package com.example.soul.ui.home
+﻿package com.example.soul.ui.home
 
 import android.content.Intent
 import android.os.Bundle
@@ -151,7 +151,7 @@ class HomeActivity : AppCompatActivity() {
 
         // Edit profile button
         binding.btnEdit.setOnClickListener {
-            Toast.makeText(this, "Edit profile coming soon", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Tính năng chỉnh sửa hồ sơ sẽ có sớm", Toast.LENGTH_SHORT).show()
         }
 
         // Share button
@@ -172,14 +172,14 @@ class HomeActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_explore -> {
-                    Toast.makeText(this, "Explore coming soon", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Tính năng khám phá sẽ có sớm", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_notification -> {
                     true
                 }
                 R.id.nav_library -> {
-                    Toast.makeText(this, "Library coming soon", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Tính năng thư viện sẽ có sớm", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_profile -> {
@@ -201,7 +201,7 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun onAddCollectionClicked() {
-        Toast.makeText(this, "Add collection coming soon", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Tính năng thêm bộ sưu tập sẽ có sớm", Toast.LENGTH_SHORT).show()
         // TODO: Navigate to add collection screen
     }
 
@@ -211,11 +211,11 @@ class HomeActivity : AppCompatActivity() {
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.action_edit -> {
-                        Toast.makeText(this@HomeActivity, "Edit ${collection.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@HomeActivity, "Chỉnh sửa ${collection.name}", Toast.LENGTH_SHORT).show()
                         true
                     }
                     R.id.action_delete -> {
-                        Toast.makeText(this@HomeActivity, "Delete ${collection.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@HomeActivity, "Xóa ${collection.name}", Toast.LENGTH_SHORT).show()
                         true
                     }
                     R.id.action_share -> {
@@ -235,7 +235,7 @@ class HomeActivity : AppCompatActivity() {
             putExtra(Intent.EXTRA_TEXT, "Check out my profile: ${binding.tvProfileLink.text}")
             type = "text/plain"
         }
-        startActivity(Intent.createChooser(shareIntent, "Share profile"))
+        startActivity(Intent.createChooser(shareIntent, "Chia sẻ hồ sơ"))
     }
 
     private fun shareCollection(collection: Collection) {
@@ -244,15 +244,15 @@ class HomeActivity : AppCompatActivity() {
             putExtra(Intent.EXTRA_TEXT, "Check out my ${collection.name} collection!")
             type = "text/plain"
         }
-        startActivity(Intent.createChooser(shareIntent, "Share collection"))
+        startActivity(Intent.createChooser(shareIntent, "Chia sẻ bộ sưu tập"))
     }
 
     private fun showSettingsMenu(anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("Logout")
+            menu.add("Đăng xuất")
             setOnMenuItemClickListener { item ->
                 when (item.title) {
-                    "Logout" -> {
+                    "Đăng xuất" -> {
                         logout()
                         true
                     }
@@ -273,6 +273,8 @@ class HomeActivity : AppCompatActivity() {
         finish()
     }
 }
+
+
 
 
 
