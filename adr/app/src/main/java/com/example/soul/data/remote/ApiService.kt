@@ -147,6 +147,7 @@ interface ApiService {
      */
     @GET("/api/social/comments/{targetType}/{targetId}")
     suspend fun getComments(
+        @Header("Authorization") token: String,
         @Path("targetType") targetType: String,
         @Path("targetId") targetId: Int,
         @Query("page") page: Int = 1,
@@ -161,6 +162,19 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body body: Map<String, @JvmSuppressWildcards Any?>
     ): Response<CreateCommentResponse>
+
+    @PUT("/api/social/comments/{id}")
+    suspend fun updateComment(
+        @Header("Authorization") token: String,
+        @Path("id") commentId: Int,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<CreateCommentResponse>
+
+    @HTTP(method = "DELETE", path = "/api/social/comments/{id}", hasBody = false)
+    suspend fun deleteComment(
+        @Header("Authorization") token: String,
+        @Path("id") commentId: Int
+    ): Response<Map<String, Any?>>
 
     @GET("/api/social/notifications")
     suspend fun getNotifications(

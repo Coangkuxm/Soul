@@ -257,17 +257,19 @@ class SocialController {
   // Create a comment
   async createComment(req, res, next) {
     try {
-      const { content, targetId, targetType } = req.body;
+      const { content, targetId, targetType, parentId } = req.body;
       const userId = req.user.id;
 
       // Validate target type
-      if (!['collection', 'item'].includes(targetType)) {
+      if (!['collection', 'item', 'collection_item'].includes(targetType)) {
         throw new BadRequestError('Invalid target type');
       }
 
+      const targetTable = getCommentTargetTable(targetType);
+
       // Check if target exists
       const targetExists = await db.query(
-        `SELECT id FROM ${targetType}s WHERE id = $1`,
+        `SELECT id FROM ${targetTable} WHERE id = $1`,
         [targetId]
       );
 
@@ -275,13 +277,35 @@ class SocialController {
         throw new NotFoundError(`${targetType} not found`);
       }
 
+      let normalizedParentId = null;
+      if (parentId) {
+        const parentCommentResult = await db.query(
+          `SELECT id, parent_id, target_id, target_type
+           FROM comments
+           WHERE id = $1`,
+          [parentId]
+        );
+
+        if (parentCommentResult.rows.length === 0) {
+          throw new NotFoundError('Parent comment not found');
+        }
+
+        const parentComment = parentCommentResult.rows[0];
+        if (parentComment.target_id !== targetId || parentComment.target_type !== targetType) {
+          throw new BadRequestError('Parent comment does not belong to this target');
+        }
+
+        // Flatten deep nesting to one visible reply level.
+        normalizedParentId = parentComment.parent_id || parentComment.id;
+      }
+
       // Create comment
       const result = await db.query(
         `INSERT INTO comments 
-        (user_id, content, target_id, target_type) 
-        VALUES ($1, $2, $3, $4) 
+        (user_id, content, target_id, target_type, parent_id) 
+        VALUES ($1, $2, $3, $4, $5) 
         RETURNING *`,
-        [userId, content, targetId, targetType]
+        [userId, content, targetId, targetType, normalizedParentId]
       );
 
       const comment = result.rows[0];
@@ -310,6 +334,15 @@ class SocialController {
           [targetId]
         );
         targetOwnerId = collection.rows[0]?.owner_id;
+      } else if (targetType === 'collection_item') {
+        const collectionItem = await db.query(
+          `SELECT c.owner_id
+           FROM collection_items ci
+           JOIN collections c ON c.id = ci.collection_id
+           WHERE ci.id = $1`,
+          [targetId]
+        );
+        targetOwnerId = collectionItem.rows[0]?.owner_id;
       } else {
         const item = await db.query(
           'SELECT created_by FROM items WHERE id = $1',
@@ -338,24 +371,35 @@ class SocialController {
     try {
       const { targetType, targetId } = req.params;
       const { page = 1, limit = 10 } = req.query;
+      const userId = req.user.id;
       const offset = (page - 1) * limit;
 
       // Validate target type
-      if (!['collection', 'item'].includes(targetType)) {
+      if (!['collection', 'item', 'collection_item'].includes(targetType)) {
         throw new BadRequestError('Invalid target type');
       }
 
       // Get comments with user info
       const result = await db.query(
-        `SELECT c.*, u.username, u.avatar_url 
+        `SELECT c.*,
+                u.username,
+                u.avatar_url,
+                CASE WHEN l.id IS NOT NULL THEN true ELSE false END AS is_liked
         FROM comments c
         JOIN users u ON c.user_id = u.id
+        LEFT JOIN likes l
+          ON l.target_id = c.id
+         AND l.target_type = 'comment'
+         AND l.user_id = $3
         WHERE c.target_id = $1
           AND c.target_type = $2
           AND COALESCE(u.account_status, 'active') = 'active'
-        ORDER BY c.created_at DESC
-        LIMIT $3 OFFSET $4`,
-        [targetId, targetType, limit, offset]
+        ORDER BY
+          COALESCE(c.parent_id, c.id) DESC,
+          CASE WHEN c.parent_id IS NULL THEN 0 ELSE 1 END,
+          c.created_at ASC
+        LIMIT $4 OFFSET $5`,
+        [targetId, targetType, userId, limit, offset]
       );
 
       // Get total count for pagination
@@ -570,6 +614,16 @@ function getActivityText(itemType) {
     'other': 'đã thêm một item mới'
   };
   return texts[itemType] || texts['other'];
+}
+
+function getCommentTargetTable(targetType) {
+  const tableMap = {
+    collection: 'collections',
+    item: 'items',
+    collection_item: 'collection_items'
+  };
+
+  return tableMap[targetType];
 }
 
 module.exports = new SocialController();

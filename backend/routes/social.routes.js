@@ -28,7 +28,7 @@ router.delete('/likes', authenticateToken, (req, res, next) =>
 router.post('/comments', authenticateToken, (req, res, next) => 
   socialController.createComment(req, res, next)
 );
-router.get('/comments/:targetType/:targetId', (req, res, next) => 
+router.get('/comments/:targetType/:targetId', authenticateToken, (req, res, next) => 
   socialController.getComments(req, res, next)
 );
 router.put('/comments/:id', authenticateToken, (req, res, next) => 

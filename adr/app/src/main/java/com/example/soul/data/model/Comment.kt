@@ -24,7 +24,9 @@ data class Comment(
     @SerializedName("username")
     val username: String?,
     @SerializedName("avatar_url")
-    val avatarUrl: String?
+    val avatarUrl: String?,
+    @SerializedName("is_liked")
+    val isLiked: Boolean = false
 )
 
 data class CommentsResponse(

@@ -1,4 +1,4 @@
-﻿package com.example.soul.ui.home
+package com.example.soul.ui.home
 
 import android.content.Intent
 import android.os.Bundle
@@ -24,6 +24,7 @@ import com.example.soul.ui.add.AddItemActivity
 import com.example.soul.ui.add.AddOptionsBottomSheet
 import com.example.soul.ui.auth.LoginActivity
 import com.example.soul.ui.home.adapter.FeedAdapter
+import com.example.soul.ui.messenger.SharePostActivity
 import com.example.soul.ui.profile.ProfileActivity
 import com.example.soul.ui.profile.UserProfileActivity
 import com.example.soul.audio.PreviewAudioPlayer
@@ -77,7 +78,7 @@ class FeedActivity : AppCompatActivity() {
             return
         }
 
-        // Hiển thị avatar sẵn từ cache nếu có
+        // Hi?n th? avatar s?n t? cache n?u c�
         setAvatarFromUrl(authPreferences.getUser()?.avatarUrl)
 
         setupUI()
@@ -92,7 +93,7 @@ class FeedActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Đảm bảo avatar/header cập nhật mỗi lần quay lại Home
+        // �?m b?o avatar/header c?p nh?t m?i l?n quay l?i Home
         viewModel.refreshProfileOnly()
     }
 
@@ -121,6 +122,9 @@ class FeedActivity : AppCompatActivity() {
             onCommentClick = { feedItem ->
                 openComments(feedItem)
             },
+            onShareClick = { feedItem ->
+                openSharePost(feedItem)
+            },
             onReportClick = { feedItem, anchor ->
                 showFeedItemMenu(feedItem, anchor)
             }
@@ -137,7 +141,7 @@ class FeedActivity : AppCompatActivity() {
         // Observe profile for header avatar
         viewModel.profile.observe(this) { resource ->
             when (resource) {
-                is Resource.Loading -> { /* giữ nguyên avatar hiện tại để tránh nhấp nháy */ }
+                is Resource.Loading -> { /* gi? nguy�n avatar hi?n t?i d? tr�nh nh?p nh�y */ }
                 is Resource.Success -> {
                     resource.data?.let { profile ->
                         setAvatarFromUrl(profile.avatarUrl)
@@ -188,7 +192,7 @@ class FeedActivity : AppCompatActivity() {
         // Observe session expired
         viewModel.sessionExpired.observe(this) { expired ->
             if (expired) {
-                Toast.makeText(this, "Phiên đăng nhập đã hết hạn", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Phi�n dang nh?p d� h?t h?n", Toast.LENGTH_SHORT).show()
                 logout()
             }
         }
@@ -223,14 +227,14 @@ class FeedActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_explore -> {
-                    Toast.makeText(this, "Tính năng khám phá sẽ có sớm", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "T�nh nang kh�m ph� s? c� s?m", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_notification -> {
                     true
                 }
                 R.id.nav_library -> {
-                    Toast.makeText(this, "Tính năng thư viện sẽ có sớm", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "T�nh nang thu vi?n s? c� s?m", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_profile -> {
@@ -240,11 +244,17 @@ class FeedActivity : AppCompatActivity() {
                 else -> false
             }
         }
-        binding.ivMiniPlayerPlay.setOnClickListener {
+        binding.btnMiniPlayerToggle.setOnClickListener {
             val url = currentPreviewUrl
             if (!url.isNullOrEmpty()) {
                 previewAudioPlayer.toggle(url)
             }
+        }
+        binding.btnMiniPlayerClose.setOnClickListener {
+            previewAudioPlayer.stop()
+            currentPreviewUrl = null
+            pendingSpotifyUrlForPreview = null
+            stopMiniPlayer()
         }
 
     }
@@ -269,8 +279,8 @@ class FeedActivity : AppCompatActivity() {
 
     private fun showFilterMenu(anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("Mọi người")
-            menu.add("Chỉ bạn bè")
+            menu.add("M?i ngu?i")
+            menu.add("Ch? b?n b�")
             setOnMenuItemClickListener { item ->
                 binding.btnFilter.text = item.title
                 // TODO: Filter feed based on selection
@@ -293,13 +303,40 @@ class FeedActivity : AppCompatActivity() {
         bottomSheet.show(supportFragmentManager, AddOptionsBottomSheet.TAG)
     }
 
-            private fun openComments(feedItem: FeedItem) {
+    private fun openComments(feedItem: FeedItem) {
+        val displayName = feedItem.user.displayName ?: feedItem.user.username
+        val subtitle = feedItem.item.metadata?.artist ?: feedItem.collection.name
         val intent = Intent(this, com.example.soul.ui.comments.CommentsActivity::class.java).apply {
-            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_TARGET_TYPE, "item")
-            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_TARGET_ID, feedItem.item.id)
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_TARGET_TYPE, "collection_item")
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_TARGET_ID, feedItem.id)
             putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_TITLE, feedItem.item.title)
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_POST_USER_NAME, displayName)
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_POST_USER_AVATAR, feedItem.user.avatarUrl)
+            putExtra(
+                com.example.soul.ui.comments.CommentsActivity.EXTRA_POST_NOTE,
+                feedItem.note ?: feedItem.item.description
+            )
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_POST_ITEM_TITLE, feedItem.item.title)
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_POST_ITEM_SUBTITLE, subtitle)
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_POST_ITEM_COVER, feedItem.item.coverImageUrl)
+            putExtra(com.example.soul.ui.comments.CommentsActivity.EXTRA_POST_ADDED_AT, feedItem.addedAt)
         }
         startActivity(intent)
+    }
+    private fun openSharePost(feedItem: FeedItem) {
+        val displayName = feedItem.user.displayName ?: feedItem.user.username
+        val subtitle = feedItem.item.metadata?.artist ?: feedItem.collection.name
+        startActivity(Intent(this, SharePostActivity::class.java).apply {
+            putExtra(SharePostActivity.EXTRA_COLLECTION_ITEM_ID, feedItem.id)
+            putExtra(SharePostActivity.EXTRA_ITEM_ID, feedItem.item.id)
+            putExtra(SharePostActivity.EXTRA_ITEM_TITLE, feedItem.item.title)
+            putExtra(SharePostActivity.EXTRA_ITEM_SUBTITLE, subtitle)
+            putExtra(SharePostActivity.EXTRA_POST_NOTE, feedItem.note ?: feedItem.item.description)
+            putExtra(SharePostActivity.EXTRA_COVER_URL, feedItem.item.coverImageUrl)
+            putExtra(SharePostActivity.EXTRA_POST_USER_NAME, displayName)
+            putExtra(SharePostActivity.EXTRA_POST_USER_AVATAR, feedItem.user.avatarUrl)
+            putExtra(SharePostActivity.EXTRA_POST_ADDED_AT, feedItem.addedAt)
+        })
     }
     private fun onUserClicked(userId: Int) {
         startActivity(Intent(this, UserProfileActivity::class.java).apply {
@@ -309,12 +346,12 @@ class FeedActivity : AppCompatActivity() {
 
     private fun showFeedItemMenu(feedItem: FeedItem, anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("Báo cáo bài viết")
+            menu.add("B�o c�o b�i vi?t")
             setOnMenuItemClickListener {
                 showReportDialog(
                     targetType = "collection_item",
                     targetId = feedItem.id,
-                    title = "Báo cáo bài viết"
+                    title = "B�o c�o b�i vi?t"
                 )
                 true
             }
@@ -325,11 +362,11 @@ class FeedActivity : AppCompatActivity() {
     private fun showReportDialog(targetType: String, targetId: Int, title: String) {
         val reasonCodes = listOf(
             "spam" to "Spam",
-            "harassment" to "Quấy rối",
-            "hate_speech" to "Ngôn từ thù ghét",
-            "nudity" to "Nội dung nhạy cảm",
-            "misleading" to "Thông tin sai lệch",
-            "other" to "Lý do khác"
+            "harassment" to "Qu?y r?i",
+            "hate_speech" to "Ng�n t? th� gh�t",
+            "nudity" to "N?i dung nh?y c?m",
+            "misleading" to "Th�ng tin sai l?ch",
+            "other" to "L� do kh�c"
         )
         val labels = reasonCodes.map { it.second }.toTypedArray()
 
@@ -338,7 +375,7 @@ class FeedActivity : AppCompatActivity() {
             .setItems(labels) { _, which ->
                 submitReport(targetType, targetId, reasonCodes[which].first, reasonCodes[which].second)
             }
-            .setNegativeButton("Hủy", null)
+            .setNegativeButton("H?y", null)
             .show()
     }
 
@@ -357,16 +394,16 @@ class FeedActivity : AppCompatActivity() {
                 )
 
                 if (response.isSuccessful) {
-                    Toast.makeText(this@FeedActivity, "Đã gửi báo cáo", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@FeedActivity, "�� g?i b�o c�o", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(
                         this@FeedActivity,
-                        response.errorBody()?.string() ?: "Không thể gửi báo cáo",
+                        response.errorBody()?.string() ?: "Kh�ng th? g?i b�o c�o",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@FeedActivity, e.message ?: "Không thể gửi báo cáo", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@FeedActivity, e.message ?: "Kh�ng th? g?i b�o c�o", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -377,13 +414,13 @@ class FeedActivity : AppCompatActivity() {
             val pos = previewAudioPlayer.getPositionMs()
             val dur = previewAudioPlayer.getDurationMs()
             if (dur > 0) {
-                binding.tvMiniPlayerTime.text = "${formatTime(pos)}/${formatTime(dur)}"
-            } else {
-                binding.tvMiniPlayerTime.text = "0:00/0:30"
-            }
-            binding.ivMiniPlayerPlay.setImageResource(
-                if (previewAudioPlayer.isPlaying()) R.drawable.ic_pause_circle else R.drawable.ic_play_circle
-            )
+            binding.tvMiniPlayerTime.text = "${formatTime(pos)}/${formatTime(dur)}"
+        } else {
+            binding.tvMiniPlayerTime.text = "0:00/0:30"
+        }
+        binding.ivMiniPlayerPlay.setImageResource(
+                if (previewAudioPlayer.isPlaying()) R.drawable.ic_pause_mini else R.drawable.ic_play_mini
+        )
             binding.layoutMiniPlayer.postDelayed(this, 500)
         }
     }
@@ -445,15 +482,15 @@ class FeedActivity : AppCompatActivity() {
     private fun promptOpenSpotifyOrNotify(spotifyUrl: String?) {
         if (!spotifyUrl.isNullOrEmpty()) {
             AlertDialog.Builder(this)
-                .setTitle("Hết đoạn xem trước")
-                .setMessage("Bạn muốn mở Spotify để nghe cả bài không?")
-                .setPositiveButton("Mở Spotify") { _, _ ->
+                .setTitle("H?t do?n xem tru?c")
+                .setMessage("B?n mu?n m? Spotify d? nghe c? b�i kh�ng?")
+                .setPositiveButton("M? Spotify") { _, _ ->
                     openSpotify(spotifyUrl)
                 }
-                .setNegativeButton("Hủy", null)
+                .setNegativeButton("H?y", null)
                 .show()
         } else {
-            Toast.makeText(this, "Không có nguồn phát", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Kh�ng c� ngu?n ph�t", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -467,14 +504,15 @@ class FeedActivity : AppCompatActivity() {
                 val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(spotifyUrl))
                 startActivity(intent)
             } catch (e2: Exception) {
-                Toast.makeText(this, "Không thể mở Spotify", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Kh�ng th? m? Spotify", Toast.LENGTH_SHORT).show()
             }
         }
     }
     private fun startMiniPlayer() {
-        val title = currentPreviewTitle ?: "Xem trước"
+        val title = currentPreviewTitle ?: "Xem tru?c"
         val artist = currentPreviewArtist
-        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title • $artist" else title
+        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title � $artist" else title
+        binding.tvMiniPlayerTitle.isSelected = true
         val coverUrl = currentPreviewCoverUrl
         if (!coverUrl.isNullOrEmpty() && !coverUrl.contains("example.com")) {
             Glide.with(this)
@@ -495,6 +533,7 @@ class FeedActivity : AppCompatActivity() {
         binding.layoutMiniPlayer.removeCallbacks(miniPlayerUpdater)
         binding.layoutMiniPlayer.visibility = View.GONE
         binding.tvMiniPlayerTime.text = "0:00/0:30"
+        binding.tvMiniPlayerTitle.isSelected = false
     }
 
     private fun formatTime(ms: Long): String {
@@ -521,7 +560,7 @@ class FeedActivity : AppCompatActivity() {
                 // Revert on error
                 feedItem.isLiked = !isLiked
                 feedAdapter.notifyDataSetChanged()
-                Toast.makeText(this@FeedActivity, "Không thể cập nhật lượt thích", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@FeedActivity, "Kh�ng th? c?p nh?t lu?t th�ch", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -560,6 +599,11 @@ class FeedActivity : AppCompatActivity() {
         previewAudioPlayer.release()
     }
 }
+
+
+
+
+
 
 
 

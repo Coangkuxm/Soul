@@ -39,7 +39,7 @@ router.post(
   validate([
     param('id').isInt({ min: 1 }).withMessage('conversation id is invalid'),
     body('content').isString().trim().isLength({ min: 1 }).withMessage('content is required'),
-    body('message_type').optional().isIn(['text', 'image', 'system']),
+    body('message_type').optional().isIn(['text', 'image', 'system', 'shared_post']),
     body('metadata').optional().isObject(),
     body('reply_to_message_id').optional().isInt({ min: 1 })
   ]),
@@ -55,4 +55,3 @@ router.put(
 );
 
 module.exports = router;
-

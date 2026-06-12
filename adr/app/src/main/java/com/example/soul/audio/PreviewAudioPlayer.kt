@@ -42,6 +42,11 @@ class PreviewAudioPlayer(context: Context) {
         player.release()
     }
 
+    fun stop() {
+        player.stop()
+        currentUrl = null
+    }
+
     fun setOnEndedListener(listener: (() -> Unit)?) {
         onEnded = listener
     }

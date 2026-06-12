@@ -68,6 +68,17 @@
                 android:src="@drawable/ic_more" />
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/tvDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Mot bai hat minh nghe di nghe lai ca tuan nay."
+            tools:visibility="visible" />
+
         <androidx.cardview.widget.CardView
             android:id="@+id/cardItem"
             android:layout_width="match_parent"
@@ -152,17 +163,6 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <TextView
-            android:id="@+id/tvDescription"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:visibility="gone"
-            tools:text="Mot bai hat minh nghe di nghe lai ca tuan nay."
-            tools:visibility="visible" />
-
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -182,10 +182,19 @@
                 android:id="@+id/btnComment"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
                 android:padding="4dp"
                 android:src="@drawable/ic_comment" />
+
+            <ImageView
+                android:id="@+id/btnShare"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="4dp"
+                android:src="@drawable/ic_share" />
         </LinearLayout>
 
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>
+

@@ -55,7 +55,7 @@ CREATE TABLE "comments" (
 	"like_count" integer DEFAULT 0,
 	"created_at" timestamp with time zone DEFAULT now(),
 	"updated_at" timestamp with time zone DEFAULT now(),
-	CONSTRAINT "comments_target_type_check" CHECK (CHECK (((target_type)::text = ANY ((ARRAY['collection'::character varying, 'item'::character varying])::text[]))))
+	CONSTRAINT "comments_target_type_check" CHECK (CHECK (((target_type)::text = ANY ((ARRAY['collection'::character varying, 'item'::character varying, 'collection_item'::character varying])::text[]))))
 );
 CREATE TABLE "items" (
 	"id" serial PRIMARY KEY,

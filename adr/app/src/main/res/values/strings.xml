@@ -36,4 +36,44 @@
     <string name="test_connection_hint">Nhấn nút để kiểm tra kết nối đến máy chủ</string>
     <string name="login_success">Đăng nhập thành công!</string>
     <string name="login_failed">Đăng nhập thất bại</string>
+
+    <!-- Add Item -->
+    <string name="add_item_title">Thêm mục</string>
+    <string name="add_item_type">Loại mục</string>
+    <string name="add_item_music">Nhạc</string>
+    <string name="add_item_movie">Phim</string>
+    <string name="add_item_book">Sách</string>
+    <string name="add_item_game">Game</string>
+    <string name="add_item_artist">Nghệ sĩ</string>
+    <string name="add_item_other">Khác</string>
+    <string name="add_item_search_sources">Tìm kiếm từ Spotify / TMDB</string>
+    <string name="add_item_search_spotify">Tìm kiếm từ Spotify</string>
+    <string name="add_item_search_tmdb">Tìm kiếm từ TMDB</string>
+    <string name="add_item_name_hint">Tên *</string>
+    <string name="add_item_music_name_hint">Tên bài hát (tìm kiếm từ Spotify)</string>
+    <string name="add_item_post_note_hint">Ghi chú bài đăng</string>
+    <string name="add_item_description_hint">Mô tả nội dung</string>
+    <string name="add_item_artist_hint">Nghệ sĩ</string>
+    <string name="add_item_album_hint">Album</string>
+    <string name="add_item_director_hint">Đạo diễn</string>
+    <string name="add_item_author_hint">Tác giả</string>
+    <string name="add_item_developer_hint">Nhà phát triển</string>
+    <string name="add_item_collection_title">Thêm vào bộ sưu tập</string>
+    <string name="add_item_collection_hint">Chọn bộ sưu tập</string>
+    <string name="add_item_rating_title">Đánh giá</string>
+    <string name="add_item_submit">Thêm mục</string>
+    <string name="add_item_cover_from_source">Ảnh được lấy từ %1$s</string>
+    <string name="add_item_search_cover_prompt">Hãy tìm kiếm từ %1$s để lấy ảnh</string>
+    <string name="add_item_selected">Đã chọn: %1$s</string>
+    <string name="add_item_select_music_required">Vui lòng tìm kiếm và chọn bài hát từ Spotify</string>
+    <string name="add_item_name_required">Vui lòng nhập tên</string>
+    <string name="add_item_collection_required">Vui lòng chọn bộ sưu tập</string>
+    <string name="add_item_login_again">Vui lòng đăng nhập lại</string>
+    <string name="add_item_uploading_image">Đang upload ảnh...</string>
+    <string name="add_item_missing_id">Không lấy được ID item</string>
+    <string name="add_item_success">Thêm item thành công!</string>
+    <string name="add_item_collection_error">Lỗi thêm vào collection</string>
+    <string name="add_item_create_error">Lỗi tạo item</string>
+    <string name="generic_error_with_message">Lỗi: %1$s</string>
+    <string name="add_item_image_too_large">Ảnh quá lớn (tối đa 5MB)</string>
 </resources>

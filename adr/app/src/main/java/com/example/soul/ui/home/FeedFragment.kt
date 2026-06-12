@@ -1,4 +1,4 @@
-﻿package com.example.soul.ui.home
+package com.example.soul.ui.home
 
 import android.content.Intent
 import android.os.Bundle
@@ -28,6 +28,7 @@ import com.example.soul.ui.add.AddOptionsBottomSheet
 import com.example.soul.ui.comments.CommentsActivity
 import com.example.soul.ui.home.adapter.FeedAdapter
 import com.example.soul.ui.main.MainTabsActivity
+import com.example.soul.ui.messenger.SharePostActivity
 import com.example.soul.ui.profile.UserProfileActivity
 import com.example.soul.utils.Resource
 import kotlinx.coroutines.launch
@@ -99,6 +100,7 @@ class FeedFragment : Fragment() {
             onLikeClick = { feedItem, isLiked -> handleLikeClick(feedItem, isLiked) },
             onPlayClick = { handlePlayClick(it) },
             onCommentClick = { openComments(it) },
+            onShareClick = { openSharePost(it) },
             onReportClick = { feedItem, anchor -> showFeedItemMenu(feedItem, anchor) }
         )
         binding.rvFeed.apply {
@@ -158,8 +160,14 @@ class FeedFragment : Fragment() {
         }
         binding.btnFilter.setOnClickListener { showFilterMenu(it) }
         binding.btnAdd.setOnClickListener { showAddOptionsBottomSheet() }
-        binding.ivMiniPlayerPlay.setOnClickListener {
+        binding.btnMiniPlayerToggle.setOnClickListener {
             currentPreviewUrl?.let { previewAudioPlayer.toggle(it) }
+        }
+        binding.btnMiniPlayerClose.setOnClickListener {
+            previewAudioPlayer.stop()
+            currentPreviewUrl = null
+            pendingSpotifyUrlForPreview = null
+            stopMiniPlayer()
         }
 
         binding.swipeRefresh.setOnRefreshListener {
@@ -189,8 +197,8 @@ class FeedFragment : Fragment() {
 
     private fun showFilterMenu(anchor: View) {
         PopupMenu(requireContext(), anchor).apply {
-            menu.add("Mọi người")
-            menu.add("Chỉ bạn bè")
+            menu.add("M?i ngu?i")
+            menu.add("Ch? b?n b�")
             setOnMenuItemClickListener {
                 binding.btnFilter.text = it.title
                 viewModel.refresh()
@@ -213,13 +221,37 @@ class FeedFragment : Fragment() {
     }
 
     private fun openComments(feedItem: FeedItem) {
+        val displayName = feedItem.user.displayName ?: feedItem.user.username
+        val subtitle = feedItem.item.metadata?.artist ?: feedItem.collection.name
         startActivity(Intent(requireContext(), CommentsActivity::class.java).apply {
-            putExtra(CommentsActivity.EXTRA_TARGET_TYPE, "item")
-            putExtra(CommentsActivity.EXTRA_TARGET_ID, feedItem.item.id)
+            putExtra(CommentsActivity.EXTRA_TARGET_TYPE, "collection_item")
+            putExtra(CommentsActivity.EXTRA_TARGET_ID, feedItem.id)
             putExtra(CommentsActivity.EXTRA_TITLE, feedItem.item.title)
+            putExtra(CommentsActivity.EXTRA_POST_USER_NAME, displayName)
+            putExtra(CommentsActivity.EXTRA_POST_USER_AVATAR, feedItem.user.avatarUrl)
+            putExtra(CommentsActivity.EXTRA_POST_NOTE, feedItem.note ?: feedItem.item.description)
+            putExtra(CommentsActivity.EXTRA_POST_ITEM_TITLE, feedItem.item.title)
+            putExtra(CommentsActivity.EXTRA_POST_ITEM_SUBTITLE, subtitle)
+            putExtra(CommentsActivity.EXTRA_POST_ITEM_COVER, feedItem.item.coverImageUrl)
+            putExtra(CommentsActivity.EXTRA_POST_ADDED_AT, feedItem.addedAt)
         })
     }
 
+    private fun openSharePost(feedItem: FeedItem) {
+        val displayName = feedItem.user.displayName ?: feedItem.user.username
+        val subtitle = feedItem.item.metadata?.artist ?: feedItem.collection.name
+        startActivity(Intent(requireContext(), SharePostActivity::class.java).apply {
+            putExtra(SharePostActivity.EXTRA_COLLECTION_ITEM_ID, feedItem.id)
+            putExtra(SharePostActivity.EXTRA_ITEM_ID, feedItem.item.id)
+            putExtra(SharePostActivity.EXTRA_ITEM_TITLE, feedItem.item.title)
+            putExtra(SharePostActivity.EXTRA_ITEM_SUBTITLE, subtitle)
+            putExtra(SharePostActivity.EXTRA_POST_NOTE, feedItem.note ?: feedItem.item.description)
+            putExtra(SharePostActivity.EXTRA_COVER_URL, feedItem.item.coverImageUrl)
+            putExtra(SharePostActivity.EXTRA_POST_USER_NAME, displayName)
+            putExtra(SharePostActivity.EXTRA_POST_USER_AVATAR, feedItem.user.avatarUrl)
+            putExtra(SharePostActivity.EXTRA_POST_ADDED_AT, feedItem.addedAt)
+        })
+    }
     private fun onUserClicked(userId: Int) {
         startActivity(Intent(requireContext(), UserProfileActivity::class.java).apply {
             putExtra(UserProfileActivity.EXTRA_USER_ID, userId)
@@ -228,9 +260,9 @@ class FeedFragment : Fragment() {
 
     private fun showFeedItemMenu(feedItem: FeedItem, anchor: View) {
         PopupMenu(requireContext(), anchor).apply {
-            menu.add("Báo cáo bài viết")
+            menu.add("B�o c�o b�i vi?t")
             setOnMenuItemClickListener {
-                showReportDialog("collection_item", feedItem.id, "Báo cáo bài viết")
+                showReportDialog("collection_item", feedItem.id, "B�o c�o b�i vi?t")
                 true
             }
             show()
@@ -240,11 +272,11 @@ class FeedFragment : Fragment() {
     private fun showReportDialog(targetType: String, targetId: Int, title: String) {
         val reasonCodes = listOf(
             "spam" to "Spam",
-            "harassment" to "Quấy rối",
-            "hate_speech" to "Ngôn từ thù ghét",
-            "nudity" to "Nội dung nhạy cảm",
-            "misleading" to "Thông tin sai lệch",
-            "other" to "Lý do khác"
+            "harassment" to "Qu?y r?i",
+            "hate_speech" to "Ng�n t? th� gh�t",
+            "nudity" to "N?i dung nh?y c?m",
+            "misleading" to "Th�ng tin sai l?ch",
+            "other" to "L� do kh�c"
         )
         val labels = reasonCodes.map { it.second }.toTypedArray()
 
@@ -253,7 +285,7 @@ class FeedFragment : Fragment() {
             .setItems(labels) { _, which ->
                 submitReport(targetType, targetId, reasonCodes[which].first, reasonCodes[which].second)
             }
-            .setNegativeButton("Hủy", null)
+            .setNegativeButton("H?y", null)
             .show()
     }
 
@@ -272,16 +304,16 @@ class FeedFragment : Fragment() {
                 )
 
                 if (response.isSuccessful) {
-                    Toast.makeText(requireContext(), "Đã gửi báo cáo", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "�� g?i b�o c�o", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(
                         requireContext(),
-                        response.errorBody()?.string() ?: "Không thể gửi báo cáo",
+                        response.errorBody()?.string() ?: "Kh�ng th? g?i b�o c�o",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), e.message ?: "Không thể gửi báo cáo", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), e.message ?: "Kh�ng th? g?i b�o c�o", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -297,7 +329,7 @@ class FeedFragment : Fragment() {
                 "0:00/0:30"
             }
             binding.ivMiniPlayerPlay.setImageResource(
-                if (previewAudioPlayer.isPlaying()) R.drawable.ic_pause_circle else R.drawable.ic_play_circle
+                if (previewAudioPlayer.isPlaying()) R.drawable.ic_pause_mini else R.drawable.ic_play_mini
             )
             binding.layoutMiniPlayer.postDelayed(this, 500)
         }
@@ -353,14 +385,14 @@ class FeedFragment : Fragment() {
 
     private fun promptOpenSpotifyOrNotify(spotifyUrl: String?) {
         if (spotifyUrl.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Không có nguồn phát", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Kh�ng c� ngu?n ph�t", Toast.LENGTH_SHORT).show()
             return
         }
         AlertDialog.Builder(requireContext())
-            .setTitle("Hết đoạn xem trước")
-            .setMessage("Bạn muốn mở Spotify để nghe cả bài không?")
-            .setPositiveButton("Mở Spotify") { _, _ -> openSpotify(spotifyUrl) }
-            .setNegativeButton("Hủy", null)
+            .setTitle("H?t do?n xem tru?c")
+            .setMessage("B?n mu?n m? Spotify d? nghe c? b�i kh�ng?")
+            .setPositiveButton("M? Spotify") { _, _ -> openSpotify(spotifyUrl) }
+            .setNegativeButton("H?y", null)
             .show()
     }
 
@@ -373,15 +405,16 @@ class FeedFragment : Fragment() {
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(spotifyUrl)))
             } catch (_: Exception) {
-                Toast.makeText(requireContext(), "Không thể mở Spotify", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Kh�ng th? m? Spotify", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun startMiniPlayer() {
-        val title = currentPreviewTitle ?: "Xem trước"
+        val title = currentPreviewTitle ?: "Xem tru?c"
         val artist = currentPreviewArtist
-        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title • $artist" else title
+        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title � $artist" else title
+        binding.tvMiniPlayerTitle.isSelected = true
         val coverUrl = currentPreviewCoverUrl
         if (!coverUrl.isNullOrEmpty() && !coverUrl.contains("example.com")) {
             Glide.with(this)
@@ -402,6 +435,7 @@ class FeedFragment : Fragment() {
         binding.layoutMiniPlayer.removeCallbacks(miniPlayerUpdater)
         binding.layoutMiniPlayer.visibility = View.GONE
         binding.tvMiniPlayerTime.text = "0:00/0:30"
+        binding.tvMiniPlayerTitle.isSelected = false
     }
 
     private fun formatTime(ms: Long): String {
@@ -424,7 +458,7 @@ class FeedFragment : Fragment() {
             } catch (_: Exception) {
                 feedItem.isLiked = !isLiked
                 feedAdapter.notifyDataSetChanged()
-                Toast.makeText(requireContext(), "Không thể cập nhật lượt thích", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Kh�ng th? c?p nh?t lu?t th�ch", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -436,4 +470,8 @@ class FeedFragment : Fragment() {
         super.onDestroyView()
     }
 }
+
+
+
+
 

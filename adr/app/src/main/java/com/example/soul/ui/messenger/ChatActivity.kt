@@ -17,6 +17,7 @@ import com.example.soul.data.model.ChatMessage
 import com.example.soul.data.remote.ChatSocketManager
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.ActivityChatBinding
+import com.example.soul.ui.comments.CommentsActivity
 import kotlinx.coroutines.launch
 
 class ChatActivity : AppCompatActivity() {
@@ -86,7 +87,9 @@ class ChatActivity : AppCompatActivity() {
             .circleCrop()
             .into(binding.ivAvatar)
 
-        adapter = ChatMessageAdapter(currentUserId)
+        adapter = ChatMessageAdapter(currentUserId) { message ->
+            openSharedPost(message)
+        }
         binding.rvMessages.layoutManager = LinearLayoutManager(this).apply {
             stackFromEnd = true
         }
@@ -194,6 +197,27 @@ class ChatActivity : AppCompatActivity() {
 
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun openSharedPost(message: ChatMessage) {
+        val metadata = message.metadata.orEmpty()
+        val targetId = (metadata["targetId"] as? Number)?.toInt()
+            ?: metadata["targetId"]?.toString()?.toIntOrNull()
+            ?: return
+        val targetType = metadata["targetType"]?.toString().orEmpty().ifBlank { "collection_item" }
+
+        startActivity(android.content.Intent(this, CommentsActivity::class.java).apply {
+            putExtra(CommentsActivity.EXTRA_TARGET_TYPE, targetType)
+            putExtra(CommentsActivity.EXTRA_TARGET_ID, targetId)
+            putExtra(CommentsActivity.EXTRA_TITLE, metadata["itemTitle"]?.toString())
+            putExtra(CommentsActivity.EXTRA_POST_USER_NAME, metadata["postUserName"]?.toString())
+            putExtra(CommentsActivity.EXTRA_POST_USER_AVATAR, metadata["postUserAvatar"]?.toString())
+            putExtra(CommentsActivity.EXTRA_POST_NOTE, metadata["postNote"]?.toString())
+            putExtra(CommentsActivity.EXTRA_POST_ITEM_TITLE, metadata["itemTitle"]?.toString())
+            putExtra(CommentsActivity.EXTRA_POST_ITEM_SUBTITLE, metadata["itemSubtitle"]?.toString())
+            putExtra(CommentsActivity.EXTRA_POST_ITEM_COVER, metadata["coverUrl"]?.toString())
+            putExtra(CommentsActivity.EXTRA_POST_ADDED_AT, metadata["addedAt"]?.toString())
+        })
     }
 
     companion object {
