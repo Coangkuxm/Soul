@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const axios = require('axios');
 const { spotifyApi, getAccessToken } = require('../config/spotify');
 
 // Middleware để đảm bảo có token hợp lệ
 const ensureAuth = async (req, res, next) => {
+  // /search đã chuyển sang Deezer -> không cần token Spotify
+  if (req.path === '/search') return next();
   try {
     if (!spotifyApi.getAccessToken()) {
       const ok = await getAccessToken();
@@ -108,11 +111,13 @@ router.get('/artists/:id/top-tracks', async (req, res) => {
   }
 });
 
-// Tìm kiếm bài hát
+// Tìm kiếm bài hát.
+// LƯU Ý: Spotify chặn request từ IP nhà cung cấp cloud (Render) -> 403 body rỗng dù token hợp lệ.
+// Nên dùng Deezer (API mở, không cần token, không chặn IP). Giữ NGUYÊN format trả về để app không phải sửa.
 router.get('/search', async (req, res) => {
   try {
-    const { q, type = 'track', limit = 10 } = req.query;
-    
+    const { q, limit = 10 } = req.query;
+
     if (!q) {
       return res.status(400).json({
         success: false,
@@ -120,53 +125,29 @@ router.get('/search', async (req, res) => {
       });
     }
 
-    // Luôn đảm bảo có token mới trước khi search (token có thể hết hạn)
-    if (!spotifyApi.getAccessToken()) {
-      const ok = await getAccessToken();
-      if (!ok) {
-        return res.status(503).json({
-          success: false,
-          error: 'Không lấy được Spotify access token (kiểm tra SPOTIFY_CLIENT_ID/SECRET).',
-          diag: { reason: 'token_grant_failed' }
-        });
-      }
-    }
-
-    const { body } = await spotifyApi.searchTracks(q, { limit: parseInt(limit, 10) || 10 });
-
-    res.json({
-      success: true,
-      data: body.tracks.items.map(track => ({
-        id: track.id,
-        name: track.name,
-        artists: track.artists.map(a => a.name).join(', '),
-        album: track.album.name,
-        preview_url: track.preview_url,
-        external_url: track.external_urls.spotify,
-        cover_url: track.album.images?.[0]?.url || null // Lấy ảnh bìa album (size lớn nhất)
-      }))
+    const dz = await axios.get('https://api.deezer.com/search', {
+      params: { q, limit: parseInt(limit, 10) || 10 },
+      timeout: 10000
     });
+
+    const tracks = Array.isArray(dz.data && dz.data.data) ? dz.data.data : [];
+    const data = tracks.map(track => ({
+      id: String(track.id),
+      name: track.title,
+      artists: track.artist && track.artist.name ? track.artist.name : '',
+      album: track.album && track.album.title ? track.album.title : '',
+      preview_url: track.preview || null,
+      external_url: track.link || null,
+      cover_url:
+        (track.album && (track.album.cover_xl || track.album.cover_big || track.album.cover_medium)) || null
+    }));
+
+    res.json({ success: true, data });
   } catch (error) {
-    console.error('Lỗi khi tìm kiếm Spotify:', {
-      statusCode: error.statusCode,
-      message: error.message,
-      body: error.body
-    });
-    // spotify-web-api-node để thông tin hữu ích trong error.body, tránh trả "[object Object]"
-    const spotifyMsg =
-      error?.body?.error?.message ||
-      (typeof error?.body?.error === 'string' ? error.body.error : null) ||
-      'Spotify search failed';
-    res.status(error.statusCode || 500).json({
+    console.error('Lỗi khi tìm nhạc (Deezer):', error.message);
+    res.status(error.response?.status || 500).json({
       success: false,
-      error: spotifyMsg,
-      // TẠM THỜI để chẩn đoán — sẽ gỡ sau khi xác định nguyên nhân
-      diag: {
-        statusCode: error.statusCode || null,
-        body: error.body || null,
-        hasToken: Boolean(spotifyApi.getAccessToken()),
-        rawMessage: typeof error?.message === 'string' ? error.message : String(error?.message)
-      }
+      error: 'Không tìm được nhạc, vui lòng thử lại'
     });
   }
 });
