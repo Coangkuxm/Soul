@@ -135,7 +135,11 @@ router.get('/search', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Lỗi khi tìm kiếm:', error.message, error.body || '');
+    console.error('Lỗi khi tìm kiếm Spotify:', {
+      statusCode: error.statusCode,
+      message: error.message,
+      body: error.body
+    });
     // spotify-web-api-node để thông tin hữu ích trong error.body, tránh trả "[object Object]"
     const spotifyMsg =
       error?.body?.error?.message ||

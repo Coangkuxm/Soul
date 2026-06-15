@@ -29,6 +29,9 @@ const { errorHandler } = require('./middlewares/errorHandler');
 const { authenticateToken } = require('./middlewares/auth.middleware');
 
 const app = express();
+// Render/Cloudflare đứng trước app -> tin proxy để express-rate-limit đọc đúng IP
+// (sửa lỗi ERR_ERL_UNEXPECTED_X_FORWARDED_FOR).
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const swaggerUi = require('swagger-ui-express');
