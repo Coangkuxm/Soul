@@ -1,12 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
 const { spotifyApi, getAccessToken } = require('../config/spotify');
 
 // Middleware để đảm bảo có token hợp lệ
 const ensureAuth = async (req, res, next) => {
-  // /search đã chuyển sang Deezer -> không cần token Spotify
-  if (req.path === '/search') return next();
   try {
     if (!spotifyApi.getAccessToken()) {
       const ok = await getAccessToken();
@@ -111,9 +108,7 @@ router.get('/artists/:id/top-tracks', async (req, res) => {
   }
 });
 
-// Tìm kiếm bài hát.
-// LƯU Ý: Spotify chặn request từ IP nhà cung cấp cloud (Render) -> 403 body rỗng dù token hợp lệ.
-// Nên dùng Deezer (API mở, không cần token, không chặn IP). Giữ NGUYÊN format trả về để app không phải sửa.
+// Tìm kiếm bài hát (Spotify)
 router.get('/search', async (req, res) => {
   try {
     const { q, limit = 10 } = req.query;
@@ -125,29 +120,29 @@ router.get('/search', async (req, res) => {
       });
     }
 
-    const dz = await axios.get('https://api.deezer.com/search', {
-      params: { q, limit: parseInt(limit, 10) || 10 },
-      timeout: 10000
+    if (!spotifyApi.getAccessToken()) {
+      await getAccessToken();
+    }
+
+    const { body } = await spotifyApi.searchTracks(q, { limit: parseInt(limit, 10) || 10 });
+
+    res.json({
+      success: true,
+      data: body.tracks.items.map(track => ({
+        id: track.id,
+        name: track.name,
+        artists: track.artists.map(a => a.name).join(', '),
+        album: track.album.name,
+        preview_url: track.preview_url,
+        external_url: track.external_urls.spotify,
+        cover_url: track.album.images?.[0]?.url || null
+      }))
     });
-
-    const tracks = Array.isArray(dz.data && dz.data.data) ? dz.data.data : [];
-    const data = tracks.map(track => ({
-      id: String(track.id),
-      name: track.title,
-      artists: track.artist && track.artist.name ? track.artist.name : '',
-      album: track.album && track.album.title ? track.album.title : '',
-      preview_url: track.preview || null,
-      external_url: track.link || null,
-      cover_url:
-        (track.album && (track.album.cover_xl || track.album.cover_big || track.album.cover_medium)) || null
-    }));
-
-    res.json({ success: true, data });
   } catch (error) {
-    console.error('Lỗi khi tìm nhạc (Deezer):', error.message);
-    res.status(error.response?.status || 500).json({
+    console.error('Lỗi khi tìm kiếm Spotify:', error.statusCode, error.message, error.body);
+    res.status(error.statusCode || 500).json({
       success: false,
-      error: 'Không tìm được nhạc, vui lòng thử lại'
+      error: error?.body?.error?.message || error.message || 'Lỗi khi tìm kiếm Spotify'
     });
   }
 });
