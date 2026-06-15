@@ -92,9 +92,10 @@ const sendPasswordResetEmail = async (user, token) => {
   const html = await renderTemplate('reset-password', {
     name: user.display_name || user.username,
     resetUrl,
+    code: token, // mã OTP 6 số để hiển thị trong email (mobile)
     appName: 'Soul App',
     supportEmail: 'support@yourapp.com',
-    expiresIn: '1 hour'
+    expiresIn: '15 phút'
   });
 
   return sendEmail(

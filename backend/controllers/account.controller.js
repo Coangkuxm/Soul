@@ -30,6 +30,7 @@ const accountController = {
   ],
 
   validateResetPassword: [
+    body('email').isEmail().normalizeEmail(),
     body('token').notEmpty(),
     body('password').isLength({ min: 6 })
   ],
@@ -50,27 +51,38 @@ const accountController = {
       const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
       const user = userResult.rows[0];
 
+      // OTP_TEST_MODE: chưa cấu hình SMTP -> trả mã trong response + log (bật mặc định,
+      // tắt bằng OTP_TEST_MODE=false khi đã có email thật).
+      const testMode = process.env.OTP_TEST_MODE !== 'false';
+      const genericMessage = 'Nếu email tồn tại, mã đặt lại mật khẩu đã được gửi.';
+
+      // Không tiết lộ email có tồn tại hay không
       if (!user) {
-        return res.json({ 
-          success: true, 
-          message: 'If your email is registered, you will receive a password reset link.' 
-        });
+        return res.json({ success: true, message: genericMessage });
       }
 
-      const resetToken = generateToken();
-      const resetTokenExpiry = new Date(Date.now() + 3600000);
+      // Mã OTP 6 chữ số, hết hạn sau 15 phút (lưu chung cột reset_password_token)
+      const resetCode = crypto.randomInt(100000, 1000000).toString();
+      const resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
       await query(
         'UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE id = $3',
-        [resetToken, resetTokenExpiry, user.id]
+        [resetCode, resetTokenExpiry, user.id]
       );
 
-      await sendPasswordResetEmail(user, resetToken);
+      console.log(`[ForgotPassword] OTP cho ${email}: ${resetCode} (hết hạn sau 15 phút)`);
 
-      res.json({ 
-        success: true, 
-        message: 'If your email is registered, you will receive a password reset link.' 
-      });
+      // Cố gắng gửi email; nếu chưa cấu hình SMTP thì bỏ qua trong test mode
+      try {
+        await sendPasswordResetEmail(user, resetCode);
+      } catch (mailErr) {
+        console.error('[ForgotPassword] Gửi email thất bại (test mode bỏ qua):', mailErr.message);
+        if (!testMode) throw mailErr;
+      }
+
+      const payload = { success: true, message: genericMessage };
+      if (testMode) payload.devCode = resetCode; // CHỈ dùng để test
+      res.json(payload);
     } catch (error) {
       next(error);
     }
@@ -84,18 +96,18 @@ const accountController = {
         throw new BadRequestError('Validation failed', errors.array());
       }
 
-      const { token, password } = req.body;
+      const { email, token, password } = req.body;
 
-      // Find user by reset token and check expiry
+      // Tìm user theo email + mã OTP còn hạn (scope theo email để hạn chế dò mã 6 số)
       const userResult = await query(
-        'SELECT * FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()',
-        [token]
+        'SELECT * FROM users WHERE email = $1 AND reset_password_token = $2 AND reset_password_expires > NOW()',
+        [email, token]
       );
-      
+
       const user = userResult.rows[0];
 
       if (!user) {
-        throw new UnauthorizedError('Invalid or expired reset token');
+        throw new UnauthorizedError('Mã đặt lại không đúng hoặc đã hết hạn');
       }
 
       // Hash new password

@@ -3,9 +3,12 @@ package com.example.soul.data.repository
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.User
 import com.example.soul.data.model.auth.ChangePasswordRequest
+import com.example.soul.data.model.auth.ForgotPasswordRequest
+import com.example.soul.data.model.auth.ForgotPasswordResponse
 import com.example.soul.data.model.auth.LoginRequest
 import com.example.soul.data.model.auth.LoginResponse
 import com.example.soul.data.model.auth.RegisterRequest
+import com.example.soul.data.model.auth.ResetPasswordRequest
 import com.example.soul.data.model.auth.SimpleResponse
 import com.example.soul.data.remote.ApiService
 import com.example.soul.utils.Resource
@@ -137,6 +140,56 @@ class AuthRepository(
         }
     }
     
+    /** Quên mật khẩu: yêu cầu gửi mã OTP tới email */
+    suspend fun forgotPassword(email: String): Resource<ForgotPasswordResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.forgotPassword(ForgotPasswordRequest(email))
+                if (response.isSuccessful && response.body()?.success == true) {
+                    Resource.Success(response.body()!!)
+                } else {
+                    val body = response.body()
+                    Resource.Error(body?.error ?: body?.message ?: "Không thể gửi mã. Vui lòng thử lại.")
+                }
+            } catch (e: SocketTimeoutException) {
+                Resource.Error("⏳ Server đang khởi động. Vui lòng đợi rồi thử lại.")
+            } catch (e: ConnectException) {
+                Resource.Error("❌ Không thể kết nối đến server.")
+            } catch (e: UnknownHostException) {
+                Resource.Error("❌ Không tìm thấy server. Kiểm tra kết nối mạng.")
+            } catch (e: Exception) {
+                Resource.Error(e.message ?: "Đã xảy ra lỗi")
+            }
+        }
+    }
+
+    /** Đặt lại mật khẩu bằng mã OTP */
+    suspend fun resetPassword(email: String, code: String, newPassword: String): Resource<SimpleResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.resetPassword(ResetPasswordRequest(email, code, newPassword))
+                if (response.isSuccessful && response.body()?.success == true) {
+                    Resource.Success(response.body()!!)
+                } else {
+                    val message = when (response.code()) {
+                        400 -> "Dữ liệu không hợp lệ"
+                        401 -> "Mã đặt lại không đúng hoặc đã hết hạn"
+                        else -> response.body()?.error ?: "Đặt lại mật khẩu thất bại: ${response.code()}"
+                    }
+                    Resource.Error(message)
+                }
+            } catch (e: SocketTimeoutException) {
+                Resource.Error("⏳ Server đang khởi động. Vui lòng đợi rồi thử lại.")
+            } catch (e: ConnectException) {
+                Resource.Error("❌ Không thể kết nối đến server.")
+            } catch (e: UnknownHostException) {
+                Resource.Error("❌ Không tìm thấy server. Kiểm tra kết nối mạng.")
+            } catch (e: Exception) {
+                Resource.Error(e.message ?: "Đã xảy ra lỗi")
+            }
+        }
+    }
+
     /**
      * Logout user - clear local session
      */

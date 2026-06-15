@@ -20,6 +20,9 @@ import com.example.soul.data.model.auth.LoginRequest
 import com.example.soul.data.model.auth.LoginResponse
 import com.example.soul.data.model.auth.RegisterRequest
 import com.example.soul.data.model.auth.ChangePasswordRequest
+import com.example.soul.data.model.auth.ForgotPasswordRequest
+import com.example.soul.data.model.auth.ForgotPasswordResponse
+import com.example.soul.data.model.auth.ResetPasswordRequest
 import com.example.soul.data.model.auth.SimpleResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -61,7 +64,19 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body request: ChangePasswordRequest
     ): Response<SimpleResponse>
-    
+
+    /** Quên mật khẩu: gửi mã OTP tới email (public, không cần token) */
+    @POST("/api/account/forgot-password")
+    suspend fun forgotPassword(
+        @Body request: ForgotPasswordRequest
+    ): Response<ForgotPasswordResponse>
+
+    /** Đặt lại mật khẩu bằng mã OTP (public, không cần token) */
+    @POST("/api/account/reset-password")
+    suspend fun resetPassword(
+        @Body request: ResetPasswordRequest
+    ): Response<SimpleResponse>
+
     /**
      * Get current user profile
      */

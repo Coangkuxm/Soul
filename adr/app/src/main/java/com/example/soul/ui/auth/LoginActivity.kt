@@ -44,7 +44,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.tvForgotPassword.setOnClickListener {
-            showToast("Tính năng quên mật khẩu sẽ được cập nhật sau")
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
 
 

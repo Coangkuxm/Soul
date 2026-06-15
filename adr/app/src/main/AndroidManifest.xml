@@ -81,6 +81,11 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".ui.auth.ForgotPasswordActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Add Collection Activity -->
         <activity
             android:name=".ui.add.AddCollectionActivity"
