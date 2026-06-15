@@ -11,7 +11,7 @@ import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.data.repository.AuthRepository
 import com.example.soul.databinding.ActivityRegisterBinding
-import com.example.soul.ui.main.MainTabsActivity
+import com.example.soul.ui.profile.EditProfileActivity
 import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
@@ -59,8 +59,9 @@ class RegisterActivity : AppCompatActivity() {
 
             if (result.data?.success == true) {
                 Toast.makeText(this@RegisterActivity, "Đăng ký thành công", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this@RegisterActivity, MainTabsActivity::class.java).apply {
+                startActivity(Intent(this@RegisterActivity, EditProfileActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    putExtra(EditProfileActivity.EXTRA_ONBOARDING, true)
                 })
                 finish()
             } else {

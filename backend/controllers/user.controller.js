@@ -95,13 +95,6 @@ const userController = {
 
       if (username) {
         const existingUser = await userModel.findByUsername(username);
-        if (existingUser && existingUser.id !== parseInt(id)) {
-          throw new ConflictError('Ten dang nhap da duoc su dung boi nguoi dung khac');
-        }
-      }
-
-      if (username) {
-        const existingUser = await userModel.findByUsername(username);
         if (existingUser && existingUser.id !== req.user.id) {
           throw new ConflictError('Ten dang nhap da duoc su dung');
         }

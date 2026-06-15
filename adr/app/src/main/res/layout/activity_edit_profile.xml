@@ -133,6 +133,16 @@
                 android:text="Luu thay doi"
                 android:backgroundTint="@color/primary" />
 
+            <Button
+                android:id="@+id/btnSkipProfile"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Bo qua, vao app"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
         </LinearLayout>
     </ScrollView>
 

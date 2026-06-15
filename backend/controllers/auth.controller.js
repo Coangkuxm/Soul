@@ -40,6 +40,9 @@ const generateToken = (length = 32) => {
     .slice(0, length);
 };
 
+const mobileTokenExpiresIn = process.env.JWT_MOBILE_EXPIRES_IN || '90d';
+const mobileTokenMaxAge = 90 * 24 * 60 * 60 * 1000;
+
 const authController = {
   // Input validation for login
   validateLogin: [
@@ -145,7 +148,7 @@ if (!isMatch) {
         },
         process.env.JWT_SECRET,
         { 
-          expiresIn: '1d',
+          expiresIn: mobileTokenExpiresIn,
           algorithm: 'HS256',
           issuer: 'soul-api',
           audience: 'soul-app'
@@ -157,7 +160,7 @@ if (!isMatch) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        maxAge: mobileTokenMaxAge,
         path: '/',
         domain: process.env.COOKIE_DOMAIN || undefined
       });
@@ -235,7 +238,7 @@ if (!isMatch) {
           },
           process.env.JWT_SECRET || 'your-secret-key',
           { 
-            expiresIn: '1d',
+            expiresIn: mobileTokenExpiresIn,
             algorithm: 'HS256',
             issuer: process.env.JWT_ISSUER || 'soul-api',
             audience: process.env.JWT_AUDIENCE || 'soul-app'
@@ -247,7 +250,7 @@ if (!isMatch) {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'strict',
-          maxAge: 24 * 60 * 60 * 1000, // 1 day
+          maxAge: mobileTokenMaxAge,
           path: '/',
           domain: process.env.COOKIE_DOMAIN || undefined
         });

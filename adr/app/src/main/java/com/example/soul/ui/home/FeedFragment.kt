@@ -28,7 +28,6 @@ import com.example.soul.ui.add.AddOptionsBottomSheet
 import com.example.soul.ui.comments.CommentsActivity
 import com.example.soul.ui.home.adapter.FeedAdapter
 import com.example.soul.ui.main.MainTabsActivity
-import com.example.soul.ui.messenger.SharePostActivity
 import com.example.soul.ui.profile.UserProfileActivity
 import com.example.soul.utils.Resource
 import kotlinx.coroutines.launch
@@ -240,17 +239,17 @@ class FeedFragment : Fragment() {
     private fun openSharePost(feedItem: FeedItem) {
         val displayName = feedItem.user.displayName ?: feedItem.user.username
         val subtitle = feedItem.item.metadata?.artist ?: feedItem.collection.name
-        startActivity(Intent(requireContext(), SharePostActivity::class.java).apply {
-            putExtra(SharePostActivity.EXTRA_COLLECTION_ITEM_ID, feedItem.id)
-            putExtra(SharePostActivity.EXTRA_ITEM_ID, feedItem.item.id)
-            putExtra(SharePostActivity.EXTRA_ITEM_TITLE, feedItem.item.title)
-            putExtra(SharePostActivity.EXTRA_ITEM_SUBTITLE, subtitle)
-            putExtra(SharePostActivity.EXTRA_POST_NOTE, feedItem.note ?: feedItem.item.description)
-            putExtra(SharePostActivity.EXTRA_COVER_URL, feedItem.item.coverImageUrl)
-            putExtra(SharePostActivity.EXTRA_POST_USER_NAME, displayName)
-            putExtra(SharePostActivity.EXTRA_POST_USER_AVATAR, feedItem.user.avatarUrl)
-            putExtra(SharePostActivity.EXTRA_POST_ADDED_AT, feedItem.addedAt)
-        })
+        com.example.soul.ui.messenger.SharePostBottomSheet.newInstance(
+            collectionItemId = feedItem.id,
+            itemId = feedItem.item.id,
+            itemTitle = feedItem.item.title,
+            itemSubtitle = subtitle,
+            postNote = feedItem.note ?: feedItem.item.description,
+            coverUrl = feedItem.item.coverImageUrl,
+            postUserName = displayName,
+            postUserAvatar = feedItem.user.avatarUrl,
+            postAddedAt = feedItem.addedAt
+        ).show(parentFragmentManager, com.example.soul.ui.messenger.SharePostBottomSheet.TAG)
     }
     private fun onUserClicked(userId: Int) {
         startActivity(Intent(requireContext(), UserProfileActivity::class.java).apply {
@@ -470,6 +469,8 @@ class FeedFragment : Fragment() {
         super.onDestroyView()
     }
 }
+
+
 
 
 

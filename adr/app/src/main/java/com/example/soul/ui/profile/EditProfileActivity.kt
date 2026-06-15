@@ -1,6 +1,7 @@
 package com.example.soul.ui.profile
 
 import android.net.Uri
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
@@ -16,6 +17,7 @@ import com.example.soul.data.model.User
 import com.example.soul.data.model.UserProfile
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.ActivityEditProfileBinding
+import com.example.soul.ui.main.MainTabsActivity
 import com.example.soul.utils.ImagePickerHelper
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -27,6 +29,7 @@ class EditProfileActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "EditProfileActivity"
+        const val EXTRA_ONBOARDING = "extra_onboarding"
     }
 
     private lateinit var binding: ActivityEditProfileBinding
@@ -35,6 +38,7 @@ class EditProfileActivity : AppCompatActivity() {
     private var selectedImageUri: Uri? = null
     private var currentAvatarUrl: String? = null
     private var removeAvatar = false
+    private var isOnboarding = false
 
     private val pickImage = registerForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -57,14 +61,25 @@ class EditProfileActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         authPreferences = AuthPreferences(this)
+        isOnboarding = intent.getBooleanExtra(EXTRA_ONBOARDING, false)
 
         setupToolbar()
         bindCurrentUser()
         setupListeners()
+        setupOnboardingUi()
     }
 
     private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.toolbar.setNavigationOnClickListener {
+            if (isOnboarding) navigateToMain() else finish()
+        }
+    }
+
+    private fun setupOnboardingUi() {
+        if (!isOnboarding) return
+        binding.toolbar.title = "Hoan thien ho so"
+        binding.btnSave.text = "Hoan tat"
+        binding.btnSkipProfile.visibility = android.view.View.VISIBLE
     }
 
     private fun bindCurrentUser() {
@@ -102,6 +117,10 @@ class EditProfileActivity : AppCompatActivity() {
 
         binding.btnSave.setOnClickListener {
             saveProfile()
+        }
+
+        binding.btnSkipProfile.setOnClickListener {
+            navigateToMain()
         }
     }
 
@@ -176,8 +195,12 @@ class EditProfileActivity : AppCompatActivity() {
                     selectedImageUri = null
                     removeAvatar = false
                     Toast.makeText(this@EditProfileActivity, "Cap nhat ho so thanh cong", Toast.LENGTH_SHORT).show()
-                    setResult(RESULT_OK)
-                    finish()
+                    if (isOnboarding) {
+                        navigateToMain()
+                    } else {
+                        setResult(RESULT_OK)
+                        finish()
+                    }
                 } else {
                     val errorMessage = parseError(response.errorBody()?.string(), "Khong the cap nhat ho so")
                     Toast.makeText(this@EditProfileActivity, errorMessage, Toast.LENGTH_SHORT).show()
@@ -240,6 +263,14 @@ class EditProfileActivity : AppCompatActivity() {
         binding.btnSave.isEnabled = !isLoading
         binding.btnChangeAvatar.isEnabled = !isLoading
         binding.btnRemoveAvatar.isEnabled = !isLoading
+        binding.btnSkipProfile.isEnabled = !isLoading
+    }
+
+    private fun navigateToMain() {
+        startActivity(Intent(this, MainTabsActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
+        finish()
     }
 
     private fun UserProfile.toUser(): User {

@@ -127,11 +127,6 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <activity
-            android:name=".ui.messenger.SharePostActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-            
     </application>
 </manifest>
 

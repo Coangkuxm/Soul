@@ -1,38 +1,75 @@
 package com.example.soul.ui.messenger
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
+import com.example.soul.R
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.ExploreUser
 import com.example.soul.data.model.ShareRecipient
 import com.example.soul.data.remote.RetrofitClient
-import com.example.soul.databinding.ActivitySharePostBinding
+import com.example.soul.databinding.DialogSharePostBinding
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class SharePostActivity : AppCompatActivity() {
+class SharePostBottomSheet : BottomSheetDialogFragment() {
 
     companion object {
-        const val EXTRA_COLLECTION_ITEM_ID = "extra_collection_item_id"
-        const val EXTRA_ITEM_ID = "extra_item_id"
-        const val EXTRA_ITEM_TITLE = "extra_item_title"
-        const val EXTRA_ITEM_SUBTITLE = "extra_item_subtitle"
-        const val EXTRA_POST_NOTE = "extra_post_note"
-        const val EXTRA_COVER_URL = "extra_cover_url"
-        const val EXTRA_POST_USER_NAME = "extra_post_user_name"
-        const val EXTRA_POST_USER_AVATAR = "extra_post_user_avatar"
-        const val EXTRA_POST_ADDED_AT = "extra_post_added_at"
+        const val TAG = "SharePostBottomSheet"
+
+        private const val ARG_COLLECTION_ITEM_ID = "arg_collection_item_id"
+        private const val ARG_ITEM_ID = "arg_item_id"
+        private const val ARG_ITEM_TITLE = "arg_item_title"
+        private const val ARG_ITEM_SUBTITLE = "arg_item_subtitle"
+        private const val ARG_POST_NOTE = "arg_post_note"
+        private const val ARG_COVER_URL = "arg_cover_url"
+        private const val ARG_POST_USER_NAME = "arg_post_user_name"
+        private const val ARG_POST_USER_AVATAR = "arg_post_user_avatar"
+        private const val ARG_POST_ADDED_AT = "arg_post_added_at"
+
+        fun newInstance(
+            collectionItemId: Int,
+            itemId: Int,
+            itemTitle: String?,
+            itemSubtitle: String?,
+            postNote: String?,
+            coverUrl: String?,
+            postUserName: String?,
+            postUserAvatar: String?,
+            postAddedAt: String?
+        ): SharePostBottomSheet {
+            return SharePostBottomSheet().apply {
+                arguments = Bundle().apply {
+                    putInt(ARG_COLLECTION_ITEM_ID, collectionItemId)
+                    putInt(ARG_ITEM_ID, itemId)
+                    putString(ARG_ITEM_TITLE, itemTitle)
+                    putString(ARG_ITEM_SUBTITLE, itemSubtitle)
+                    putString(ARG_POST_NOTE, postNote)
+                    putString(ARG_COVER_URL, coverUrl)
+                    putString(ARG_POST_USER_NAME, postUserName)
+                    putString(ARG_POST_USER_AVATAR, postUserAvatar)
+                    putString(ARG_POST_ADDED_AT, postAddedAt)
+                }
+            }
+        }
     }
 
-    private lateinit var binding: ActivitySharePostBinding
+    private var _binding: DialogSharePostBinding? = null
+    private val binding get() = _binding!!
+
     private lateinit var authPreferences: AuthPreferences
     private lateinit var adapter: ShareRecipientAdapter
 
@@ -40,12 +77,18 @@ class SharePostActivity : AppCompatActivity() {
     private var currentUserId: Int = -1
     private var searchJob: Job? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivitySharePostBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = DialogSharePostBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        authPreferences = AuthPreferences(this)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        authPreferences = AuthPreferences(requireContext())
         token = authPreferences.getToken().orEmpty()
         currentUserId = authPreferences.getUser()?.id ?: -1
 
@@ -53,18 +96,47 @@ class SharePostActivity : AppCompatActivity() {
         loadRecentConversations()
     }
 
+    override fun onStart() {
+        super.onStart()
+        val bottomSheet = (dialog as? BottomSheetDialog)
+            ?.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
+            ?: return
+        bottomSheet.layoutParams.height = (resources.displayMetrics.heightPixels * 0.48f).toInt()
+        BottomSheetBehavior.from(bottomSheet).state = BottomSheetBehavior.STATE_EXPANDED
+    }
+
     private fun setupUi() {
-        adapter = ShareRecipientAdapter { recipient ->
-            sendSharedPost(recipient)
-        }
-        binding.rvRecipients.layoutManager = LinearLayoutManager(this)
+        adapter = ShareRecipientAdapter { recipient -> sendSharedPost(recipient) }
+        binding.rvRecipients.layoutManager = LinearLayoutManager(
+            requireContext(),
+            LinearLayoutManager.HORIZONTAL,
+            false
+        )
         binding.rvRecipients.adapter = adapter
 
-        binding.btnBack.setOnClickListener { finish() }
+        binding.tvPostTitle.text = arguments?.getString(ARG_ITEM_TITLE).orEmpty()
+        binding.tvPostSubtitle.text = arguments?.getString(ARG_ITEM_SUBTITLE).orEmpty()
+
+        val postNote = arguments?.getString(ARG_POST_NOTE).orEmpty()
+        if (postNote.isBlank()) {
+            binding.tvPostNote.visibility = View.GONE
+        } else {
+            binding.tvPostNote.visibility = View.VISIBLE
+            binding.tvPostNote.text = postNote
+        }
+
+        Glide.with(this)
+            .load(arguments?.getString(ARG_COVER_URL))
+            .placeholder(R.drawable.ic_default_cover)
+            .error(R.drawable.ic_default_cover)
+            .centerCrop()
+            .into(binding.ivPostCover)
+
+        binding.btnClose.setOnClickListener { dismiss() }
         binding.etSearch.doAfterTextChanged { text ->
             val keyword = text?.toString()?.trim().orEmpty()
             searchJob?.cancel()
-            searchJob = lifecycleScope.launch {
+            searchJob = viewLifecycleOwner.lifecycleScope.launch {
                 delay(250)
                 if (keyword.isBlank()) {
                     loadRecentConversations()
@@ -76,7 +148,7 @@ class SharePostActivity : AppCompatActivity() {
     }
 
     private fun loadRecentConversations() {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             binding.progressBar.visibility = View.VISIBLE
             try {
                 val response = RetrofitClient.apiService.getChatConversations(
@@ -102,7 +174,7 @@ class SharePostActivity : AppCompatActivity() {
                         avatarUrl = conversation.otherAvatarUrl
                     )
                 }
-                bindRecipients(recipients, emptyMessage = "Chưa có cuộc trò chuyện nào")
+                bindRecipients(recipients, "Chưa có cuộc trò chuyện nào")
             } catch (e: Exception) {
                 showError(e.message ?: "Lỗi mạng")
             } finally {
@@ -112,7 +184,7 @@ class SharePostActivity : AppCompatActivity() {
     }
 
     private fun searchUsers(keyword: String) {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             binding.progressBar.visibility = View.VISIBLE
             try {
                 val response = RetrofitClient.apiService.searchUsers(
@@ -137,7 +209,7 @@ class SharePostActivity : AppCompatActivity() {
                             avatarUrl = user.avatarUrl
                         )
                     }
-                bindRecipients(recipients, emptyMessage = "Không tìm thấy người dùng")
+                bindRecipients(recipients, "Không tìm thấy người dùng")
             } catch (e: Exception) {
                 showError(e.message ?: "Lỗi mạng")
             } finally {
@@ -172,7 +244,7 @@ class SharePostActivity : AppCompatActivity() {
     }
 
     private fun sendSharedPost(recipient: ShareRecipient) {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             binding.progressBar.visibility = View.VISIBLE
             try {
                 val conversationId = when (recipient.mode) {
@@ -185,22 +257,20 @@ class SharePostActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                val body = mapOf(
-                    "content" to "Đã chia sẻ một bài viết",
-                    "message_type" to "shared_post",
-                    "metadata" to buildSharedPostMetadata()
-                )
-
                 val response = RetrofitClient.apiService.sendChatMessage(
                     token = "Bearer $token",
                     conversationId = conversationId,
-                    body = body
+                    body = mapOf(
+                        "content" to "Đã chia sẻ một bài viết",
+                        "message_type" to "shared_post",
+                        "metadata" to buildSharedPostMetadata()
+                    )
                 )
                 if (response.isSuccessful) {
-                    Toast.makeText(this@SharePostActivity, "Đã chia sẻ qua tin nhắn", Toast.LENGTH_SHORT).show()
-                    finish()
+                    Toast.makeText(requireContext(), "Đã chia sẻ qua tin nhắn", Toast.LENGTH_SHORT).show()
+                    dismiss()
                 } else {
-                    showError("Không thể gửi bài viết")
+                    showError(response.errorBody()?.string() ?: "Không thể gửi bài viết")
                 }
             } catch (e: Exception) {
                 showError(e.message ?: "Lỗi mạng")
@@ -226,19 +296,27 @@ class SharePostActivity : AppCompatActivity() {
     private fun buildSharedPostMetadata(): Map<String, Any?> {
         return mapOf(
             "targetType" to "collection_item",
-            "targetId" to intent.getIntExtra(EXTRA_COLLECTION_ITEM_ID, -1),
-            "itemId" to intent.getIntExtra(EXTRA_ITEM_ID, -1),
-            "itemTitle" to intent.getStringExtra(EXTRA_ITEM_TITLE),
-            "itemSubtitle" to intent.getStringExtra(EXTRA_ITEM_SUBTITLE),
-            "postNote" to intent.getStringExtra(EXTRA_POST_NOTE),
-            "coverUrl" to intent.getStringExtra(EXTRA_COVER_URL),
-            "postUserName" to intent.getStringExtra(EXTRA_POST_USER_NAME),
-            "postUserAvatar" to intent.getStringExtra(EXTRA_POST_USER_AVATAR),
-            "addedAt" to intent.getStringExtra(EXTRA_POST_ADDED_AT)
+            "targetId" to arguments?.getInt(ARG_COLLECTION_ITEM_ID, -1),
+            "itemId" to arguments?.getInt(ARG_ITEM_ID, -1),
+            "itemTitle" to arguments?.getString(ARG_ITEM_TITLE),
+            "itemSubtitle" to arguments?.getString(ARG_ITEM_SUBTITLE),
+            "postNote" to arguments?.getString(ARG_POST_NOTE),
+            "coverUrl" to arguments?.getString(ARG_COVER_URL),
+            "postUserName" to arguments?.getString(ARG_POST_USER_NAME),
+            "postUserAvatar" to arguments?.getString(ARG_POST_USER_AVATAR),
+            "addedAt" to arguments?.getString(ARG_POST_ADDED_AT)
         )
     }
 
     private fun showError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onDestroyView() {
+        searchJob?.cancel()
+        _binding = null
+        super.onDestroyView()
     }
 }
+
+
