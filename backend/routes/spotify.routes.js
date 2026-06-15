@@ -120,8 +120,20 @@ router.get('/search', async (req, res) => {
       });
     }
 
-    const { body } = await spotifyApi.searchTracks(q, { limit });
-    
+    // Luôn đảm bảo có token mới trước khi search (token có thể hết hạn)
+    if (!spotifyApi.getAccessToken()) {
+      const ok = await getAccessToken();
+      if (!ok) {
+        return res.status(503).json({
+          success: false,
+          error: 'Không lấy được Spotify access token (kiểm tra SPOTIFY_CLIENT_ID/SECRET).',
+          diag: { reason: 'token_grant_failed' }
+        });
+      }
+    }
+
+    const { body } = await spotifyApi.searchTracks(q, { limit: parseInt(limit, 10) || 10 });
+
     res.json({
       success: true,
       data: body.tracks.items.map(track => ({
@@ -144,11 +156,17 @@ router.get('/search', async (req, res) => {
     const spotifyMsg =
       error?.body?.error?.message ||
       (typeof error?.body?.error === 'string' ? error.body.error : null) ||
-      (typeof error?.message === 'string' ? error.message : null) ||
-      'Có lỗi xảy ra khi tìm kiếm Spotify';
+      'Spotify search failed';
     res.status(error.statusCode || 500).json({
       success: false,
-      error: spotifyMsg
+      error: spotifyMsg,
+      // TẠM THỜI để chẩn đoán — sẽ gỡ sau khi xác định nguyên nhân
+      diag: {
+        statusCode: error.statusCode || null,
+        body: error.body || null,
+        hasToken: Boolean(spotifyApi.getAccessToken()),
+        rawMessage: typeof error?.message === 'string' ? error.message : String(error?.message)
+      }
     });
   }
 });
