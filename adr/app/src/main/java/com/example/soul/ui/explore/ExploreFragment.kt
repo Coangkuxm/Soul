@@ -133,7 +133,7 @@ class ExploreFragment : Fragment() {
                     .toMutableList()
 
                 usersCache = parsed
-                adapter.submitList(usersCache.toList())
+                renderRows()
                 binding.tvEmpty.text = if (keyword.isBlank()) {
                     "Chua co nguoi dung nao de goi y"
                 } else {
@@ -175,12 +175,28 @@ class ExploreFragment : Fragment() {
         }
     }
 
+    /** Chia danh sách thành 2 nhóm: "Đang theo dõi" lên trước, rồi "Những người bạn có thể biết". */
+    private fun renderRows() {
+        val following = usersCache.filter { it.isFollowing }
+        val others = usersCache.filter { !it.isFollowing }
+        val rows = mutableListOf<ExploreRow>()
+        if (following.isNotEmpty()) {
+            rows += ExploreRow.Header("Đang theo dõi")
+            rows += following.map { ExploreRow.UserItem(it) }
+        }
+        if (others.isNotEmpty()) {
+            rows += ExploreRow.Header("Những người bạn có thể biết")
+            rows += others.map { ExploreRow.UserItem(it) }
+        }
+        adapter.submitList(rows)
+    }
+
     private fun toggleFollow(user: ExploreUser) {
         viewLifecycleOwner.lifecycleScope.launch {
             val token = authPreferences.getToken().orEmpty()
             val before = user.isFollowing
             user.isFollowing = !before
-            adapter.submitList(usersCache.toList())
+            renderRows()
             try {
                 if (before) {
                     RetrofitClient.apiService.unfollowUser("Bearer $token", user.id)
@@ -192,7 +208,7 @@ class ExploreFragment : Fragment() {
                 saveFollowCache()
             } catch (e: Exception) {
                 user.isFollowing = before
-                adapter.submitList(usersCache.toList())
+                renderRows()
                 showError(e.message ?: "Thao tác theo dõi thất bại")
             }
         }

@@ -1,4 +1,4 @@
-﻿package com.example.soul.ui.explore
+package com.example.soul.ui.explore
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -9,28 +9,50 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.soul.R
 import com.example.soul.data.model.ExploreUser
+import com.example.soul.databinding.ItemExploreHeaderBinding
 import com.example.soul.databinding.ItemExploreUserBinding
 import com.example.soul.utils.AvatarLoader
 
 class ExploreUserAdapter(
     private val onFollowClick: (ExploreUser) -> Unit,
     private val onUserClick: (ExploreUser) -> Unit
-) : ListAdapter<ExploreUser, ExploreUserAdapter.ViewHolder>(Diff()) {
+) : ListAdapter<ExploreRow, RecyclerView.ViewHolder>(Diff()) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemExploreUserBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
-        return ViewHolder(binding)
+    companion object {
+        private const val TYPE_HEADER = 0
+        private const val TYPE_USER = 1
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun getItemViewType(position: Int): Int = when (getItem(position)) {
+        is ExploreRow.Header -> TYPE_HEADER
+        is ExploreRow.UserItem -> TYPE_USER
     }
 
-    inner class ViewHolder(
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return if (viewType == TYPE_HEADER) {
+            HeaderViewHolder(ItemExploreHeaderBinding.inflate(inflater, parent, false))
+        } else {
+            UserViewHolder(ItemExploreUserBinding.inflate(inflater, parent, false))
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val row = getItem(position)) {
+            is ExploreRow.Header -> (holder as HeaderViewHolder).bind(row)
+            is ExploreRow.UserItem -> (holder as UserViewHolder).bind(row.user)
+        }
+    }
+
+    inner class HeaderViewHolder(
+        private val binding: ItemExploreHeaderBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(header: ExploreRow.Header) {
+            binding.tvHeader.text = header.title
+        }
+    }
+
+    inner class UserViewHolder(
         private val binding: ItemExploreUserBinding
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(user: ExploreUser) {
@@ -99,14 +121,19 @@ class ExploreUserAdapter(
         }
     }
 
-    class Diff : DiffUtil.ItemCallback<ExploreUser>() {
-        override fun areItemsTheSame(oldItem: ExploreUser, newItem: ExploreUser): Boolean {
-            return oldItem.id == newItem.id
+    class Diff : DiffUtil.ItemCallback<ExploreRow>() {
+        override fun areItemsTheSame(oldItem: ExploreRow, newItem: ExploreRow): Boolean {
+            return when {
+                oldItem is ExploreRow.Header && newItem is ExploreRow.Header ->
+                    oldItem.title == newItem.title
+                oldItem is ExploreRow.UserItem && newItem is ExploreRow.UserItem ->
+                    oldItem.user.id == newItem.user.id
+                else -> false
+            }
         }
 
-        override fun areContentsTheSame(oldItem: ExploreUser, newItem: ExploreUser): Boolean {
+        override fun areContentsTheSame(oldItem: ExploreRow, newItem: ExploreRow): Boolean {
             return oldItem == newItem
         }
     }
 }
-

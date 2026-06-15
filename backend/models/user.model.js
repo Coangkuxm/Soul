@@ -144,9 +144,9 @@ const userModel = {
 
     if (search) {
       queryText += ` AND (username ILIKE $${searchParam} OR email ILIKE $${searchParam} OR display_name ILIKE $${searchParam})`;
-      queryText += ` ORDER BY "isFollowing" ASC, username ASC`;
+      queryText += ` ORDER BY "isFollowing" DESC, username ASC`;
     } else {
-      queryText += ` ORDER BY "isFollowing" ASC, "followerCount" DESC, created_at DESC`;
+      queryText += ` ORDER BY "isFollowing" DESC, "followerCount" DESC, created_at DESC`;
     }
 
     queryText += ` LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
