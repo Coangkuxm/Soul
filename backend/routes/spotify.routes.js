@@ -6,7 +6,13 @@ const { spotifyApi, getAccessToken } = require('../config/spotify');
 const ensureAuth = async (req, res, next) => {
   try {
     if (!spotifyApi.getAccessToken()) {
-      await getAccessToken();
+      const ok = await getAccessToken();
+      if (!ok) {
+        return res.status(503).json({
+          success: false,
+          error: 'Spotify chưa sẵn sàng: lấy access token thất bại (kiểm tra SPOTIFY_CLIENT_ID/SECRET trên server).'
+        });
+      }
     }
     next();
   } catch (error) {
@@ -129,10 +135,16 @@ router.get('/search', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Lỗi khi tìm kiếm:', error);
+    console.error('Lỗi khi tìm kiếm:', error.message, error.body || '');
+    // spotify-web-api-node để thông tin hữu ích trong error.body, tránh trả "[object Object]"
+    const spotifyMsg =
+      error?.body?.error?.message ||
+      (typeof error?.body?.error === 'string' ? error.body.error : null) ||
+      (typeof error?.message === 'string' ? error.message : null) ||
+      'Có lỗi xảy ra khi tìm kiếm Spotify';
     res.status(error.statusCode || 500).json({
       success: false,
-      error: error.message || 'Có lỗi xảy ra'
+      error: spotifyMsg
     });
   }
 });

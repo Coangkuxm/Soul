@@ -6,6 +6,11 @@ const spotifyApi = new SpotifyWebApi({
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET
 });
 
+// Cảnh báo sớm nếu thiếu creds -> tìm nhạc/nghệ sĩ sẽ lỗi
+if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
+  console.error('[Spotify] Thiếu SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET -> tìm nhạc sẽ lỗi (403/503). Hãy set trong Environment của service.');
+}
+
 // Function to get access token
 const getAccessToken = async () => {
   try {
