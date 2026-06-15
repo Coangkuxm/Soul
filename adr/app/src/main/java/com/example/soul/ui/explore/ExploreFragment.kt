@@ -134,6 +134,11 @@ class ExploreFragment : Fragment() {
 
                 usersCache = parsed
                 adapter.submitList(usersCache.toList())
+                binding.tvEmpty.text = if (keyword.isBlank()) {
+                    "Chua co nguoi dung nao de goi y"
+                } else {
+                    "Khong tim thay nguoi dung"
+                }
                 binding.tvEmpty.visibility = if (usersCache.isEmpty()) View.VISIBLE else View.GONE
                 saveFollowCache() // keep cache updated with latest follow states
             } catch (e: Exception) {
@@ -156,13 +161,13 @@ class ExploreFragment : Fragment() {
         return usersArray.mapNotNull { node ->
             if (!node.isJsonObject) return@mapNotNull null
             val obj = node.asJsonObject
-            val id = obj.get("id")?.asInt ?: return@mapNotNull null
-            val username = obj.get("username")?.asString ?: return@mapNotNull null
-            val displayName = obj.get("displayName")?.asString
-            val avatarUrl = obj.get("avatarUrl")?.asString
+            val id = obj.get("id")?.takeIf { !it.isJsonNull }?.asInt ?: return@mapNotNull null
+            val username = obj.get("username")?.takeIf { !it.isJsonNull }?.asString ?: return@mapNotNull null
+            val displayName = obj.get("displayName")?.takeIf { !it.isJsonNull }?.asString
+            val avatarUrl = obj.get("avatarUrl")?.takeIf { !it.isJsonNull }?.asString
             val apiFollow = when {
-                obj.has("isFollowing") -> obj.get("isFollowing").asBoolean
-                obj.has("is_following") -> obj.get("is_following").asBoolean
+                obj.has("isFollowing") && !obj.get("isFollowing").isJsonNull -> obj.get("isFollowing").asBoolean
+                obj.has("is_following") && !obj.get("is_following").isJsonNull -> obj.get("is_following").asBoolean
                 else -> null
             }
             val isFollowing = apiFollow ?: followedIds.contains(id)

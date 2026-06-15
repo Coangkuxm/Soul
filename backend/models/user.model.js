@@ -102,8 +102,12 @@ const userModel = {
   },
 
   // Lấy danh sách người dùng (phân trang)
-  async getAll({ page = 1, limit = 10, search = '' }) {
+  async getAll({ page = 1, limit = 10, search = '', currentUserId = null }) {
     const offset = (page - 1) * limit;
+    const queryParams = [];
+    const currentUserParam = currentUserId ? queryParams.push(currentUserId) : null;
+    const searchParam = search ? queryParams.push(`%${search}%`) : null;
+
     let queryText = `
       SELECT 
         id, 
@@ -114,22 +118,38 @@ const userModel = {
         bio, 
         role,
         account_status as "accountStatus",
+        ${
+          currentUserParam
+            ? `EXISTS (
+                SELECT 1 FROM user_follows uf
+                WHERE uf.follower_id = $${currentUserParam}
+                  AND uf.following_id = users.id
+              )`
+            : 'false'
+        } as "isFollowing",
+        (
+          SELECT COUNT(*)::int
+          FROM user_follows uf_count
+          WHERE uf_count.following_id = users.id
+        ) as "followerCount",
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM users
+      WHERE COALESCE(account_status, 'active') = 'active'
     `;
-    
-    const queryParams = [];
-    
-    if (search) {
-      queryText += ` WHERE COALESCE(account_status, 'active') = 'active'
-                     AND (username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1)`;
-      queryParams.push(`%${search}%`);
-    } else {
-      queryText += ` WHERE COALESCE(account_status, 'active') = 'active'`;
+
+    if (currentUserParam) {
+      queryText += ` AND id <> $${currentUserParam}`;
     }
-    
-    queryText += ` ORDER BY created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+
+    if (search) {
+      queryText += ` AND (username ILIKE $${searchParam} OR email ILIKE $${searchParam} OR display_name ILIKE $${searchParam})`;
+      queryText += ` ORDER BY "isFollowing" ASC, username ASC`;
+    } else {
+      queryText += ` ORDER BY "isFollowing" ASC, "followerCount" DESC, created_at DESC`;
+    }
+
+    queryText += ` LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
     
     queryParams.push(limit, offset);
     

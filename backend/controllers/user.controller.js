@@ -162,7 +162,8 @@ const userController = {
       const users = await userModel.getAll({ 
         page: parseInt(page), 
         limit: parseInt(limit), 
-        search 
+        search,
+        currentUserId: req.user.id
       });
       
       // Lấy tổng số người dùng để phân trang

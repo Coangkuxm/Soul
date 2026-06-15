@@ -47,17 +47,6 @@ class LoginActivity : AppCompatActivity() {
             showToast("Tính năng quên mật khẩu sẽ được cập nhật sau")
         }
 
-        binding.btnGoogle.setOnClickListener {
-            showToast("Đăng nhập Google sẽ được cập nhật sau")
-        }
-
-        binding.btnFacebook.setOnClickListener {
-            showToast("Đăng nhập Facebook sẽ được cập nhật sau")
-        }
-
-        binding.btnApple.setOnClickListener {
-            showToast("Đăng nhập Apple sẽ được cập nhật sau")
-        }
 
         binding.tvSignUp.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
@@ -98,9 +87,6 @@ class LoginActivity : AppCompatActivity() {
         binding.btnLogin.isEnabled = !isLoading
         binding.etEmail.isEnabled = !isLoading
         binding.etPassword.isEnabled = !isLoading
-        binding.btnGoogle.isEnabled = !isLoading
-        binding.btnFacebook.isEnabled = !isLoading
-        binding.btnApple.isEnabled = !isLoading
         binding.tvSignUp.isEnabled = !isLoading
     }
 

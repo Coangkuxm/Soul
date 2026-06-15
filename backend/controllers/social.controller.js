@@ -10,9 +10,45 @@ class SocialController {
       const limit = parseInt(req.query.limit) || 10;
       const offset = (page - 1) * limit;
 
-      // Query: JOIN collection_items + items + collections + users
-      // Priority: friends (user_follows) first, then random others
       const feedQuery = `
+        WITH user_preferences AS (
+          SELECT i.type, COUNT(*)::int AS weight
+          FROM likes l
+          JOIN items i ON i.id = l.target_id
+          WHERE l.user_id = $1
+            AND l.target_type = 'item'
+          GROUP BY i.type
+
+          UNION ALL
+
+          SELECT i.type, COUNT(*)::int AS weight
+          FROM comments cm
+          JOIN collection_items ci_pref
+            ON cm.target_type = 'collection_item'
+           AND cm.target_id = ci_pref.id
+          JOIN items i ON i.id = ci_pref.item_id
+          WHERE cm.user_id = $1
+          GROUP BY i.type
+        ),
+        preference_scores AS (
+          SELECT type, SUM(weight)::int AS weight
+          FROM user_preferences
+          GROUP BY type
+        ),
+        post_stats AS (
+          SELECT
+            ci.id AS collection_item_id,
+            COUNT(DISTINCT lp.id)::int AS post_like_count,
+            COUNT(DISTINCT cm.id)::int AS post_comment_count
+          FROM collection_items ci
+          LEFT JOIN likes lp
+            ON lp.target_type = 'item'
+           AND lp.target_id = ci.item_id
+          LEFT JOIN comments cm
+            ON cm.target_type = 'collection_item'
+           AND cm.target_id = ci.id
+          GROUP BY ci.id
+        )
         SELECT 
           ci.id as collection_item_id,
           ci.note,
@@ -31,19 +67,36 @@ class SocialController {
           u.display_name,
           u.avatar_url,
           CASE WHEN uf.follower_id IS NOT NULL THEN true ELSE false END as is_friend,
-          CASE WHEN l.id IS NOT NULL THEN true ELSE false END as is_liked
+          CASE WHEN l.id IS NOT NULL THEN true ELSE false END as is_liked,
+          (
+            CASE WHEN uf.follower_id IS NOT NULL THEN 80 ELSE 0 END
+            + CASE WHEN c.owner_id = $1 THEN -100 ELSE 0 END
+            + CASE
+                WHEN ci.added_at >= NOW() - INTERVAL '1 day' THEN 45
+                WHEN ci.added_at >= NOW() - INTERVAL '7 days' THEN 30
+                WHEN ci.added_at >= NOW() - INTERVAL '30 days' THEN 12
+                ELSE 0
+              END
+            + LEAST(COALESCE(ps.post_like_count, 0), 20) * 2
+            + LEAST(COALESCE(ps.post_comment_count, 0), 20) * 3
+            + LEAST(COALESCE(pref.weight, 0), 10) * 4
+            + RANDOM() * 8
+          ) as feed_score
         FROM collection_items ci
         JOIN items i ON ci.item_id = i.id
         JOIN collections c ON ci.collection_id = c.id
         JOIN users u ON c.owner_id = u.id
         LEFT JOIN user_follows uf ON uf.following_id = u.id AND uf.follower_id = $1
         LEFT JOIN likes l ON l.target_id = i.id AND l.target_type = 'item' AND l.user_id = $1
+        LEFT JOIN preference_scores pref ON pref.type = i.type
+        LEFT JOIN post_stats ps ON ps.collection_item_id = ci.id
         WHERE c.is_private = false
           AND COALESCE(u.account_status, 'active') = 'active'
           AND COALESCE(ci.moderation_status, 'active') = 'active'
+          AND ci.added_at >= NOW() - INTERVAL '180 days'
         ORDER BY 
-          CASE WHEN uf.follower_id IS NOT NULL THEN 0 ELSE 1 END,
-          RANDOM()
+          feed_score DESC,
+          ci.added_at DESC
         LIMIT $2 OFFSET $3
       `;
 
