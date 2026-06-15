@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -99,13 +100,17 @@ class FeedAdapter(
                 }
 
                 updateLikeIcon(btnLike, feedItem.isLiked)
+                renderCount(tvLikeCount, feedItem.likeCount)
                 btnLike.setOnClickListener {
                     val willLike = !feedItem.isLiked
                     feedItem.isLiked = willLike
+                    feedItem.likeCount = (feedItem.likeCount + if (willLike) 1 else -1).coerceAtLeast(0)
                     animateLike(btnLike, willLike)
+                    renderCount(tvLikeCount, feedItem.likeCount)
                     onLikeClick(feedItem, willLike)
                 }
 
+                renderCount(tvCommentCount, feedItem.commentCount)
                 btnComment.setOnClickListener { onCommentClick(feedItem) }
                 btnShare.setOnClickListener { onShareClick(feedItem) }
                 btnMore.setOnClickListener { onReportClick(feedItem, it) }
@@ -113,6 +118,15 @@ class FeedAdapter(
                 root.setOnClickListener { onItemClick(feedItem) }
                 ivAvatar.setOnClickListener { onUserClick(feedItem.user.id) }
                 tvActivity.setOnClickListener { onUserClick(feedItem.user.id) }
+            }
+        }
+
+        private fun renderCount(tv: TextView, count: Int) {
+            if (count > 0) {
+                tv.visibility = View.VISIBLE
+                tv.text = count.toString()
+            } else {
+                tv.visibility = View.GONE
             }
         }
 

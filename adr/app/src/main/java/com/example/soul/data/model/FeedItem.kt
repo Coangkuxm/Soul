@@ -32,7 +32,13 @@ data class FeedItem(
     
     @SerializedName("isLiked")
     var isLiked: Boolean = false,
-    
+
+    @SerializedName("likeCount")
+    var likeCount: Int = 0,
+
+    @SerializedName("commentCount")
+    var commentCount: Int = 0,
+
     @SerializedName("activityText")
     val activityText: String?
 )

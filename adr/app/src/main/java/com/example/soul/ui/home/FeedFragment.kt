@@ -63,6 +63,23 @@ class FeedFragment : Fragment() {
         if (result.resultCode == android.app.Activity.RESULT_OK) viewModel.refresh()
     }
 
+    // Khi đóng màn bình luận: cập nhật số comment cho đúng bài (không cần reload cả feed)
+    private val commentsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != android.app.Activity.RESULT_OK) return@registerForActivityResult
+        val data = result.data ?: return@registerForActivityResult
+        val targetId = data.getIntExtra(CommentsActivity.EXTRA_TARGET_ID, -1)
+        val count = data.getIntExtra(CommentsActivity.EXTRA_RESULT_COMMENT_COUNT, -1)
+        if (targetId != -1 && count >= 0) {
+            val item = feedAdapter.currentList.firstOrNull { it.id == targetId }
+            if (item != null && item.commentCount != count) {
+                item.commentCount = count
+                feedAdapter.notifyDataSetChanged()
+            }
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -213,7 +230,7 @@ class FeedFragment : Fragment() {
     private fun openComments(feedItem: FeedItem) {
         val displayName = feedItem.user.displayName ?: feedItem.user.username
         val subtitle = feedItem.item.metadata?.artist ?: feedItem.collection.name
-        startActivity(Intent(requireContext(), CommentsActivity::class.java).apply {
+        commentsLauncher.launch(Intent(requireContext(), CommentsActivity::class.java).apply {
             putExtra(CommentsActivity.EXTRA_TARGET_TYPE, "collection_item")
             putExtra(CommentsActivity.EXTRA_TARGET_ID, feedItem.id)
             putExtra(CommentsActivity.EXTRA_TITLE, feedItem.item.title)
@@ -446,7 +463,9 @@ class FeedFragment : Fragment() {
                     RetrofitClient.apiService.unlikeItem(token, body)
                 }
             } catch (_: Exception) {
+                // Hoàn tác cả trạng thái lẫn số đếm đã cập nhật lạc quan ở adapter
                 feedItem.isLiked = !isLiked
+                feedItem.likeCount = (feedItem.likeCount + if (isLiked) -1 else 1).coerceAtLeast(0)
                 feedAdapter.notifyDataSetChanged()
                 Toast.makeText(requireContext(), "Không thể cập nhật lượt thích", Toast.LENGTH_SHORT).show()
             }

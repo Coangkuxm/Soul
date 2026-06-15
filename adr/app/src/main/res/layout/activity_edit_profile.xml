@@ -45,7 +45,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="12dp"
-                android:text="Doi anh dai dien" />
+                android:text="Đổi ảnh đại diện" />
 
             <Button
                 android:id="@+id/btnRemoveAvatar"
@@ -53,7 +53,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:text="Xoa anh dai dien" />
+                android:text="Xóa ảnh đại diện" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilUsername"
@@ -130,7 +130,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="Luu thay doi"
+                android:text="Lưu thay đổi"
                 android:backgroundTint="@color/primary" />
 
             <Button
@@ -139,7 +139,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Bo qua, vao app"
+                android:text="Bỏ qua, vào app"
                 android:visibility="gone"
                 tools:visibility="visible" />
 

@@ -33,7 +33,14 @@ data class CommentsResponse(
     @SerializedName("success")
     val success: Boolean,
     @SerializedName("data")
-    val data: List<Comment>
+    val data: List<Comment>,
+    @SerializedName("pagination")
+    val pagination: CommentsPagination? = null
+)
+
+data class CommentsPagination(
+    @SerializedName("total")
+    val total: Int = 0
 )
 
 data class CreateCommentResponse(

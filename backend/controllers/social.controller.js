@@ -72,6 +72,8 @@ class SocialController {
           u.avatar_url,
           CASE WHEN uf.follower_id IS NOT NULL THEN true ELSE false END as is_friend,
           CASE WHEN l.id IS NOT NULL THEN true ELSE false END as is_liked,
+          COALESCE(ps.post_like_count, 0) as like_count,
+          COALESCE(ps.post_comment_count, 0) as comment_count,
           (
             CASE WHEN uf.follower_id IS NOT NULL THEN 80 ELSE 0 END
             + CASE WHEN c.owner_id = $1 THEN -100 ELSE 0 END
@@ -132,6 +134,8 @@ class SocialController {
         },
         isFriend: row.is_friend,
         isLiked: row.is_liked,
+        likeCount: row.like_count || 0,
+        commentCount: row.comment_count || 0,
         activityText: getActivityText(row.item_type)
       }));
 

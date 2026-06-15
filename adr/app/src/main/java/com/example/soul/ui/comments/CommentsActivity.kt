@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.widget.Toast
 import android.view.inputmethod.InputMethodManager
 import android.content.Context
+import android.content.Intent
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -34,6 +35,8 @@ class CommentsActivity : AppCompatActivity() {
         const val EXTRA_POST_ITEM_SUBTITLE = "post_item_subtitle"
         const val EXTRA_POST_ITEM_COVER = "post_item_cover"
         const val EXTRA_POST_ADDED_AT = "post_added_at"
+        // Trả về cho màn feed: số bình luận mới nhất của bài (để cập nhật bộ đếm)
+        const val EXTRA_RESULT_COMMENT_COUNT = "result_comment_count"
     }
 
     private lateinit var binding: ActivityCommentsBinding
@@ -149,6 +152,13 @@ class CommentsActivity : AppCompatActivity() {
         }
     }
 
+    private fun publishCommentCount(count: Int) {
+        setResult(RESULT_OK, Intent().apply {
+            putExtra(EXTRA_TARGET_ID, targetId)
+            putExtra(EXTRA_RESULT_COMMENT_COUNT, count)
+        })
+    }
+
     private fun titleFromFallback(): String {
         return intent.getStringExtra(EXTRA_TITLE).orEmpty().ifBlank { "Bài viết" }
     }
@@ -194,7 +204,10 @@ class CommentsActivity : AppCompatActivity() {
                     targetId = targetId
                 )
                 if (response.isSuccessful && response.body() != null) {
-                    adapter.submitComments(response.body()!!.data)
+                    val body = response.body()!!
+                    adapter.submitComments(body.data)
+                    // Trả số comment mới nhất về feed (total đếm cả reply, khớp post_comment_count)
+                    publishCommentCount(body.pagination?.total ?: body.data.size)
                 } else {
                     Toast.makeText(this@CommentsActivity, "Không thể tải bình luận", Toast.LENGTH_SHORT).show()
                 }
