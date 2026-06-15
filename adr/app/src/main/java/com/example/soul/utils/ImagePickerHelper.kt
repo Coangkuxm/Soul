@@ -2,8 +2,8 @@ package com.example.soul.utils
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Base64
-import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
 /**
@@ -27,16 +27,45 @@ object ImagePickerHelper {
     }
     
     /**
-     * Get file size from Uri in MB
+     * Get file size from Uri in MB.
+     * Đọc kích thước thật qua OpenableColumns.SIZE (InputStream.available() KHÔNG phải
+     * kích thước file). Fallback đọc toàn bộ stream nếu provider không trả về SIZE.
      */
     fun getFileSizeMB(context: Context, uri: Uri): Double {
+        val bytes = getFileSizeBytes(context, uri)
+        return bytes / (1024.0 * 1024.0)
+    }
+
+    private fun getFileSizeBytes(context: Context, uri: Uri): Long {
+        // 1) Ưu tiên metadata SIZE từ ContentResolver
+        try {
+            context.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                    if (sizeIndex != -1 && !cursor.isNull(sizeIndex)) {
+                        val size = cursor.getLong(sizeIndex)
+                        if (size > 0) return size
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            // bỏ qua, thử cách dưới
+        }
+
+        // 2) Fallback: đếm số byte thực tế khi đọc stream
         return try {
-            val inputStream = context.contentResolver.openInputStream(uri)
-            val bytes = inputStream?.available() ?: 0
-            inputStream?.close()
-            bytes / (1024.0 * 1024.0)
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                var total = 0L
+                val buffer = ByteArray(8 * 1024)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read == -1) break
+                    total += read
+                }
+                total
+            } ?: 0L
         } catch (e: Exception) {
-            0.0
+            0L
         }
     }
     

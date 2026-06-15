@@ -10,6 +10,7 @@ import com.bumptech.glide.Glide
 import com.example.soul.R
 import com.example.soul.data.model.Comment
 import com.example.soul.databinding.ItemCommentBinding
+import com.example.soul.utils.AvatarLoader
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -98,17 +99,7 @@ class CommentAdapter(
             binding.btnReply.setOnClickListener { onReplyClick(comment) }
             binding.btnLike.setOnClickListener { onLikeClick(comment, !comment.isLiked) }
 
-            val avatarUrl = comment.avatarUrl
-            if (!avatarUrl.isNullOrEmpty() && !avatarUrl.contains("example.com")) {
-                Glide.with(binding.ivAvatar.context)
-                    .load(avatarUrl)
-                    .placeholder(R.drawable.ic_default_avatar)
-                    .error(R.drawable.ic_default_avatar)
-                    .circleCrop()
-                    .into(binding.ivAvatar)
-            } else {
-                binding.ivAvatar.setImageResource(R.drawable.ic_default_avatar)
-            }
+            AvatarLoader.load(binding.ivAvatar, comment.avatarUrl)
         }
 
         private fun showCommentMenu(anchor: View, comment: Comment) {
@@ -166,3 +157,4 @@ class CommentAdapter(
         val replyToUserName: String?
     )
 }
+

@@ -7,10 +7,10 @@ import android.content.res.ColorStateList
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.example.soul.R
 import com.example.soul.data.model.ExploreUser
 import com.example.soul.databinding.ItemExploreUserBinding
+import com.example.soul.utils.AvatarLoader
 
 class ExploreUserAdapter(
     private val onFollowClick: (ExploreUser) -> Unit,
@@ -36,12 +36,7 @@ class ExploreUserAdapter(
         fun bind(user: ExploreUser) {
             binding.tvName.text = user.displayName?.takeIf { it.isNotBlank() } ?: user.username
             binding.tvSubtitle.text = "@${user.username}"
-            Glide.with(binding.ivAvatar.context)
-                .load(user.avatarUrl)
-                .placeholder(R.drawable.ic_default_avatar)
-                .error(R.drawable.ic_default_avatar)
-                .circleCrop()
-                .into(binding.ivAvatar)
+            AvatarLoader.load(binding.ivAvatar, user.avatarUrl)
 
             applyFollowVisual(user.isFollowing, animate = false)
 

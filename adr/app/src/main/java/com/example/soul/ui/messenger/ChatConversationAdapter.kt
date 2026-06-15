@@ -11,6 +11,7 @@ import com.example.soul.R
 import com.example.soul.data.model.ChatConversation
 import com.example.soul.databinding.ItemChatConversationBinding
 import com.example.soul.ui.notification.RelativeTime
+import com.example.soul.utils.AvatarLoader
 
 class ChatConversationAdapter(
     private val onItemClick: (ChatConversation) -> Unit
@@ -48,12 +49,7 @@ class ChatConversationAdapter(
             binding.tvUnreadCount.text = unread.toString()
             binding.tvUnreadCount.visibility = if (unread > 0) View.VISIBLE else View.GONE
 
-            Glide.with(binding.ivAvatar.context)
-                .load(item.otherAvatarUrl)
-                .placeholder(R.drawable.ic_default_avatar)
-                .error(R.drawable.ic_default_avatar)
-                .circleCrop()
-                .into(binding.ivAvatar)
+            AvatarLoader.load(binding.ivAvatar, item.otherAvatarUrl)
 
             binding.root.setOnClickListener { onItemClick(item) }
         }

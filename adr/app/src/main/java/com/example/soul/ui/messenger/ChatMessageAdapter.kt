@@ -14,6 +14,7 @@ import com.example.soul.data.model.ChatMessage
 import com.example.soul.databinding.ItemChatMessageOtherBinding
 import com.example.soul.databinding.ItemChatMessageSelfBinding
 import com.example.soul.ui.notification.RelativeTime
+import com.example.soul.utils.AvatarLoader
 
 class ChatMessageAdapter(
     private val currentUserId: Int,
@@ -79,12 +80,7 @@ class ChatMessageAdapter(
                 ?: "Ngu?i dùng"
             binding.tvTime.text = RelativeTime.format(item.createdAt)
 
-            Glide.with(binding.ivAvatar.context)
-                .load(item.senderAvatarUrl)
-                .placeholder(R.drawable.ic_default_avatar)
-                .error(R.drawable.ic_default_avatar)
-                .circleCrop()
-                .into(binding.ivAvatar)
+            AvatarLoader.load(binding.ivAvatar, item.senderAvatarUrl)
         }
     }
 
@@ -145,3 +141,4 @@ class ChatMessageAdapter(
         private const val VIEW_TYPE_OTHER = 2
     }
 }
+

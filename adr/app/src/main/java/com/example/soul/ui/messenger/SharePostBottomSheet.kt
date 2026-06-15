@@ -229,10 +229,10 @@ class SharePostBottomSheet : BottomSheetDialogFragment() {
         return usersArray.mapNotNull { node ->
             if (!node.isJsonObject) return@mapNotNull null
             val obj = node.asJsonObject
-            val id = obj.get("id")?.asInt ?: return@mapNotNull null
-            val username = obj.get("username")?.asString ?: return@mapNotNull null
-            val displayName = obj.get("displayName")?.asString
-            val avatarUrl = obj.get("avatarUrl")?.asString
+            val id = obj.get("id")?.takeIf { !it.isJsonNull }?.asInt ?: return@mapNotNull null
+            val username = obj.get("username")?.takeIf { !it.isJsonNull }?.asString ?: return@mapNotNull null
+            val displayName = obj.get("displayName")?.takeIf { !it.isJsonNull }?.asString
+            val avatarUrl = obj.get("avatarUrl")?.takeIf { !it.isJsonNull }?.asString
             ExploreUser(id = id, username = username, displayName = displayName, avatarUrl = avatarUrl)
         }
     }

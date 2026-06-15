@@ -24,6 +24,7 @@ import com.example.soul.ui.home.HomeViewModel
 import com.example.soul.ui.home.HomeViewModelFactory
 import com.example.soul.ui.admin.AdminReportsActivity
 import com.example.soul.ui.main.adapter.CollectionAdapter
+import com.example.soul.utils.AvatarLoader
 import com.example.soul.utils.Resource
 
 class ProfileFragment : Fragment() {
@@ -95,21 +96,7 @@ class ProfileFragment : Fragment() {
                             binding.tvBio.visibility = View.GONE
                             binding.tvBio.text = ""
                         }
-                        val avatarUrl = profile.avatarUrl
-                        val isValidUrl = !avatarUrl.isNullOrEmpty() &&
-                            !avatarUrl.contains("example.com") &&
-                            (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://"))
-                        if (isValidUrl) {
-                            Glide.with(this)
-                                .load(avatarUrl)
-                                .placeholder(R.drawable.ic_default_avatar)
-                                .error(R.drawable.ic_default_avatar)
-                                .transition(DrawableTransitionOptions.withCrossFade())
-                                .circleCrop()
-                                .into(binding.ivAvatar)
-                        } else {
-                            binding.ivAvatar.setImageResource(R.drawable.ic_default_avatar)
-                        }
+                        AvatarLoader.load(binding.ivAvatar, profile.avatarUrl)
                     }
                 }
                 is Resource.Error -> {

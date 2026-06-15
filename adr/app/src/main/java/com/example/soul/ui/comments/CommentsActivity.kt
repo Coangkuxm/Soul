@@ -15,6 +15,7 @@ import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.Comment
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.ActivityCommentsBinding
+import com.example.soul.utils.AvatarLoader
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -134,16 +135,7 @@ class CommentsActivity : AppCompatActivity() {
             binding.tvPostItemSubtitle.visibility = View.GONE
         }
 
-        if (postUserAvatar.isNotBlank() && !postUserAvatar.contains("example.com")) {
-            Glide.with(this)
-                .load(postUserAvatar)
-                .placeholder(R.drawable.ic_default_avatar)
-                .error(R.drawable.ic_default_avatar)
-                .circleCrop()
-                .into(binding.ivPostUserAvatar)
-        } else {
-            binding.ivPostUserAvatar.setImageResource(R.drawable.ic_default_avatar)
-        }
+        AvatarLoader.load(binding.ivPostUserAvatar, postUserAvatar)
 
         if (postCover.isNotBlank() && !postCover.contains("example.com")) {
             Glide.with(this)

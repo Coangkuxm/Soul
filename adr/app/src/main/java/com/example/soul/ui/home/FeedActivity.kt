@@ -27,6 +27,7 @@ import com.example.soul.ui.home.adapter.FeedAdapter
 import com.example.soul.ui.profile.ProfileActivity
 import com.example.soul.ui.profile.UserProfileActivity
 import com.example.soul.audio.PreviewAudioPlayer
+import com.example.soul.utils.AvatarLoader
 import com.example.soul.utils.Resource
 import kotlinx.coroutines.launch
 
@@ -259,21 +260,7 @@ class FeedActivity : AppCompatActivity() {
     }
 
     private fun setAvatarFromUrl(avatarUrl: String?) {
-        val isValidUrl = !avatarUrl.isNullOrEmpty() &&
-            !avatarUrl.contains("example.com") &&
-            (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://"))
-
-        if (isValidUrl) {
-            Glide.with(this)
-                .load(avatarUrl)
-                .placeholder(R.drawable.ic_default_avatar)
-                .error(R.drawable.ic_default_avatar)
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .circleCrop()
-                .into(binding.ivUserAvatar)
-        } else {
-            binding.ivUserAvatar.setImageResource(R.drawable.ic_default_avatar)
-        }
+        AvatarLoader.load(binding.ivUserAvatar, avatarUrl)
     }
 
     private fun showFilterMenu(anchor: View) {
@@ -598,6 +585,7 @@ class FeedActivity : AppCompatActivity() {
         previewAudioPlayer.release()
     }
 }
+
 
 
 

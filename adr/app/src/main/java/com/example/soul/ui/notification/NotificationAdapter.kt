@@ -10,6 +10,7 @@ import com.bumptech.glide.Glide
 import com.example.soul.R
 import com.example.soul.data.model.NotificationItem
 import com.example.soul.databinding.ItemNotificationBinding
+import com.example.soul.utils.AvatarLoader
 
 class NotificationAdapter(
     private val onClick: (NotificationItem) -> Unit
@@ -44,12 +45,7 @@ class NotificationAdapter(
             }
             binding.tvTime.text = RelativeTime.format(item.createdAt)
             binding.unreadDot.visibility = if (item.isRead) View.GONE else View.VISIBLE
-            Glide.with(binding.ivAvatar)
-                .load(item.senderAvatar)
-                .placeholder(R.drawable.ic_default_avatar)
-                .error(R.drawable.ic_default_avatar)
-                .circleCrop()
-                .into(binding.ivAvatar)
+            AvatarLoader.load(binding.ivAvatar, item.senderAvatar)
         }
 
         private fun typeText(type: String): String {

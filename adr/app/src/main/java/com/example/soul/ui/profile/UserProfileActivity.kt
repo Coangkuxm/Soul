@@ -7,13 +7,13 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import com.bumptech.glide.Glide
 import com.example.soul.R
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.ActivityUserProfileBinding
 import com.example.soul.ui.collection.CollectionItemsActivity
 import com.example.soul.ui.messenger.ChatActivity
+import com.example.soul.utils.AvatarLoader
 import kotlinx.coroutines.launch
 
 class UserProfileActivity : AppCompatActivity() {
@@ -76,12 +76,7 @@ class UserProfileActivity : AppCompatActivity() {
                         targetAvatarUrl = user.avatarUrl
                         binding.tvUsername.text = targetName
                         binding.tvLink.text = "shelf.im/${user.username}"
-                        Glide.with(this@UserProfileActivity)
-                            .load(user.avatarUrl)
-                            .placeholder(R.drawable.ic_default_avatar)
-                            .error(R.drawable.ic_default_avatar)
-                            .circleCrop()
-                            .into(binding.ivAvatar)
+                        AvatarLoader.load(binding.ivAvatar, user.avatarUrl)
                     }
                 }
 

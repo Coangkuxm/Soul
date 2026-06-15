@@ -9,6 +9,7 @@ import com.bumptech.glide.Glide
 import com.example.soul.R
 import com.example.soul.data.model.ShareRecipient
 import com.example.soul.databinding.ItemShareRecipientBinding
+import com.example.soul.utils.AvatarLoader
 
 class ShareRecipientAdapter(
     private val onClick: (ShareRecipient) -> Unit
@@ -34,12 +35,7 @@ class ShareRecipientAdapter(
             binding.tvTitle.text = item.title
             binding.tvSubtitle.text = item.subtitle.orEmpty()
 
-            Glide.with(binding.ivAvatar.context)
-                .load(item.avatarUrl)
-                .placeholder(R.drawable.ic_default_avatar)
-                .error(R.drawable.ic_default_avatar)
-                .circleCrop()
-                .into(binding.ivAvatar)
+            AvatarLoader.load(binding.ivAvatar, item.avatarUrl)
 
             binding.root.setOnClickListener { onClick(item) }
         }

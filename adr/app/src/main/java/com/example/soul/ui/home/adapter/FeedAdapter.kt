@@ -16,6 +16,7 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.soul.R
 import com.example.soul.data.model.FeedItem
 import com.example.soul.databinding.ItemFeedBinding
+import com.example.soul.utils.AvatarLoader
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,17 +59,7 @@ class FeedAdapter(
                 tvActivity.text = spannable
                 tvTime.text = getTimeAgo(feedItem.addedAt)
 
-                val avatarUrl = feedItem.user.avatarUrl
-                if (!avatarUrl.isNullOrEmpty() && !avatarUrl.contains("example.com")) {
-                    Glide.with(ivAvatar.context)
-                        .load(avatarUrl)
-                        .placeholder(R.drawable.ic_default_avatar)
-                        .error(R.drawable.ic_default_avatar)
-                        .transition(DrawableTransitionOptions.withCrossFade())
-                        .into(ivAvatar)
-                } else {
-                    ivAvatar.setImageResource(R.drawable.ic_default_avatar)
-                }
+                AvatarLoader.load(ivAvatar, feedItem.user.avatarUrl)
 
                 tvTitle.text = feedItem.item.title
                 val artist = feedItem.item.metadata?.artist

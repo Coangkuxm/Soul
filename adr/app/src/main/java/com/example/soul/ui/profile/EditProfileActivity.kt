@@ -169,7 +169,9 @@ class EditProfileActivity : AppCompatActivity() {
                     avatarUrl = ""
                 }
                 selectedImageUri?.let {
-                    avatarUrl = uploadAvatar(token, it) ?: currentAvatarUrl
+                    // uploadAvatar ném exception khi thất bại -> rơi vào catch bên dưới,
+                    // hiển thị lỗi thật và KHÔNG lưu hồ sơ (tránh báo "thành công" giả).
+                    avatarUrl = uploadAvatar(token, it)
                     removeAvatar = false
                 }
 
@@ -214,40 +216,46 @@ class EditProfileActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun uploadAvatar(token: String, uri: Uri): String? {
-        return try {
-            if (!ImagePickerHelper.isFileSizeValid(this, uri)) {
-                Toast.makeText(this, "Anh qua lon (toi da 5MB)", Toast.LENGTH_SHORT).show()
-                return null
-            }
-
-            val inputStream = contentResolver.openInputStream(uri)
-            val bytes = inputStream?.readBytes()
-            inputStream?.close()
-
-            if (bytes == null) return null
-
-            val requestBody = bytes.toRequestBody("image/*".toMediaTypeOrNull())
-            val imagePart = MultipartBody.Part.createFormData("image", "avatar.jpg", requestBody)
-            val folderPart = "avatars".toRequestBody("text/plain".toMediaTypeOrNull())
-
-            val response = RetrofitClient.apiService.uploadImage(
-                token = "Bearer $token",
-                image = imagePart,
-                folder = folderPart
-            )
-
-            if (response.isSuccessful && response.body() != null) {
-                val data = response.body()!!["data"] as? Map<*, *>
-                data?.get("url") as? String
-            } else {
-                Log.e(TAG, "Avatar upload failed: ${response.errorBody()?.string()}")
-                null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Avatar upload error", e)
-            null
+    /**
+     * Upload avatar, trả về URL ảnh khi thành công.
+     * Ném exception (kèm message dễ hiểu) khi thất bại để caller hiển thị lỗi thật,
+     * thay vì âm thầm dùng lại avatar cũ rồi báo "thành công".
+     */
+    private suspend fun uploadAvatar(token: String, uri: Uri): String {
+        if (!ImagePickerHelper.isFileSizeValid(this, uri)) {
+            throw IllegalArgumentException("Anh qua lon (toi da 5MB)")
         }
+
+        val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: throw IllegalStateException("Khong doc duoc anh da chon")
+
+        val mimeType = contentResolver.getType(uri) ?: "image/*"
+        val requestBody = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
+        val imagePart = MultipartBody.Part.createFormData("image", "avatar.jpg", requestBody)
+        val folderPart = "avatars".toRequestBody("text/plain".toMediaTypeOrNull())
+
+        val response = RetrofitClient.apiService.uploadImage(
+            token = "Bearer $token",
+            image = imagePart,
+            folder = folderPart
+        )
+
+        if (!response.isSuccessful) {
+            val errorMessage = parseError(
+                response.errorBody()?.string(),
+                "Upload anh that bai (ma ${response.code()})"
+            )
+            Log.e(TAG, "Avatar upload failed: ${response.code()} $errorMessage")
+            throw IllegalStateException(errorMessage)
+        }
+
+        val data = response.body()?.get("data") as? Map<*, *>
+        val url = data?.get("url") as? String
+        if (url.isNullOrBlank()) {
+            Log.e(TAG, "Avatar upload: response thieu data.url -> ${response.body()}")
+            throw IllegalStateException("Server khong tra ve URL anh")
+        }
+        return url
     }
 
     private fun parseError(raw: String?, fallback: String): String {
