@@ -114,8 +114,30 @@ const checkConnection = async () => {
   }
 };
 
-// Gọi hàm kiểm tra kết nối khi khởi động
-checkConnection();
+// Tự động đảm bảo các ràng buộc target_type cho phép 'collection_item' (idempotent).
+// Chạy trên CHÍNH database mà app đang kết nối -> không cần sửa SQL thủ công trên Neon.
+const ensureSchema = async () => {
+  try {
+    await pool.query(`ALTER TABLE comments DROP CONSTRAINT IF EXISTS comments_target_type_check`);
+    await pool.query(
+      `ALTER TABLE comments ADD CONSTRAINT comments_target_type_check
+       CHECK (target_type IN ('collection', 'item', 'collection_item'))`
+    );
+
+    await pool.query(`ALTER TABLE reports DROP CONSTRAINT IF EXISTS reports_target_type_check`);
+    await pool.query(
+      `ALTER TABLE reports ADD CONSTRAINT reports_target_type_check
+       CHECK (target_type IN ('user', 'collection_item'))`
+    );
+
+    console.log("✅ ensureSchema: đã cập nhật ràng buộc target_type (comments, reports)");
+  } catch (error) {
+    console.error('⚠️ ensureSchema lỗi (bỏ qua, không chặn khởi động):', error.message);
+  }
+};
+
+// Gọi hàm kiểm tra kết nối khi khởi động, rồi đảm bảo schema
+checkConnection().then(() => ensureSchema());
 
 // Hàm lấy client để thực hiện transaction
 const getClient = async () => {
