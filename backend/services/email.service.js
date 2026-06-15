@@ -11,6 +11,16 @@ const readFile = promisify(fs.readFile);
 const hasSmtpConfig = () =>
   process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
 
+// Log lúc boot để biết CHÍNH XÁC biến SMTP nào đang thiếu trên Render
+console.log(
+  '[Email] SMTP env -> HOST:%s  USER:%s  PASS:%s  PORT:%s  FROM:%s',
+  process.env.SMTP_HOST ? 'set' : 'MISSING',
+  process.env.SMTP_USER ? 'set' : 'MISSING',
+  process.env.SMTP_PASS ? 'set' : 'MISSING',
+  process.env.SMTP_PORT || '(mặc định 587)',
+  process.env.EMAIL_FROM ? 'set' : 'MISSING'
+);
+
 const createTransporter = async () => {
   if (hasSmtpConfig()) {
     return nodemailer.createTransport({
