@@ -20,7 +20,11 @@ const createTransporter = async () => {
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
-      }
+      },
+      // Tránh treo vô hạn khi SMTP chậm/bị chặn
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000
     });
   }
 

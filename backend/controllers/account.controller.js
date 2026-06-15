@@ -72,13 +72,10 @@ const accountController = {
 
       console.log(`[ForgotPassword] OTP cho ${email}: ${resetCode} (hết hạn sau 15 phút)`);
 
-      // Cố gắng gửi email; nếu chưa cấu hình SMTP thì bỏ qua trong test mode
-      try {
-        await sendPasswordResetEmail(user, resetCode);
-      } catch (mailErr) {
-        console.error('[ForgotPassword] Gửi email thất bại (test mode bỏ qua):', mailErr.message);
-        if (!testMode) throw mailErr;
-      }
+      // Gửi email ở CHẾ ĐỘ NỀN — không await để response không bị treo khi SMTP chậm/timeout.
+      sendPasswordResetEmail(user, resetCode)
+        .then(() => console.log(`[ForgotPassword] Đã gửi email tới ${email}`))
+        .catch((mailErr) => console.error('[ForgotPassword] Gửi email thất bại:', mailErr.message));
 
       const payload = { success: true, message: genericMessage };
       if (testMode) payload.devCode = resetCode; // CHỈ dùng để test
