@@ -157,45 +157,45 @@ class AddCollectionActivity : AppCompatActivity() {
         binding.btnCreate.isEnabled = !show
     }
     
-    private suspend fun uploadImage(token: String, uri: Uri): String? {
-        return try {
-            // Check file size
-            if (!ImagePickerHelper.isFileSizeValid(this, uri)) {
-                Toast.makeText(this, "Ảnh quá lớn (tối đa 5MB)", Toast.LENGTH_SHORT).show()
-                return null
-            }
-            
-            // Read file bytes
-            val inputStream = contentResolver.openInputStream(uri)
-            val bytes = inputStream?.readBytes()
-            inputStream?.close()
-            
-            if (bytes == null) return null
-            
-            // Create multipart body
-            val requestBody = bytes.toRequestBody("image/*".toMediaTypeOrNull())
-            val imagePart = MultipartBody.Part.createFormData("image", "cover.jpg", requestBody)
-            val folderPart = "collections".toRequestBody("text/plain".toMediaTypeOrNull())
-            
-            val response = RetrofitClient.apiService.uploadImage(
-                token = "Bearer $token",
-                image = imagePart,
-                folder = folderPart
-            )
-            
-            if (response.isSuccessful && response.body() != null) {
-                val data = response.body()!!
-                data["data"]?.let { dataMap ->
-                    (dataMap as? Map<*, *>)?.get("url") as? String
-                }
-            } else {
-                Toast.makeText(this, "Lỗi upload ảnh", Toast.LENGTH_SHORT).show()
-                null
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(this, "Lỗi upload: ${e.message}", Toast.LENGTH_SHORT).show()
-            null
+    /**
+     * Upload ảnh bìa, trả về URL khi thành công.
+     * Ném exception (kèm message lỗi thật) khi thất bại để caller dừng tạo collection
+     * và hiển thị lỗi, thay vì âm thầm tạo collection không có ảnh bìa.
+     */
+    private suspend fun uploadImage(token: String, uri: Uri): String {
+        if (!ImagePickerHelper.isFileSizeValid(this, uri)) {
+            throw IllegalArgumentException("Ảnh quá lớn (tối đa 5MB)")
         }
+
+        val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: throw IllegalStateException("Không đọc được ảnh đã chọn")
+
+        val mimeType = contentResolver.getType(uri) ?: "image/*"
+        val requestBody = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
+        val imagePart = MultipartBody.Part.createFormData("image", "cover.jpg", requestBody)
+
+        // Endpoint chuyên dụng cho ảnh bìa: lưu vào soul-app/covers + crop 1200x630.
+        val response = RetrofitClient.apiService.uploadCollectionCover(
+            token = "Bearer $token",
+            image = imagePart
+        )
+
+        if (!response.isSuccessful) {
+            val errorMessage = try {
+                JSONObject(response.errorBody()?.string() ?: "")
+                    .optString("error")
+                    .ifEmpty { "Upload ảnh thất bại (mã ${response.code()})" }
+            } catch (e: Exception) {
+                "Upload ảnh thất bại (mã ${response.code()})"
+            }
+            throw IllegalStateException(errorMessage)
+        }
+
+        val data = response.body()?.get("data") as? Map<*, *>
+        val url = data?.get("url") as? String
+        if (url.isNullOrBlank()) {
+            throw IllegalStateException("Server không trả về URL ảnh")
+        }
+        return url
     }
 }

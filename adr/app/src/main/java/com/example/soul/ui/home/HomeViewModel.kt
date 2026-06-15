@@ -44,6 +44,9 @@ class HomeViewModel(
     private val _sessionExpired = MutableLiveData<Boolean>()
     val sessionExpired: LiveData<Boolean> = _sessionExpired
 
+    // null = "Mọi người" (mặc định), "friends" = "Chỉ bạn bè"
+    private var feedScope: String? = null
+
     init {
         loadData()
     }
@@ -61,6 +64,14 @@ class HomeViewModel(
 
     fun refreshProfileOnly() {
         loadProfile()
+    }
+
+    /** Đổi bộ lọc feed ("Mọi người" = null, "Chỉ bạn bè" = "friends") và tải lại feed. */
+    fun setFeedScope(scope: String?) {
+        if (feedScope == scope) return
+        feedScope = scope
+        _isRefreshing.value = true
+        loadFeed()
     }
 
     private fun loadProfile() {
@@ -128,7 +139,8 @@ class HomeViewModel(
                 val response = apiService.getFeed(
                     token = "Bearer $token",
                     page = 1,
-                    limit = 20
+                    limit = 20,
+                    scope = feedScope
                 )
                 
                 if (response.isSuccessful && response.body() != null) {

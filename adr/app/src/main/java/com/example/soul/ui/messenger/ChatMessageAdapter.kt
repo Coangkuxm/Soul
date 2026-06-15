@@ -77,7 +77,7 @@ class ChatMessageAdapter(
             )
             binding.tvSender.text = item.senderDisplayName?.takeIf { it.isNotBlank() }
                 ?: item.senderUsername
-                ?: "Ngu?i d�ng"
+                ?: "Người dùng"
             binding.tvTime.text = RelativeTime.format(item.createdAt)
 
             AvatarLoader.load(binding.ivAvatar, item.senderAvatarUrl)

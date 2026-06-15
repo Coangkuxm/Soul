@@ -123,7 +123,7 @@ class CommentAdapter(
         val edited = !comment.updatedAt.isNullOrBlank() &&
             !comment.createdAt.isNullOrBlank() &&
             comment.updatedAt.substringBefore(".") != comment.createdAt.substringBefore(".")
-        return if (edited && base.isNotBlank()) "$base � Da chinh sua" else base
+        return if (edited && base.isNotBlank()) "$base • Đã chỉnh sửa" else base
     }
 
     private fun formatTimeAgo(dateString: String?): String {

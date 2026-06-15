@@ -184,11 +184,14 @@ class FeedFragment : Fragment() {
 
     private fun showFilterMenu(anchor: View) {
         PopupMenu(requireContext(), anchor).apply {
-            menu.add("M?i ngu?i")
-            menu.add("Ch? b?n b�")
-            setOnMenuItemClickListener {
-                binding.btnFilter.text = it.title
-                viewModel.refresh()
+            val idEveryone = 0
+            val idFriends = 1
+            menu.add(0, idEveryone, 0, "Mọi người")
+            menu.add(0, idFriends, 1, "Chỉ bạn bè")
+            setOnMenuItemClickListener { item ->
+                binding.btnFilter.text = item.title
+                scrollToTopOnNextRefresh = true
+                viewModel.setFeedScope(if (item.itemId == idFriends) "friends" else null)
                 true
             }
             show()
@@ -247,9 +250,9 @@ class FeedFragment : Fragment() {
 
     private fun showFeedItemMenu(feedItem: FeedItem, anchor: View) {
         PopupMenu(requireContext(), anchor).apply {
-            menu.add("B�o c�o b�i vi?t")
+            menu.add("Báo cáo bài viết")
             setOnMenuItemClickListener {
-                showReportDialog("collection_item", feedItem.id, "B�o c�o b�i vi?t")
+                showReportDialog("collection_item", feedItem.id, "Báo cáo bài viết")
                 true
             }
             show()
@@ -259,11 +262,11 @@ class FeedFragment : Fragment() {
     private fun showReportDialog(targetType: String, targetId: Int, title: String) {
         val reasonCodes = listOf(
             "spam" to "Spam",
-            "harassment" to "Qu?y r?i",
-            "hate_speech" to "Ng�n t? th� gh�t",
-            "nudity" to "N?i dung nh?y c?m",
-            "misleading" to "Th�ng tin sai l?ch",
-            "other" to "L� do kh�c"
+            "harassment" to "Quấy rối",
+            "hate_speech" to "Ngôn từ thù ghét",
+            "nudity" to "Nội dung nhạy cảm",
+            "misleading" to "Thông tin sai lệch",
+            "other" to "Lý do khác"
         )
         val labels = reasonCodes.map { it.second }.toTypedArray()
 
@@ -272,7 +275,7 @@ class FeedFragment : Fragment() {
             .setItems(labels) { _, which ->
                 submitReport(targetType, targetId, reasonCodes[which].first, reasonCodes[which].second)
             }
-            .setNegativeButton("H?y", null)
+            .setNegativeButton("Hủy", null)
             .show()
     }
 
@@ -291,16 +294,16 @@ class FeedFragment : Fragment() {
                 )
 
                 if (response.isSuccessful) {
-                    Toast.makeText(requireContext(), "�� g?i b�o c�o", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Đã gửi báo cáo", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(
                         requireContext(),
-                        response.errorBody()?.string() ?: "Kh�ng th? g?i b�o c�o",
+                        response.errorBody()?.string() ?: "Không thể gửi báo cáo",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), e.message ?: "Kh�ng th? g?i b�o c�o", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), e.message ?: "Không thể gửi báo cáo", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -372,14 +375,14 @@ class FeedFragment : Fragment() {
 
     private fun promptOpenSpotifyOrNotify(spotifyUrl: String?) {
         if (spotifyUrl.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Kh�ng c� ngu?n ph�t", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Không có nguồn phát", Toast.LENGTH_SHORT).show()
             return
         }
         AlertDialog.Builder(requireContext())
-            .setTitle("H?t do?n xem tru?c")
-            .setMessage("B?n mu?n m? Spotify d? nghe c? b�i kh�ng?")
-            .setPositiveButton("M? Spotify") { _, _ -> openSpotify(spotifyUrl) }
-            .setNegativeButton("H?y", null)
+            .setTitle("Hết đoạn xem trước")
+            .setMessage("Bạn muốn mở Spotify để nghe cả bài không?")
+            .setPositiveButton("Mở Spotify") { _, _ -> openSpotify(spotifyUrl) }
+            .setNegativeButton("Hủy", null)
             .show()
     }
 
@@ -392,15 +395,15 @@ class FeedFragment : Fragment() {
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(spotifyUrl)))
             } catch (_: Exception) {
-                Toast.makeText(requireContext(), "Kh�ng th? m? Spotify", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Không thể mở Spotify", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun startMiniPlayer() {
-        val title = currentPreviewTitle ?: "Xem tru?c"
+        val title = currentPreviewTitle ?: "Xem trước"
         val artist = currentPreviewArtist
-        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title � $artist" else title
+        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title • $artist" else title
         binding.tvMiniPlayerTitle.isSelected = true
         val coverUrl = currentPreviewCoverUrl
         if (!coverUrl.isNullOrEmpty() && !coverUrl.contains("example.com")) {
@@ -445,7 +448,7 @@ class FeedFragment : Fragment() {
             } catch (_: Exception) {
                 feedItem.isLiked = !isLiked
                 feedAdapter.notifyDataSetChanged()
-                Toast.makeText(requireContext(), "Kh�ng th? c?p nh?t lu?t th�ch", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Không thể cập nhật lượt thích", Toast.LENGTH_SHORT).show()
             }
         }
     }

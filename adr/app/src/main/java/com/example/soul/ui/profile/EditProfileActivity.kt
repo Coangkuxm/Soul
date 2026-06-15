@@ -232,12 +232,11 @@ class EditProfileActivity : AppCompatActivity() {
         val mimeType = contentResolver.getType(uri) ?: "image/*"
         val requestBody = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
         val imagePart = MultipartBody.Part.createFormData("image", "avatar.jpg", requestBody)
-        val folderPart = "avatars".toRequestBody("text/plain".toMediaTypeOrNull())
 
-        val response = RetrofitClient.apiService.uploadImage(
+        // Endpoint chuyên dụng cho avatar: lưu vào soul-app/avatars + crop vuông 400x400 focus mặt.
+        val response = RetrofitClient.apiService.uploadAvatar(
             token = "Bearer $token",
-            image = imagePart,
-            folder = folderPart
+            image = imagePart
         )
 
         if (!response.isSuccessful) {

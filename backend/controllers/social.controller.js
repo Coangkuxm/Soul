@@ -10,6 +10,10 @@ class SocialController {
       const limit = parseInt(req.query.limit) || 10;
       const offset = (page - 1) * limit;
 
+      // scope=friends -> chỉ bài của người mình đang follow (bạn bè); mặc định: mọi người
+      const friendsOnly = req.query.scope === 'friends';
+      const friendFilter = friendsOnly ? 'AND uf.follower_id IS NOT NULL' : '';
+
       const feedQuery = `
         WITH user_preferences AS (
           SELECT i.type, COUNT(*)::int AS weight
@@ -94,7 +98,8 @@ class SocialController {
           AND COALESCE(u.account_status, 'active') = 'active'
           AND COALESCE(ci.moderation_status, 'active') = 'active'
           AND ci.added_at >= NOW() - INTERVAL '180 days'
-        ORDER BY 
+          ${friendFilter}
+        ORDER BY
           feed_score DESC,
           ci.added_at DESC
         LIMIT $2 OFFSET $3

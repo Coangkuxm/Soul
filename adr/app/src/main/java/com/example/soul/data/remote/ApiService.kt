@@ -139,7 +139,8 @@ interface ApiService {
     suspend fun getFeed(
         @Header("Authorization") token: String,
         @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 10
+        @Query("limit") limit: Int = 10,
+        @Query("scope") scope: String? = null
     ): Response<FeedResponse>
 
     /**
@@ -347,6 +348,26 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Part image: MultipartBody.Part,
         @Part("folder") folder: RequestBody
+    ): Response<Map<String, Any?>>
+
+    /**
+     * Upload avatar: lưu vào folder soul-app/avatars, tự crop vuông 400x400 focus mặt.
+     */
+    @Multipart
+    @POST("/api/upload/avatar")
+    suspend fun uploadAvatar(
+        @Header("Authorization") token: String,
+        @Part image: MultipartBody.Part
+    ): Response<Map<String, Any?>>
+
+    /**
+     * Upload ảnh bìa collection: lưu vào folder soul-app/covers, crop 1200x630 (tỉ lệ 1.91:1).
+     */
+    @Multipart
+    @POST("/api/upload/collection-cover")
+    suspend fun uploadCollectionCover(
+        @Header("Authorization") token: String,
+        @Part image: MultipartBody.Part
     ): Response<Map<String, Any?>>
 
     @GET("/api/items/external/{externalId}")

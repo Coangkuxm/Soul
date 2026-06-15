@@ -78,7 +78,7 @@ class FeedActivity : AppCompatActivity() {
             return
         }
 
-        // Hi?n th? avatar s?n t? cache n?u c�
+        // Hiển thị avatar sẵn từ cache nếu có
         setAvatarFromUrl(authPreferences.getUser()?.avatarUrl)
 
         setupUI()
@@ -93,7 +93,7 @@ class FeedActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // �?m b?o avatar/header c?p nh?t m?i l?n quay l?i Home
+        // Đảm bảo avatar/header cập nhật mỗi lần quay lại Home
         viewModel.refreshProfileOnly()
     }
 
@@ -141,7 +141,7 @@ class FeedActivity : AppCompatActivity() {
         // Observe profile for header avatar
         viewModel.profile.observe(this) { resource ->
             when (resource) {
-                is Resource.Loading -> { /* gi? nguy�n avatar hi?n t?i d? tr�nh nh?p nh�y */ }
+                is Resource.Loading -> { /* giữ nguyên avatar hiện tại để tránh nhấp nháy */ }
                 is Resource.Success -> {
                     resource.data?.let { profile ->
                         setAvatarFromUrl(profile.avatarUrl)
@@ -192,7 +192,7 @@ class FeedActivity : AppCompatActivity() {
         // Observe session expired
         viewModel.sessionExpired.observe(this) { expired ->
             if (expired) {
-                Toast.makeText(this, "Phi�n dang nh?p d� h?t h?n", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Phiên đăng nhập đã hết hạn", Toast.LENGTH_SHORT).show()
                 logout()
             }
         }
@@ -227,14 +227,14 @@ class FeedActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_explore -> {
-                    Toast.makeText(this, "T�nh nang kh�m ph� s? c� s?m", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Tính năng khám phá sẽ có sớm", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_notification -> {
                     true
                 }
                 R.id.nav_library -> {
-                    Toast.makeText(this, "T�nh nang thu vi?n s? c� s?m", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Tính năng thư viện sẽ có sớm", Toast.LENGTH_SHORT).show()
                     true
                 }
                 R.id.nav_profile -> {
@@ -265,12 +265,13 @@ class FeedActivity : AppCompatActivity() {
 
     private fun showFilterMenu(anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("M?i ngu?i")
-            menu.add("Ch? b?n b�")
+            val idEveryone = 0
+            val idFriends = 1
+            menu.add(0, idEveryone, 0, "Mọi người")
+            menu.add(0, idFriends, 1, "Chỉ bạn bè")
             setOnMenuItemClickListener { item ->
                 binding.btnFilter.text = item.title
-                // TODO: Filter feed based on selection
-                viewModel.refresh()
+                viewModel.setFeedScope(if (item.itemId == idFriends) "friends" else null)
                 true
             }
             show()
@@ -332,12 +333,12 @@ class FeedActivity : AppCompatActivity() {
 
     private fun showFeedItemMenu(feedItem: FeedItem, anchor: View) {
         PopupMenu(this, anchor).apply {
-            menu.add("B�o c�o b�i vi?t")
+            menu.add("Báo cáo bài viết")
             setOnMenuItemClickListener {
                 showReportDialog(
                     targetType = "collection_item",
                     targetId = feedItem.id,
-                    title = "B�o c�o b�i vi?t"
+                    title = "Báo cáo bài viết"
                 )
                 true
             }
@@ -348,11 +349,11 @@ class FeedActivity : AppCompatActivity() {
     private fun showReportDialog(targetType: String, targetId: Int, title: String) {
         val reasonCodes = listOf(
             "spam" to "Spam",
-            "harassment" to "Qu?y r?i",
-            "hate_speech" to "Ng�n t? th� gh�t",
-            "nudity" to "N?i dung nh?y c?m",
-            "misleading" to "Th�ng tin sai l?ch",
-            "other" to "L� do kh�c"
+            "harassment" to "Quấy rối",
+            "hate_speech" to "Ngôn từ thù ghét",
+            "nudity" to "Nội dung nhạy cảm",
+            "misleading" to "Thông tin sai lệch",
+            "other" to "Lý do khác"
         )
         val labels = reasonCodes.map { it.second }.toTypedArray()
 
@@ -361,7 +362,7 @@ class FeedActivity : AppCompatActivity() {
             .setItems(labels) { _, which ->
                 submitReport(targetType, targetId, reasonCodes[which].first, reasonCodes[which].second)
             }
-            .setNegativeButton("H?y", null)
+            .setNegativeButton("Hủy", null)
             .show()
     }
 
@@ -380,16 +381,16 @@ class FeedActivity : AppCompatActivity() {
                 )
 
                 if (response.isSuccessful) {
-                    Toast.makeText(this@FeedActivity, "�� g?i b�o c�o", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@FeedActivity, "Đã gửi báo cáo", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(
                         this@FeedActivity,
-                        response.errorBody()?.string() ?: "Kh�ng th? g?i b�o c�o",
+                        response.errorBody()?.string() ?: "Không thể gửi báo cáo",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@FeedActivity, e.message ?: "Kh�ng th? g?i b�o c�o", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@FeedActivity, e.message ?: "Không thể gửi báo cáo", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -468,15 +469,15 @@ class FeedActivity : AppCompatActivity() {
     private fun promptOpenSpotifyOrNotify(spotifyUrl: String?) {
         if (!spotifyUrl.isNullOrEmpty()) {
             AlertDialog.Builder(this)
-                .setTitle("H?t do?n xem tru?c")
-                .setMessage("B?n mu?n m? Spotify d? nghe c? b�i kh�ng?")
-                .setPositiveButton("M? Spotify") { _, _ ->
+                .setTitle("Hết đoạn xem trước")
+                .setMessage("Bạn muốn mở Spotify để nghe cả bài không?")
+                .setPositiveButton("Mở Spotify") { _, _ ->
                     openSpotify(spotifyUrl)
                 }
-                .setNegativeButton("H?y", null)
+                .setNegativeButton("Hủy", null)
                 .show()
         } else {
-            Toast.makeText(this, "Kh�ng c� ngu?n ph�t", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Không có nguồn phát", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -490,14 +491,14 @@ class FeedActivity : AppCompatActivity() {
                 val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(spotifyUrl))
                 startActivity(intent)
             } catch (e2: Exception) {
-                Toast.makeText(this, "Kh�ng th? m? Spotify", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Không thể mở Spotify", Toast.LENGTH_SHORT).show()
             }
         }
     }
     private fun startMiniPlayer() {
-        val title = currentPreviewTitle ?: "Xem tru?c"
+        val title = currentPreviewTitle ?: "Xem trước"
         val artist = currentPreviewArtist
-        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title � $artist" else title
+        binding.tvMiniPlayerTitle.text = if (!artist.isNullOrEmpty()) "$title • $artist" else title
         binding.tvMiniPlayerTitle.isSelected = true
         val coverUrl = currentPreviewCoverUrl
         if (!coverUrl.isNullOrEmpty() && !coverUrl.contains("example.com")) {
@@ -546,7 +547,7 @@ class FeedActivity : AppCompatActivity() {
                 // Revert on error
                 feedItem.isLiked = !isLiked
                 feedAdapter.notifyDataSetChanged()
-                Toast.makeText(this@FeedActivity, "Kh�ng th? c?p nh?t lu?t th�ch", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@FeedActivity, "Không thể cập nhật lượt thích", Toast.LENGTH_SHORT).show()
             }
         }
     }
