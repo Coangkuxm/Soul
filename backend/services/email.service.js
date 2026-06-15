@@ -6,32 +6,35 @@ const fs = require('fs');
 
 const readFile = promisify(fs.readFile);
 
-// Create a test account for development
-// In production, use real SMTP credentials
+// Dùng SMTP thật ngay khi đã cấu hình (không phụ thuộc NODE_ENV) để tránh footgun;
+// nếu chưa cấu hình thì fallback ethereal.email (chỉ xem preview, không gửi tới hộp thư thật).
+const hasSmtpConfig = () =>
+  process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+
 const createTransporter = async () => {
-  if (process.env.NODE_ENV === 'production') {
+  if (hasSmtpConfig()) {
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_SECURE === 'true',
+      port: parseInt(process.env.SMTP_PORT, 10) || 587,
+      secure: process.env.SMTP_SECURE === 'true', // true cho cổng 465, false cho 587 (STARTTLS)
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
       }
     });
-  } else {
-    // For development, use ethereal.email
-    const testAccount = await nodemailer.createTestAccount();
-    return nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass
-      }
-    });
   }
+
+  console.warn('[Email] Chưa cấu hình SMTP_HOST/USER/PASS -> dùng ethereal (email KHÔNG tới hộp thư thật).');
+  const testAccount = await nodemailer.createTestAccount();
+  return nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    secure: false,
+    auth: {
+      user: testAccount.user,
+      pass: testAccount.pass
+    }
+  });
 };
 
 const sendEmail = async (to, subject, html) => {
