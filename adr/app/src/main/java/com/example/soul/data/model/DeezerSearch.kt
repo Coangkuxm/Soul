@@ -3,8 +3,9 @@ package com.example.soul.data.model
 import com.google.gson.annotations.SerializedName
 
 data class DeezerSearchResponse(
+    // Deezer trả {"error":{...}} khi lỗi/giới hạn -> không có "data", nên để nullable cho an toàn.
     @SerializedName("data")
-    val data: List<DeezerTrack>
+    val data: List<DeezerTrack>? = null
 )
 
 data class DeezerTrack(

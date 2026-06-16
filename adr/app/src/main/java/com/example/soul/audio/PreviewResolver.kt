@@ -31,29 +31,40 @@ object PreviewResolver {
             return it
         }
 
-        val query = listOfNotNull(title, artist)
-            .joinToString(" ")
-            .trim()
-            .ifEmpty {
-                Log.w(TAG, "Không có tên bài để tra Deezer")
-                return null
-            }
+        // Thử lần lượt: "tên + nghệ sĩ", rồi chỉ "tên bài".
+        val candidates = listOf(
+            listOfNotNull(title, artist).joinToString(" ").trim(),
+            title?.trim().orEmpty()
+        ).filter { it.isNotEmpty() }.distinct()
 
-        repeat(2) { attempt ->
-            try {
-                val response = DeezerRetrofitClient.apiService.search(query)
-                val preview = response.data.firstOrNull { !it.preview.isNullOrEmpty() }?.preview
-                Log.d(TAG, "Deezer '$query' lần ${attempt + 1}: ${response.data.size} kết quả, preview=${if (preview != null) "có" else "không"}")
-                if (!preview.isNullOrEmpty()) {
-                    cache[key] = preview
-                    return preview
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Deezer '$query' lần ${attempt + 1} lỗi: ${e.message}")
-            }
-            if (attempt == 0) delay(450)
+        if (candidates.isEmpty()) {
+            Log.w(TAG, "Không có tên bài để tra Deezer")
+            return null
         }
-        Log.w(TAG, "Không tìm được preview nào cho: $title ($query)")
+
+        for (query in candidates) {
+            repeat(2) { attempt ->
+                searchDeezer(query)?.let {
+                    cache[key] = it
+                    return it
+                }
+                if (attempt == 0) delay(450)
+            }
+        }
+        Log.w(TAG, "Không tìm được preview nào cho: $title (${candidates.joinToString(" | ")})")
         return null
+    }
+
+    private suspend fun searchDeezer(query: String): String? {
+        return try {
+            val response = DeezerRetrofitClient.apiService.search(query)
+            val tracks = response.data ?: emptyList()
+            val preview = tracks.firstOrNull { !it.preview.isNullOrEmpty() }?.preview
+            Log.d(TAG, "Deezer '$query': ${tracks.size} kết quả, preview=${if (preview != null) "có" else "không"}")
+            preview?.takeIf { it.isNotEmpty() }
+        } catch (e: Exception) {
+            Log.w(TAG, "Deezer '$query' lỗi: ${e.message}")
+            null
+        }
     }
 }

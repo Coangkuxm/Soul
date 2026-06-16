@@ -413,47 +413,27 @@ class FeedActivity : AppCompatActivity() {
     }
 
     private fun handlePlayClick(feedItem: FeedItem) {
-        val previewUrl = feedItem.item.metadata?.previewUrl
-        val spotifyUrl = feedItem.item.metadata?.spotifyUrl
         currentPreviewTitle = feedItem.item.title
         currentPreviewArtist = feedItem.item.metadata?.artist
         currentPreviewCoverUrl = feedItem.item.coverImageUrl
-
-        if (!previewUrl.isNullOrEmpty()) {
-            pendingSpotifyUrlForPreview = spotifyUrl
-            previewAudioPlayer.setOnEndedListener {
-                stopMiniPlayer()
-                promptOpenSpotifyIfAvailable()
-            }
-            startMiniPlayer()
-            currentPreviewUrl = previewUrl
-            previewAudioPlayer.toggle(previewUrl)
-            return
-        }
-
-        // Try Deezer preview by track name + artist
-        val title = feedItem.item.title
-        val artist = feedItem.item.metadata?.artist
-        val query = if (!artist.isNullOrEmpty()) "$title $artist" else title
+        val spotifyUrl = feedItem.item.metadata?.spotifyUrl
 
         lifecycleScope.launch {
-            try {
-                val response = DeezerRetrofitClient.apiService.search(query)
-                val deezerPreview = response.data.firstOrNull { !it.preview.isNullOrEmpty() }?.preview
-
-                if (!deezerPreview.isNullOrEmpty()) {
-                    pendingSpotifyUrlForPreview = spotifyUrl
-                    previewAudioPlayer.setOnEndedListener {
-                        stopMiniPlayer()
-                        promptOpenSpotifyIfAvailable()
-                    }
-                    startMiniPlayer()
-                    currentPreviewUrl = deezerPreview
-                    previewAudioPlayer.toggle(deezerPreview)
-                } else {
-                    promptOpenSpotifyOrNotify(spotifyUrl)
+            val previewUrl = com.example.soul.audio.PreviewResolver.resolve(
+                feedItem.item.title,
+                feedItem.item.metadata?.artist,
+                feedItem.item.metadata?.previewUrl
+            )
+            if (previewUrl != null) {
+                pendingSpotifyUrlForPreview = spotifyUrl
+                previewAudioPlayer.setOnEndedListener {
+                    stopMiniPlayer()
+                    promptOpenSpotifyIfAvailable()
                 }
-            } catch (e: Exception) {
+                startMiniPlayer()
+                currentPreviewUrl = previewUrl
+                previewAudioPlayer.toggle(previewUrl)
+            } else {
                 promptOpenSpotifyOrNotify(spotifyUrl)
             }
         }

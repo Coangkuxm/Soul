@@ -14,6 +14,13 @@ object DeezerRetrofitClient {
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
         .writeTimeout(20, TimeUnit.SECONDS)
+        // Một số CDN/API từ chối User-Agent mặc định của OkHttp -> đặt UA trình duyệt.
+        .addInterceptor { chain ->
+            val request = chain.request().newBuilder()
+                .header("User-Agent", "Mozilla/5.0 (Android) SoulApp")
+                .build()
+            chain.proceed(request)
+        }
         .build()
 
     private val gson = GsonBuilder()
