@@ -147,4 +147,41 @@ router.get('/search', async (req, res) => {
   }
 });
 
+// Gợi ý nhạc đang thịnh hành / mới phát hành (dùng cho phần đề xuất ở màn thêm nhạc)
+router.get('/trending', async (req, res) => {
+  try {
+    const { limit = 20, country = 'US' } = req.query;
+
+    if (!spotifyApi.getAccessToken()) {
+      await getAccessToken();
+    }
+
+    const { body } = await spotifyApi.getNewReleases({
+      limit: parseInt(limit, 10) || 20,
+      country
+    });
+
+    const albums = body.albums?.items || [];
+
+    res.json({
+      success: true,
+      data: albums.map(album => ({
+        id: album.id,
+        name: album.name,
+        artists: album.artists.map(a => a.name).join(', '),
+        album: album.name,
+        preview_url: null,
+        external_url: album.external_urls?.spotify || null,
+        cover_url: album.images?.[0]?.url || null
+      }))
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy nhạc thịnh hành:', error.statusCode, error.message, error.body);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error?.body?.error?.message || error.message || 'Lỗi khi lấy nhạc thịnh hành'
+    });
+  }
+});
+
 module.exports = router;

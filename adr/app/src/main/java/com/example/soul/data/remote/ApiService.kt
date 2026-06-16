@@ -172,6 +172,15 @@ interface ApiService {
         @Query("scope") scope: String? = null
     ): Response<FeedResponse>
 
+    /** Bài đăng của một người dùng (tab "Bài đăng" ở trang cá nhân) */
+    @GET("/api/social/users/{id}/posts")
+    suspend fun getUserPosts(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<FeedResponse>
+
     /**
      * Get comments for a target (collection/item)
      */
@@ -353,6 +362,12 @@ interface ApiService {
     suspend fun searchSpotify(
         @Query("q") query: String,
         @Query("limit") limit: Int = 10
+    ): Response<SpotifySearchResponse>
+
+    /** Nhạc đang thịnh hành / mới phát hành (gợi ý ở màn thêm nhạc) */
+    @GET("/api/spotify/trending")
+    suspend fun getTrendingSpotify(
+        @Query("limit") limit: Int = 20
     ): Response<SpotifySearchResponse>
 
     // ==================== TMDB API ====================

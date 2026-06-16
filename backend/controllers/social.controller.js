@@ -663,6 +663,83 @@ class SocialController {
       next(error);
     }
   }
+
+  // Bài đăng của một người dùng: các item họ đã thêm vào bộ sưu tập, dạng FeedItem.
+  async getUserPosts(req, res, next) {
+    try {
+      const viewerId = req.user.id;
+      const targetId = parseInt(req.params.id);
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const offset = (page - 1) * limit;
+
+      // Người khác chỉ thấy bộ sưu tập công khai; chính chủ thấy cả riêng tư.
+      const privacyFilter = viewerId === targetId ? '' : 'AND c.is_private = false';
+
+      const sql = `
+        SELECT
+          ci.id as collection_item_id,
+          ci.note, ci.rating, ci.added_at,
+          i.id as item_id, i.type as item_type, i.title, i.description,
+          i.cover_image_url, i.metadata,
+          c.id as collection_id, c.name as collection_name,
+          u.id as user_id, u.username, u.display_name, u.avatar_url,
+          CASE WHEN l.id IS NOT NULL THEN true ELSE false END as is_liked,
+          (SELECT COUNT(*)::int FROM likes lp
+            WHERE lp.target_type = 'item' AND lp.target_id = ci.item_id) as like_count,
+          (SELECT COUNT(*)::int FROM comments cm
+            WHERE cm.target_type = 'collection_item' AND cm.target_id = ci.id) as comment_count
+        FROM collection_items ci
+        JOIN items i ON ci.item_id = i.id
+        JOIN collections c ON ci.collection_id = c.id
+        JOIN users u ON c.owner_id = u.id
+        LEFT JOIN likes l
+          ON l.target_id = i.id AND l.target_type = 'item' AND l.user_id = $1
+        WHERE c.owner_id = $2
+          AND COALESCE(u.account_status, 'active') = 'active'
+          AND COALESCE(ci.moderation_status, 'active') = 'active'
+          ${privacyFilter}
+        ORDER BY ci.added_at DESC
+        LIMIT $3 OFFSET $4
+      `;
+
+      const result = await db.query(sql, [viewerId, targetId, limit, offset]);
+
+      const feedItems = result.rows.map(row => ({
+        id: row.collection_item_id,
+        item: {
+          id: row.item_id,
+          type: row.item_type,
+          title: row.title,
+          description: row.description,
+          coverImageUrl: row.cover_image_url,
+          metadata: row.metadata
+        },
+        note: row.note,
+        rating: row.rating,
+        addedAt: row.added_at,
+        collection: { id: row.collection_id, name: row.collection_name },
+        user: {
+          id: row.user_id,
+          username: row.username,
+          displayName: row.display_name,
+          avatarUrl: row.avatar_url
+        },
+        isLiked: row.is_liked,
+        likeCount: row.like_count || 0,
+        commentCount: row.comment_count || 0,
+        activityText: getActivityText(row.item_type)
+      }));
+
+      res.json({
+        success: true,
+        data: feedItems,
+        pagination: { page, limit, hasMore: feedItems.length === limit }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 // Helper function for activity text

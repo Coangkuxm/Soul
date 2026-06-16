@@ -16,7 +16,8 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.soul.R
 import com.example.soul.data.model.Collection
 import com.example.soul.data.local.AuthPreferences
-import com.example.soul.databinding.ActivityHomeBinding
+import com.example.soul.databinding.FragmentProfileBinding
+import com.google.android.material.tabs.TabLayout
 import com.example.soul.ui.auth.ChangePasswordActivity
 import com.example.soul.ui.collection.CollectionItemsActivity
 import com.example.soul.ui.auth.LoginActivity
@@ -31,7 +32,7 @@ import com.example.soul.utils.Resource
 
 class ProfileFragment : Fragment() {
 
-    private var _binding: ActivityHomeBinding? = null
+    private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
     private lateinit var collectionAdapter: CollectionAdapter
 
@@ -50,7 +51,7 @@ class ProfileFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = ActivityHomeBinding.inflate(inflater, container, false)
+        _binding = FragmentProfileBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -58,9 +59,38 @@ class ProfileFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupUI()
         setupRecyclerView()
+        setupTabs()
         setupObservers()
         setupListeners()
     }
+
+    private fun setupTabs() {
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText("Bài đăng"))
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText("Bộ sưu tập"))
+
+        val myId = AuthPreferences(requireContext()).getUser()?.id ?: -1
+        if (childFragmentManager.findFragmentById(R.id.postsContainer) == null && myId > 0) {
+            childFragmentManager.beginTransaction()
+                .replace(R.id.postsContainer, UserPostsFragment.newInstance(myId))
+                .commit()
+        }
+
+        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) = showTab(tab.position)
+            override fun onTabUnselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {}
+        })
+        showTab(0) // mặc định: tab Bài đăng
+    }
+
+    private fun showTab(position: Int) {
+        val showPosts = position == 0
+        binding.postsContainer.visibility = if (showPosts) View.VISIBLE else View.GONE
+        binding.swipeRefresh.visibility = if (showPosts) View.GONE else View.VISIBLE
+        if (showPosts) binding.progressBar.visibility = View.GONE
+    }
+
+    private fun isCollectionsTab(): Boolean = binding.tabLayout.selectedTabPosition == 1
 
     override fun onResume() {
         super.onResume()
@@ -70,8 +100,6 @@ class ProfileFragment : Fragment() {
 
     private fun setupUI() {
         // Bottom nav and FAB are owned by MainTabsActivity
-        binding.bottomNavigation.visibility = View.GONE
-        binding.fabAdd.visibility = View.GONE
         binding.swipeRefresh.setColorSchemeResources(R.color.primary, R.color.primary_dark)
     }
 
@@ -117,7 +145,7 @@ class ProfileFragment : Fragment() {
         viewModel.collections.observe(viewLifecycleOwner) { resource ->
             when (resource) {
                 is Resource.Loading -> {
-                    binding.progressBar.visibility = View.VISIBLE
+                    binding.progressBar.visibility = if (isCollectionsTab()) View.VISIBLE else View.GONE
                     if (collectionAdapter.itemCount == 0) collectionAdapter.submitCollections(emptyList())
                 }
                 is Resource.Success -> {

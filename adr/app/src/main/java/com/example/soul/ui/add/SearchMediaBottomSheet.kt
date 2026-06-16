@@ -70,6 +70,9 @@ class SearchMediaBottomSheet : BottomSheetDialogFragment() {
         setupUI()
         setupRecyclerView()
         setupSearch()
+
+        // Nhạc: gợi ý các bài đang thịnh hành ngay khi mở (ô tìm còn trống).
+        if (mediaType == "music") loadTrending()
     }
 
     private fun setupUI() {
@@ -85,8 +88,10 @@ class SearchMediaBottomSheet : BottomSheetDialogFragment() {
             else -> "Từ khóa tìm kiếm"
         }
 
-        binding.tvEmpty.visibility = View.VISIBLE
-        binding.tvEmpty.text = "Nhập từ khóa để tìm kiếm"
+        if (mediaType != "music") {
+            binding.tvEmpty.visibility = View.VISIBLE
+            binding.tvEmpty.text = "Nhập từ khóa để tìm kiếm"
+        }
     }
 
     private fun setupRecyclerView() {
@@ -114,6 +119,9 @@ class SearchMediaBottomSheet : BottomSheetDialogFragment() {
                         delay(DEBOUNCE_DELAY)
                         performSearch(query)
                     }
+                } else if (mediaType == "music") {
+                    // Xoá ô tìm -> quay lại danh sách gợi ý thịnh hành.
+                    loadTrending()
                 } else {
                     adapter.submitList(emptyList())
                     binding.tvEmpty.visibility = View.VISIBLE
@@ -138,6 +146,7 @@ class SearchMediaBottomSheet : BottomSheetDialogFragment() {
     private suspend fun performSearch(query: String) {
         binding.progressBar.visibility = View.VISIBLE
         binding.tvEmpty.visibility = View.GONE
+        binding.tvSectionLabel.visibility = View.GONE
 
         try {
             val results = when (mediaType) {
@@ -163,27 +172,60 @@ class SearchMediaBottomSheet : BottomSheetDialogFragment() {
 
     private suspend fun searchSpotify(query: String): List<SearchResult> {
         val response = RetrofitClient.apiService.searchSpotify(query)
-        
         if (response.isSuccessful && response.body()?.success == true) {
-            return response.body()!!.data.map { track ->
-                SearchResult(
-                    id = track.id,
-                    title = track.name,
-                    subtitle = track.artists,
-                    extra = track.album,
-                    coverUrl = track.coverUrl,
-                    type = "music",
-                    externalId = track.id,
-                    metadata = mapOf(
-                        "artist" to track.artists,
-                        "album" to track.album,
-                        "preview_url" to track.previewUrl,
-                        "spotify_url" to track.externalUrl
-                    )
-                )
-            }
+            return mapSpotify(response.body()!!.data)
         }
         return emptyList()
+    }
+
+    private fun mapSpotify(tracks: List<com.example.soul.data.model.SpotifyTrack>): List<SearchResult> =
+        tracks.map { track ->
+            SearchResult(
+                id = track.id,
+                title = track.name,
+                subtitle = track.artists,
+                extra = track.album,
+                coverUrl = track.coverUrl,
+                type = "music",
+                externalId = track.id,
+                metadata = mapOf(
+                    "artist" to track.artists,
+                    "album" to track.album,
+                    "preview_url" to track.previewUrl,
+                    "spotify_url" to track.externalUrl
+                )
+            )
+        }
+
+    /** Nạp danh sách nhạc đang thịnh hành vào cùng RecyclerView kết quả. */
+    private fun loadTrending() {
+        searchJob?.cancel()
+        searchJob = lifecycleScope.launch {
+            binding.progressBar.visibility = View.VISIBLE
+            binding.tvEmpty.visibility = View.GONE
+            try {
+                val response = RetrofitClient.apiService.getTrendingSpotify()
+                val results = if (response.isSuccessful && response.body()?.success == true) {
+                    mapSpotify(response.body()!!.data)
+                } else emptyList()
+
+                adapter.submitList(results)
+                if (results.isEmpty()) {
+                    binding.tvSectionLabel.visibility = View.GONE
+                    binding.tvEmpty.visibility = View.VISIBLE
+                    binding.tvEmpty.text = "Nhập từ khóa để tìm kiếm"
+                } else {
+                    binding.tvSectionLabel.visibility = View.VISIBLE
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Trending error", e)
+                binding.tvSectionLabel.visibility = View.GONE
+                binding.tvEmpty.visibility = View.VISIBLE
+                binding.tvEmpty.text = "Nhập từ khóa để tìm kiếm"
+            } finally {
+                binding.progressBar.visibility = View.GONE
+            }
+        }
     }
 
     private suspend fun searchTMDB(query: String): List<SearchResult> {

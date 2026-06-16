@@ -69,7 +69,8 @@ class FollowListActivity : AppCompatActivity() {
     private fun setupRecycler() {
         adapter = ExploreUserAdapter(
             onFollowClick = { user -> toggleFollow(user) },
-            onUserClick = { user -> openUserProfile(user.id) }
+            onUserClick = { user -> openUserProfile(user.id) },
+            currentUserId = authPreferences.getUser()?.id ?: -1
         )
         binding.rvUsers.layoutManager = LinearLayoutManager(this)
         binding.rvUsers.adapter = adapter

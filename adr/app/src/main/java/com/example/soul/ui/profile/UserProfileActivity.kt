@@ -1,5 +1,6 @@
 package com.example.soul.ui.profile
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -14,6 +15,7 @@ import com.example.soul.databinding.ActivityUserProfileBinding
 import com.example.soul.ui.collection.CollectionItemsActivity
 import com.example.soul.ui.messenger.ChatActivity
 import com.example.soul.utils.AvatarLoader
+import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.launch
 
 class UserProfileActivity : AppCompatActivity() {
@@ -28,6 +30,9 @@ class UserProfileActivity : AppCompatActivity() {
     private var userId: Int = -1
     private var targetName: String? = null
     private var targetAvatarUrl: String? = null
+    private val currentUserId: Int by lazy { authPreferences.getUser()?.id ?: -1 }
+    private var isFollowing: Boolean = false
+    private var followerCount: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,7 +66,41 @@ class UserProfileActivity : AppCompatActivity() {
         binding.swipeRefresh.setOnRefreshListener { loadData() }
         binding.layoutFollowers.setOnClickListener { openFollowList(FollowListActivity.MODE_FOLLOWERS) }
         binding.layoutFollowing.setOnClickListener { openFollowList(FollowListActivity.MODE_FOLLOWING) }
+        binding.btnFollow.setOnClickListener { toggleFollow() }
+        setupTabs()
     }
+
+    private fun setupTabs() {
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText("Bài đăng"))
+        binding.tabLayout.addTab(binding.tabLayout.newTab().setText("Bộ sưu tập"))
+
+        if (supportFragmentManager.findFragmentById(R.id.postsContainer) == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.postsContainer, UserPostsFragment.newInstance(userId))
+                .commit()
+        }
+
+        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) = showTab(tab.position)
+            override fun onTabUnselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {}
+        })
+        showTab(0) // mặc định: tab Bài đăng
+    }
+
+    private fun showTab(position: Int) {
+        val showPosts = position == 0
+        binding.postsContainer.visibility = if (showPosts) View.VISIBLE else View.GONE
+        binding.swipeRefresh.visibility = if (showPosts) View.GONE else View.VISIBLE
+        if (showPosts) {
+            binding.progressBar.visibility = View.GONE
+            binding.tvEmpty.visibility = View.GONE
+        } else {
+            binding.tvEmpty.visibility = if (adapter.itemCount == 0) View.VISIBLE else View.GONE
+        }
+    }
+
+    private fun isCollectionsTab(): Boolean = binding.tabLayout.selectedTabPosition == 1
 
     private fun openFollowList(mode: String) {
         startActivity(android.content.Intent(this, FollowListActivity::class.java).apply {
@@ -70,9 +109,59 @@ class UserProfileActivity : AppCompatActivity() {
         })
     }
 
+    private fun toggleFollow() {
+        val token = "Bearer ${authPreferences.getToken().orEmpty()}"
+        val target = !isFollowing
+        // Cập nhật giao diện ngay (optimistic) trong lúc gọi API.
+        setFollowingState(target)
+        lifecycleScope.launch {
+            try {
+                if (target) {
+                    RetrofitClient.apiService.followUser(token, userId)
+                } else {
+                    RetrofitClient.apiService.unfollowUser(token, userId)
+                }
+                updateFollowCache(userId, target)
+            } catch (e: Exception) {
+                setFollowingState(!target) // hoàn lại khi lỗi
+                Toast.makeText(
+                    this@UserProfileActivity,
+                    e.message ?: "Thao tác theo dõi thất bại",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    /** Đổi trạng thái follow + cập nhật số người theo dõi và giao diện nút. */
+    private fun setFollowingState(following: Boolean) {
+        if (isFollowing != following) {
+            isFollowing = following
+            followerCount = (followerCount + if (following) 1 else -1).coerceAtLeast(0)
+            binding.tvFollowerCount.text = followerCount.toString()
+        }
+        applyFollowVisual(following)
+    }
+
+    private fun applyFollowVisual(following: Boolean) {
+        binding.btnFollow.text = if (following) "Đang theo dõi" else "+ Theo dõi"
+        val bgColor = if (following) R.color.primary_light else R.color.primary
+        val textColor = if (following) R.color.primary_dark else R.color.white
+        binding.btnFollow.backgroundTintList = ColorStateList.valueOf(getColor(bgColor))
+        binding.btnFollow.setTextColor(getColor(textColor))
+    }
+
+    /** Đồng bộ trạng thái follow với tab Khám phá / danh sách follow qua cache dùng chung. */
+    private fun updateFollowCache(id: Int, following: Boolean) {
+        val prefs = getSharedPreferences("soul_follow_cache", MODE_PRIVATE)
+        val ids = (prefs.getStringSet("ids", emptySet()) ?: emptySet()).toMutableSet()
+        if (following) ids.add(id.toString()) else ids.remove(id.toString())
+        prefs.edit().putStringSet("ids", ids).apply()
+    }
+
     private fun loadData() {
         lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            binding.progressBar.visibility = if (isCollectionsTab()) View.VISIBLE else View.GONE
             binding.tvEmpty.visibility = View.GONE
             try {
                 val token = "Bearer ${authPreferences.getToken().orEmpty()}"
@@ -85,10 +174,24 @@ class UserProfileActivity : AppCompatActivity() {
                         targetAvatarUrl = user.avatarUrl
                         binding.tvUsername.text = targetName
                         binding.tvLink.text = "shelf.im/${user.username}"
-                        binding.tvFollowerCount.text = user.followerCount.toString()
+                        followerCount = user.followerCount
+                        binding.tvFollowerCount.text = followerCount.toString()
                         binding.tvFollowingCount.text = user.followingCount.toString()
                         AvatarLoader.load(binding.ivAvatar, user.avatarUrl)
                     }
+                }
+
+                // Nút theo dõi: chỉ hiện khi xem hồ sơ người khác (không tự follow mình).
+                if (currentUserId > 0 && currentUserId != userId) {
+                    val followRs = RetrofitClient.apiService.checkIsFollowing(token, userId)
+                    if (followRs.isSuccessful) {
+                        isFollowing = followRs.body()
+                            ?.get("isFollowing")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+                    }
+                    binding.btnFollow.visibility = View.VISIBLE
+                    applyFollowVisual(isFollowing)
+                } else {
+                    binding.btnFollow.visibility = View.GONE
                 }
 
                 val collectionsRs = RetrofitClient.apiService.getCollections(
@@ -100,14 +203,14 @@ class UserProfileActivity : AppCompatActivity() {
                 if (collectionsRs.isSuccessful) {
                     val data = collectionsRs.body()?.data.orEmpty()
                     adapter.submitList(data)
-                    binding.tvEmpty.visibility = if (data.isEmpty()) View.VISIBLE else View.GONE
+                    binding.tvEmpty.visibility = if (data.isEmpty() && isCollectionsTab()) View.VISIBLE else View.GONE
                 } else {
                     adapter.submitList(emptyList())
-                    binding.tvEmpty.visibility = View.VISIBLE
+                    binding.tvEmpty.visibility = if (isCollectionsTab()) View.VISIBLE else View.GONE
                 }
             } catch (e: Exception) {
                 adapter.submitList(emptyList())
-                binding.tvEmpty.visibility = View.VISIBLE
+                binding.tvEmpty.visibility = if (isCollectionsTab()) View.VISIBLE else View.GONE
                 Toast.makeText(this@UserProfileActivity, e.message ?: "Lỗi mạng", Toast.LENGTH_SHORT).show()
             } finally {
                 binding.progressBar.visibility = View.GONE

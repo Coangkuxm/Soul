@@ -1,6 +1,7 @@
 package com.example.soul.ui.explore
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.animation.ValueAnimator
 import android.content.res.ColorStateList
@@ -15,7 +16,9 @@ import com.example.soul.utils.AvatarLoader
 
 class ExploreUserAdapter(
     private val onFollowClick: (ExploreUser) -> Unit,
-    private val onUserClick: (ExploreUser) -> Unit
+    private val onUserClick: (ExploreUser) -> Unit,
+    // ID người dùng hiện tại: ẩn nút "Theo dõi" trên chính mình (không ai tự follow mình).
+    private val currentUserId: Int = -1
 ) : ListAdapter<ExploreRow, RecyclerView.ViewHolder>(Diff()) {
 
     companion object {
@@ -60,12 +63,19 @@ class ExploreUserAdapter(
             binding.tvSubtitle.text = "@${user.username}"
             AvatarLoader.load(binding.ivAvatar, user.avatarUrl)
 
-            applyFollowVisual(user.isFollowing, animate = false)
+            // Không hiển thị nút theo dõi trên chính mình.
+            val isSelf = user.id == currentUserId
+            binding.btnFollow.visibility = if (isSelf) View.GONE else View.VISIBLE
 
-            binding.btnFollow.setOnClickListener {
-                // Immediate optimistic UI feedback while API request is in flight.
-                applyFollowVisual(!user.isFollowing, animate = true)
-                onFollowClick(user)
+            if (!isSelf) {
+                applyFollowVisual(user.isFollowing, animate = false)
+                binding.btnFollow.setOnClickListener {
+                    // Immediate optimistic UI feedback while API request is in flight.
+                    applyFollowVisual(!user.isFollowing, animate = true)
+                    onFollowClick(user)
+                }
+            } else {
+                binding.btnFollow.setOnClickListener(null)
             }
             binding.root.setOnClickListener { onUserClick(user) }
         }
