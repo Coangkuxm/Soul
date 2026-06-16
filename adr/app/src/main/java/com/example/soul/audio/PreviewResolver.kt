@@ -1,5 +1,6 @@
 package com.example.soul.audio
 
+import android.util.Log
 import com.example.soul.data.remote.DeezerRetrofitClient
 import kotlinx.coroutines.delay
 import java.util.concurrent.ConcurrentHashMap
@@ -14,32 +15,45 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object PreviewResolver {
 
+    private const val TAG = "PreviewResolver"
+
     private val cache = ConcurrentHashMap<String, String>()
 
     suspend fun resolve(title: String?, artist: String?, spotifyPreviewUrl: String?): String? {
-        if (!spotifyPreviewUrl.isNullOrEmpty()) return spotifyPreviewUrl
+        if (!spotifyPreviewUrl.isNullOrEmpty()) {
+            Log.d(TAG, "Dùng preview Spotify cho: $title")
+            return spotifyPreviewUrl
+        }
 
         val key = (title.orEmpty() + "|" + artist.orEmpty()).lowercase().trim()
-        cache[key]?.let { return it }
+        cache[key]?.let {
+            Log.d(TAG, "Dùng preview Deezer đã cache cho: $title")
+            return it
+        }
 
         val query = listOfNotNull(title, artist)
             .joinToString(" ")
             .trim()
-            .ifEmpty { return null }
+            .ifEmpty {
+                Log.w(TAG, "Không có tên bài để tra Deezer")
+                return null
+            }
 
         repeat(2) { attempt ->
             try {
                 val response = DeezerRetrofitClient.apiService.search(query)
                 val preview = response.data.firstOrNull { !it.preview.isNullOrEmpty() }?.preview
+                Log.d(TAG, "Deezer '$query' lần ${attempt + 1}: ${response.data.size} kết quả, preview=${if (preview != null) "có" else "không"}")
                 if (!preview.isNullOrEmpty()) {
                     cache[key] = preview
                     return preview
                 }
-            } catch (_: Exception) {
-                // bỏ qua, thử lại
+            } catch (e: Exception) {
+                Log.w(TAG, "Deezer '$query' lần ${attempt + 1} lỗi: ${e.message}")
             }
             if (attempt == 0) delay(450)
         }
+        Log.w(TAG, "Không tìm được preview nào cho: $title ($query)")
         return null
     }
 }
