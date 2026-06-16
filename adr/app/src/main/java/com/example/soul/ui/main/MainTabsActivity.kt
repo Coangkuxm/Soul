@@ -67,6 +67,14 @@ class MainTabsActivity : AppCompatActivity() {
                 else -> false
             }
         }
+
+        // Bấm lại tab Home khi đang ở Home -> cuộn lên đầu và tải lại feed.
+        binding.bottomNavigation.setOnItemReselectedListener { item ->
+            if (item.itemId == R.id.nav_home) {
+                (supportFragmentManager.findFragmentByTag(TAG_HOME) as? FeedFragment)
+                    ?.scrollToTopAndRefresh()
+            }
+        }
     }
 
     fun selectProfileTab() {

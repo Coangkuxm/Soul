@@ -17,9 +17,9 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.soul.R
 import com.example.soul.audio.PreviewAudioPlayer
+import com.example.soul.audio.PreviewResolver
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.FeedItem
-import com.example.soul.data.remote.DeezerRetrofitClient
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.ActivityFeedBinding
 import com.example.soul.ui.add.AddCollectionActivity
@@ -54,13 +54,14 @@ class FeedFragment : Fragment() {
     private val addCollectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) viewModel.refresh()
+        if (result.resultCode == android.app.Activity.RESULT_OK) scrollToTopAndRefresh()
     }
 
     private val addItemLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) viewModel.refresh()
+        // Thêm thành công -> tải lại feed và cuộn lên đầu để thấy bài mới.
+        if (result.resultCode == android.app.Activity.RESULT_OK) scrollToTopAndRefresh()
     }
 
     // Khi đóng màn bình luận: cập nhật số comment cho đúng bài (không cần reload cả feed)
@@ -193,6 +194,14 @@ class FeedFragment : Fragment() {
         }
         // also ensure first load scrolls to top once data arrives
         scrollToTopOnNextRefresh = true
+    }
+
+    /** Bấm lại tab Home: cuộn lên đầu và tải lại feed. */
+    fun scrollToTopAndRefresh() {
+        if (_binding == null) return
+        binding.rvFeed.smoothScrollToPosition(0)
+        scrollToTopOnNextRefresh = true
+        viewModel.refresh()
     }
 
     private fun setAvatarFromUrl(avatarUrl: String?) {
@@ -343,42 +352,27 @@ class FeedFragment : Fragment() {
     }
 
     private fun handlePlayClick(feedItem: FeedItem) {
-        val previewUrl = feedItem.item.metadata?.previewUrl
-        val spotifyUrl = feedItem.item.metadata?.spotifyUrl
         currentPreviewTitle = feedItem.item.title
         currentPreviewArtist = feedItem.item.metadata?.artist
         currentPreviewCoverUrl = feedItem.item.coverImageUrl
+        val spotifyUrl = feedItem.item.metadata?.spotifyUrl
 
-        if (!previewUrl.isNullOrEmpty()) {
-            pendingSpotifyUrlForPreview = spotifyUrl
-            previewAudioPlayer.setOnEndedListener {
-                stopMiniPlayer()
-                promptOpenSpotifyIfAvailable()
-            }
-            startMiniPlayer()
-            currentPreviewUrl = previewUrl
-            previewAudioPlayer.toggle(previewUrl)
-            return
-        }
-
-        val query = listOfNotNull(feedItem.item.title, feedItem.item.metadata?.artist).joinToString(" ")
         viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = DeezerRetrofitClient.apiService.search(query)
-                val deezerPreview = response.data.firstOrNull { !it.preview.isNullOrEmpty() }?.preview
-                if (!deezerPreview.isNullOrEmpty()) {
-                    pendingSpotifyUrlForPreview = spotifyUrl
-                    previewAudioPlayer.setOnEndedListener {
-                        stopMiniPlayer()
-                        promptOpenSpotifyIfAvailable()
-                    }
-                    startMiniPlayer()
-                    currentPreviewUrl = deezerPreview
-                    previewAudioPlayer.toggle(deezerPreview)
-                } else {
-                    promptOpenSpotifyOrNotify(spotifyUrl)
+            val previewUrl = PreviewResolver.resolve(
+                feedItem.item.title,
+                feedItem.item.metadata?.artist,
+                feedItem.item.metadata?.previewUrl
+            )
+            if (previewUrl != null) {
+                pendingSpotifyUrlForPreview = spotifyUrl
+                previewAudioPlayer.setOnEndedListener {
+                    stopMiniPlayer()
+                    promptOpenSpotifyIfAvailable()
                 }
-            } catch (_: Exception) {
+                startMiniPlayer()
+                currentPreviewUrl = previewUrl
+                previewAudioPlayer.toggle(previewUrl)
+            } else {
                 promptOpenSpotifyOrNotify(spotifyUrl)
             }
         }

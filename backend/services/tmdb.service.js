@@ -111,6 +111,20 @@ class TMDBService {
     }
   }
 
+  // Phim/TV đang thịnh hành trong tuần. Giữ nguyên poster_path thô (dạng "/abc.jpg")
+  // để client tự dựng URL ảnh — khớp với model TMDBResult của app.
+  static async getTrending(page = 1) {
+    try {
+      const response = await tmdbApi.get('/trending/all/week', {
+        params: { page, language: 'vi-VN' }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('TMDB Trending Error:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
   static async getTvShowDetails(tvId) {
     try {
       const response = await tmdbApi.get(`/tv/${tvId}`, {

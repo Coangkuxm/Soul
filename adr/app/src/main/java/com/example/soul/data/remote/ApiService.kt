@@ -380,6 +380,12 @@ interface ApiService {
         @Query("query") query: String,
         @Query("page") page: Int = 1
     ): Response<TMDBSearchResponse>
+
+    /** Phim/TV đang thịnh hành (gợi ý ở màn thêm phim) */
+    @GET("/api/tmdb/trending")
+    suspend fun getTrendingTMDB(
+        @Query("page") page: Int = 1
+    ): Response<TMDBSearchResponse>
     
     // ==================== UPLOAD API ====================
     

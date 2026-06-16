@@ -106,6 +106,26 @@
                 app:icon="@drawable/ic_search"
                 app:iconPadding="8dp" />
 
+            <TextView
+                android:id="@+id/tvTrendingLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="🔥 Đang thịnh hành"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvTrending"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:nestedScrollingEnabled="false"
+                android:visibility="gone"
+                tools:listitem="@layout/item_search_result" />
+
             <LinearLayout
                 android:id="@+id/layoutContent"
                 android:layout_width="match_parent"

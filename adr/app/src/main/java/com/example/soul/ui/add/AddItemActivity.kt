@@ -10,6 +10,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.soul.R
 import com.example.soul.data.local.AuthPreferences
@@ -17,6 +18,7 @@ import com.example.soul.data.model.Collection
 import com.example.soul.data.model.SearchResult
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.ActivityAddItemBinding
+import com.example.soul.ui.add.adapter.SearchResultAdapter
 import com.example.soul.utils.ImagePickerHelper
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -40,6 +42,9 @@ class AddItemActivity : AppCompatActivity() {
     private var selectedCoverUrl: String? = null
     private var selectedImageUri: Uri? = null
 
+    private lateinit var trendingAdapter: SearchResultAdapter
+    private var trendingLoadedType: String? = null
+
     private val pickImage = registerForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -62,9 +67,16 @@ class AddItemActivity : AppCompatActivity() {
         authPreferences = AuthPreferences(this)
 
         setupToolbar()
+        setupTrending()
         setupTypeChips()
         setupListeners()
         loadCollections()
+    }
+
+    private fun setupTrending() {
+        trendingAdapter = SearchResultAdapter { result -> fillFormFromSearchResult(result) }
+        binding.rvTrending.layoutManager = LinearLayoutManager(this)
+        binding.rvTrending.adapter = trendingAdapter
     }
 
     private fun setupToolbar() {
@@ -147,6 +159,90 @@ class AddItemActivity : AppCompatActivity() {
                 binding.tilDirector.hint = getString(R.string.add_item_developer_hint)
             }
         }
+
+        maybeLoadTrending()
+    }
+
+    /** Hiện danh sách "đang thịnh hành" ngay trên màn (nhạc/phim) khi chưa chọn item nào. */
+    private fun maybeLoadTrending() {
+        val needsSearch = selectedType == "music" || selectedType == "movie"
+        val show = needsSearch && selectedSearchResult == null
+        binding.tvTrendingLabel.visibility = if (show) View.VISIBLE else View.GONE
+        binding.rvTrending.visibility = if (show) View.VISIBLE else View.GONE
+        if (!show) return
+
+        binding.tvTrendingLabel.text =
+            if (selectedType == "music") "🔥 Nhạc đang thịnh hành" else "🔥 Phim đang thịnh hành"
+
+        if (trendingLoadedType == selectedType) return
+        trendingLoadedType = selectedType
+        val typeForLoad = selectedType
+        trendingAdapter.submitList(emptyList())
+
+        lifecycleScope.launch {
+            try {
+                val results = if (typeForLoad == "music") loadTrendingMusic() else loadTrendingMovies()
+                // Bỏ qua nếu người dùng đã đổi loại hoặc đã chọn item trong lúc tải.
+                if (selectedType == typeForLoad && selectedSearchResult == null) {
+                    trendingAdapter.submitList(results)
+                }
+            } catch (e: Exception) {
+                trendingLoadedType = null // cho phép thử lại lần sau
+                Log.e(TAG, "Trending load error", e)
+            }
+        }
+    }
+
+    private suspend fun loadTrendingMusic(): List<SearchResult> {
+        val response = RetrofitClient.apiService.getTrendingSpotify()
+        if (response.isSuccessful && response.body()?.success == true) {
+            return response.body()!!.data.map { track ->
+                SearchResult(
+                    id = track.id,
+                    title = track.name,
+                    subtitle = track.artists,
+                    extra = track.album,
+                    coverUrl = track.coverUrl,
+                    type = "music",
+                    externalId = track.id,
+                    metadata = mapOf(
+                        "artist" to track.artists,
+                        "album" to track.album,
+                        "preview_url" to track.previewUrl,
+                        "spotify_url" to track.externalUrl
+                    )
+                )
+            }
+        }
+        return emptyList()
+    }
+
+    private suspend fun loadTrendingMovies(): List<SearchResult> {
+        val response = RetrofitClient.apiService.getTrendingTMDB()
+        if (response.isSuccessful && response.body()?.success == true) {
+            return response.body()!!.data.results
+                .filter { it.title != null || it.name != null }
+                .map { result ->
+                    val type = if (result.mediaType == "tv") "tv" else "movie"
+                    SearchResult(
+                        id = result.id.toString(),
+                        title = result.getDisplayTitle(),
+                        subtitle = if (type == "tv") "📺 TV Series" else "🎬 Movie",
+                        extra = result.getYear()?.let { "($it)" } ?: "",
+                        coverUrl = result.getPosterUrl(),
+                        type = type,
+                        externalId = result.id.toString(),
+                        metadata = mapOf(
+                            "tmdb_id" to result.id,
+                            "overview" to result.overview,
+                            "release_date" to (result.releaseDate ?: result.firstAirDate),
+                            "vote_average" to result.voteAverage,
+                            "media_type" to type
+                        )
+                    )
+                }
+        }
+        return emptyList()
     }
 
     private fun setMusicFieldsEnabled(enabled: Boolean) {
@@ -214,6 +310,8 @@ class AddItemActivity : AppCompatActivity() {
         selectedSearchResult = result
         selectedCoverUrl = result.coverUrl
         selectedImageUri = null
+        binding.tvTrendingLabel.visibility = View.GONE
+        binding.rvTrending.visibility = View.GONE
         binding.layoutContent.visibility = View.VISIBLE
         binding.etTitle.setText(result.title)
         binding.etPostNote.text?.clear()

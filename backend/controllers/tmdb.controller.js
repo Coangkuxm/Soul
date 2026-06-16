@@ -51,6 +51,24 @@ const tmdbController = {
     }
   },
 
+  // Get trending movies/TV (đề xuất ở màn thêm phim)
+  async getTrending(req, res, next) {
+    try {
+      const { page = 1 } = req.query;
+      const data = await TMDBService.getTrending(page);
+      // Chỉ giữ phim & TV (bỏ person)
+      const results = (data.results || []).filter(
+        r => r.media_type === 'movie' || r.media_type === 'tv'
+      );
+      res.json({
+        success: true,
+        data: { ...data, results }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   // Get popular movies
   async getPopularMovies(req, res, next) {
     try {

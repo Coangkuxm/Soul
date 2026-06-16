@@ -24,10 +24,14 @@ class PreviewAudioPlayer(context: Context) {
 
     fun toggle(url: String) {
         if (currentUrl == url) {
-            if (player.isPlaying) {
-                player.pause()
-            } else {
-                player.play()
+            when {
+                player.isPlaying -> player.pause()
+                // Bài đã phát hết -> phát lại từ đầu thay vì kẹt ở cuối.
+                player.playbackState == Player.STATE_ENDED -> {
+                    player.seekTo(0)
+                    player.play()
+                }
+                else -> player.play()
             }
             return
         }

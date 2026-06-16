@@ -15,9 +15,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.soul.R
 import com.example.soul.audio.PreviewAudioPlayer
+import com.example.soul.audio.PreviewResolver
 import com.example.soul.data.local.AuthPreferences
 import com.example.soul.data.model.FeedItem
-import com.example.soul.data.remote.DeezerRetrofitClient
 import com.example.soul.data.remote.RetrofitClient
 import com.example.soul.databinding.FragmentUserPostsBinding
 import com.example.soul.ui.comments.CommentsActivity
@@ -319,42 +319,27 @@ class UserPostsFragment : Fragment() {
     }
 
     private fun handlePlayClick(feedItem: FeedItem) {
-        val previewUrl = feedItem.item.metadata?.previewUrl
-        val spotifyUrl = feedItem.item.metadata?.spotifyUrl
         currentPreviewTitle = feedItem.item.title
         currentPreviewArtist = feedItem.item.metadata?.artist
         currentPreviewCoverUrl = feedItem.item.coverImageUrl
+        val spotifyUrl = feedItem.item.metadata?.spotifyUrl
 
-        if (!previewUrl.isNullOrEmpty()) {
-            pendingSpotifyUrlForPreview = spotifyUrl
-            previewAudioPlayer.setOnEndedListener {
-                stopMiniPlayer()
-                promptOpenSpotifyIfAvailable()
-            }
-            startMiniPlayer()
-            currentPreviewUrl = previewUrl
-            previewAudioPlayer.toggle(previewUrl)
-            return
-        }
-
-        val query = listOfNotNull(feedItem.item.title, feedItem.item.metadata?.artist).joinToString(" ")
         lifecycleScope.launch {
-            try {
-                val response = DeezerRetrofitClient.apiService.search(query)
-                val deezerPreview = response.data.firstOrNull { !it.preview.isNullOrEmpty() }?.preview
-                if (!deezerPreview.isNullOrEmpty()) {
-                    pendingSpotifyUrlForPreview = spotifyUrl
-                    previewAudioPlayer.setOnEndedListener {
-                        stopMiniPlayer()
-                        promptOpenSpotifyIfAvailable()
-                    }
-                    startMiniPlayer()
-                    currentPreviewUrl = deezerPreview
-                    previewAudioPlayer.toggle(deezerPreview)
-                } else {
-                    promptOpenSpotifyOrNotify(spotifyUrl)
+            val previewUrl = PreviewResolver.resolve(
+                feedItem.item.title,
+                feedItem.item.metadata?.artist,
+                feedItem.item.metadata?.previewUrl
+            )
+            if (previewUrl != null) {
+                pendingSpotifyUrlForPreview = spotifyUrl
+                previewAudioPlayer.setOnEndedListener {
+                    stopMiniPlayer()
+                    promptOpenSpotifyIfAvailable()
                 }
-            } catch (_: Exception) {
+                startMiniPlayer()
+                currentPreviewUrl = previewUrl
+                previewAudioPlayer.toggle(previewUrl)
+            } else {
                 promptOpenSpotifyOrNotify(spotifyUrl)
             }
         }
