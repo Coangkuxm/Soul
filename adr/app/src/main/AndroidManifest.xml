@@ -123,6 +123,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ui.profile.FollowListActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.admin.AdminReportsActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

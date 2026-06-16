@@ -59,6 +59,15 @@ class UserProfileActivity : AppCompatActivity() {
         binding.btnMessage.setOnClickListener { startDirectChat() }
         binding.btnReport.setOnClickListener { showReportAccountDialog() }
         binding.swipeRefresh.setOnRefreshListener { loadData() }
+        binding.layoutFollowers.setOnClickListener { openFollowList(FollowListActivity.MODE_FOLLOWERS) }
+        binding.layoutFollowing.setOnClickListener { openFollowList(FollowListActivity.MODE_FOLLOWING) }
+    }
+
+    private fun openFollowList(mode: String) {
+        startActivity(android.content.Intent(this, FollowListActivity::class.java).apply {
+            putExtra(FollowListActivity.EXTRA_USER_ID, userId)
+            putExtra(FollowListActivity.EXTRA_MODE, mode)
+        })
     }
 
     private fun loadData() {
@@ -76,6 +85,8 @@ class UserProfileActivity : AppCompatActivity() {
                         targetAvatarUrl = user.avatarUrl
                         binding.tvUsername.text = targetName
                         binding.tvLink.text = "shelf.im/${user.username}"
+                        binding.tvFollowerCount.text = user.followerCount.toString()
+                        binding.tvFollowingCount.text = user.followingCount.toString()
                         AvatarLoader.load(binding.ivAvatar, user.avatarUrl)
                     }
                 }

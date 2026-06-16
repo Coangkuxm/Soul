@@ -17,21 +17,24 @@ const userModel = {
     const result = await query(queryText, queryParams);
     return parseInt(result.rows[0].count, 10);
   },
-  // Tìm user bằng ID
+  // Tìm user bằng ID (kèm số liệu follower/following/collection)
   async findById(id) {
     const result = await query(
-      `SELECT 
-        id, 
-        username, 
-        email, 
-        display_name as "displayName", 
-        avatar_url as "avatarUrl", 
-        bio, 
+      `SELECT
+        id,
+        username,
+        email,
+        display_name as "displayName",
+        avatar_url as "avatarUrl",
+        bio,
         role,
         account_status as "accountStatus",
+        (SELECT COUNT(*)::int FROM user_follows WHERE following_id = users.id) as "followerCount",
+        (SELECT COUNT(*)::int FROM user_follows WHERE follower_id = users.id) as "followingCount",
+        (SELECT COUNT(*)::int FROM collections WHERE owner_id = users.id) as "collectionCount",
         created_at as "createdAt",
         updated_at as "updatedAt"
-      FROM users 
+      FROM users
       WHERE id = $1
         AND COALESCE(account_status, 'active') = 'active'`,
       [id]

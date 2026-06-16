@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.GridLayoutManager
@@ -23,6 +24,7 @@ import com.example.soul.ui.profile.EditProfileActivity
 import com.example.soul.ui.home.HomeViewModel
 import com.example.soul.ui.home.HomeViewModelFactory
 import com.example.soul.ui.admin.AdminReportsActivity
+import com.example.soul.ui.add.AddCollectionActivity
 import com.example.soul.ui.main.adapter.CollectionAdapter
 import com.example.soul.utils.AvatarLoader
 import com.example.soul.utils.Resource
@@ -35,6 +37,12 @@ class ProfileFragment : Fragment() {
 
     private val viewModel: HomeViewModel by viewModels {
         HomeViewModelFactory(requireContext())
+    }
+
+    private val addCollectionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) viewModel.refresh()
     }
 
     override fun onCreateView(
@@ -147,7 +155,7 @@ class ProfileFragment : Fragment() {
     }
 
     private fun onAddCollectionClicked() {
-        Toast.makeText(requireContext(), "Tính năng thêm bộ sưu tập sẽ có sớm", Toast.LENGTH_SHORT).show()
+        addCollectionLauncher.launch(Intent(requireContext(), AddCollectionActivity::class.java))
     }
 
     private fun showCollectionMenu(collection: Collection, anchor: View) {

@@ -146,6 +146,20 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("id") userId: Int
     ): Response<JsonObject>
+
+    /** Danh sách người theo dõi user (followers) */
+    @GET("/api/users/{id}/followers")
+    suspend fun getFollowers(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int
+    ): Response<JsonObject>
+
+    /** Danh sách người mà user đang theo dõi (following) */
+    @GET("/api/users/{id}/following")
+    suspend fun getFollowing(
+        @Header("Authorization") token: String,
+        @Path("id") userId: Int
+    ): Response<JsonObject>
     
     /**
      * Get news feed - random items from friends and others
