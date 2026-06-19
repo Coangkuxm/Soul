@@ -29,6 +29,7 @@ import okhttp3.RequestBody
 import com.google.gson.JsonObject
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.HTTP
 import retrofit2.http.Header
@@ -351,6 +352,17 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("collection_id") collectionId: Int,
         @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any?>>
+
+    /**
+     * Remove an item (a post) from a collection. Chỉ chủ collection mới xóa được
+     * (backend kiểm tra owner_id).
+     */
+    @DELETE("/api/collection-items/{collection_id}/items/{item_id}")
+    suspend fun removeItemFromCollection(
+        @Header("Authorization") token: String,
+        @Path("collection_id") collectionId: Int,
+        @Path("item_id") itemId: Int
     ): Response<Map<String, Any?>>
 
     // ==================== SPOTIFY API ====================

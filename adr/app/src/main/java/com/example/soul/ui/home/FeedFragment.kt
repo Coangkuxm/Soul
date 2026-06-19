@@ -291,13 +291,59 @@ class FeedFragment : Fragment() {
     }
 
     private fun showFeedItemMenu(feedItem: FeedItem, anchor: View) {
+        val isOwnPost = feedItem.user.id == authPreferences.getUser()?.id
         PopupMenu(requireContext(), anchor).apply {
-            menu.add("Báo cáo bài viết")
-            setOnMenuItemClickListener {
-                showReportDialog("collection_item", feedItem.id, "Báo cáo bài viết")
-                true
+            if (isOwnPost) {
+                // Bài của chính mình: cho phép xóa.
+                menu.add("Xóa bài viết")
+                setOnMenuItemClickListener {
+                    confirmDeletePost(feedItem)
+                    true
+                }
+            } else {
+                // Bài người khác: chỉ báo cáo.
+                menu.add("Báo cáo bài viết")
+                setOnMenuItemClickListener {
+                    showReportDialog("collection_item", feedItem.id, "Báo cáo bài viết")
+                    true
+                }
             }
             show()
+        }
+    }
+
+    private fun confirmDeletePost(feedItem: FeedItem) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Xóa bài viết")
+            .setMessage("Bạn có chắc muốn xóa bài viết này? Hành động này không thể hoàn tác.")
+            .setPositiveButton("Xóa") { _, _ -> deletePost(feedItem) }
+            .setNegativeButton("Hủy", null)
+            .show()
+    }
+
+    private fun deletePost(feedItem: FeedItem) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val token = "Bearer ${authPreferences.getToken().orEmpty()}"
+                val response = RetrofitClient.apiService.removeItemFromCollection(
+                    token = token,
+                    collectionId = feedItem.collection.id,
+                    itemId = feedItem.item.id
+                )
+                if (_binding == null) return@launch
+                if (response.isSuccessful) {
+                    viewModel.removeFeedItem(feedItem.id)
+                    Toast.makeText(requireContext(), "Đã xóa bài viết", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        response.errorBody()?.string() ?: "Không thể xóa bài viết",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), e.message ?: "Không thể xóa bài viết", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

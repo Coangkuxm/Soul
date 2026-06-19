@@ -87,6 +87,15 @@ class HomeViewModel(
         fetchFeed(reset = false)
     }
 
+    /** Gỡ một bài khỏi feed sau khi đã xóa thành công (cập nhật ngay không cần reload). */
+    fun removeFeedItem(collectionItemId: Int) {
+        val idx = accumulatedFeed.indexOfFirst { it.id == collectionItemId }
+        if (idx >= 0) {
+            accumulatedFeed.removeAt(idx)
+            _feedItems.value = Resource.Success(accumulatedFeed.toList())
+        }
+    }
+
     private fun loadProfile() {
         viewModelScope.launch {
             _profile.value = Resource.Loading()

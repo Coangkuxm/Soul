@@ -48,6 +48,8 @@ class UserPostsFragment : Fragment() {
     private lateinit var previewAudioPlayer: PreviewAudioPlayer
 
     private var userId: Int = -1
+    // true nếu đây là trang cá nhân của chính người dùng đang đăng nhập
+    private var isOwnProfile: Boolean = false
 
     private val posts = mutableListOf<FeedItem>()
     private var page = 1
@@ -89,6 +91,7 @@ class UserPostsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         userId = arguments?.getInt(ARG_USER_ID, -1) ?: -1
         authPreferences = AuthPreferences(requireContext())
+        isOwnProfile = userId > 0 && userId == authPreferences.getUser()?.id
         previewAudioPlayer = PreviewAudioPlayer(requireContext())
 
         binding.swipeRefresh.setColorSchemeResources(R.color.primary, R.color.primary_dark)
@@ -247,12 +250,62 @@ class UserPostsFragment : Fragment() {
 
     private fun showFeedItemMenu(feedItem: FeedItem, anchor: View) {
         PopupMenu(requireContext(), anchor).apply {
-            menu.add("Báo cáo bài viết")
-            setOnMenuItemClickListener {
-                showReportDialog("collection_item", feedItem.id)
-                true
+            if (isOwnProfile) {
+                // Trang của chính mình: cho phép xóa bài viết của mình.
+                menu.add("Xóa bài viết")
+                setOnMenuItemClickListener {
+                    confirmDeletePost(feedItem)
+                    true
+                }
+            } else {
+                // Trang người khác: chỉ báo cáo, không được xóa bài của người khác.
+                menu.add("Báo cáo bài viết")
+                setOnMenuItemClickListener {
+                    showReportDialog("collection_item", feedItem.id)
+                    true
+                }
             }
             show()
+        }
+    }
+
+    private fun confirmDeletePost(feedItem: FeedItem) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Xóa bài viết")
+            .setMessage("Bạn có chắc muốn xóa bài viết này? Hành động này không thể hoàn tác.")
+            .setPositiveButton("Xóa") { _, _ -> deletePost(feedItem) }
+            .setNegativeButton("Hủy", null)
+            .show()
+    }
+
+    private fun deletePost(feedItem: FeedItem) {
+        lifecycleScope.launch {
+            try {
+                val token = "Bearer ${authPreferences.getToken().orEmpty()}"
+                val response = RetrofitClient.apiService.removeItemFromCollection(
+                    token = token,
+                    collectionId = feedItem.collection.id,
+                    itemId = feedItem.item.id
+                )
+                if (_binding == null) return@launch
+                if (response.isSuccessful) {
+                    val idx = posts.indexOfFirst { it.id == feedItem.id }
+                    if (idx >= 0) posts.removeAt(idx)
+                    feedAdapter.submitList(posts.toList())
+                    val empty = posts.isEmpty()
+                    binding.layoutEmpty.visibility = if (empty) View.VISIBLE else View.GONE
+                    binding.rvFeed.visibility = if (empty) View.GONE else View.VISIBLE
+                    Toast.makeText(requireContext(), "Đã xóa bài viết", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        response.errorBody()?.string() ?: "Không thể xóa bài viết",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), e.message ?: "Không thể xóa bài viết", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
