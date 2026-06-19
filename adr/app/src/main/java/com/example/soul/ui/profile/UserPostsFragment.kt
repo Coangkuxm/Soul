@@ -96,6 +96,9 @@ class UserPostsFragment : Fragment() {
         setupMiniPlayer()
         binding.swipeRefresh.setOnRefreshListener { loadPosts(reset = true) }
         loadPosts(reset = true)
+
+        // Hâm nóng kết nối Deezer để lần bấm play đầu tiên không bị trượt.
+        lifecycleScope.launch { PreviewResolver.warmUp() }
     }
 
     private fun setupRecyclerView() {
@@ -223,7 +226,11 @@ class UserPostsFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 val token = "Bearer ${authPreferences.getToken()}"
-                val body = mapOf("targetId" to feedItem.item.id, "targetType" to "item")
+                val body = mapOf(
+                    "targetId" to feedItem.item.id,
+                    "targetType" to "item",
+                    "collectionItemId" to feedItem.id
+                )
                 if (isLiked) {
                     RetrofitClient.apiService.likeItem(token, body)
                 } else {

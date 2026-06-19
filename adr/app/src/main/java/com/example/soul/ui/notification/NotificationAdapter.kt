@@ -39,6 +39,7 @@ class NotificationAdapter(
             binding.tvTitle.text = "${item.senderUsername ?: "Người dùng"} ${typeText(item.notificationType)}"
             binding.tvSubtitle.text = when (item.targetType) {
                 "collection" -> "Bộ sưu tập #${item.targetId}"
+                "collection_item" -> "Bài viết #${item.targetId}"
                 "item" -> "Mục #${item.targetId}"
                 "user" -> "Người dùng #${item.targetId}"
                 else -> item.targetType

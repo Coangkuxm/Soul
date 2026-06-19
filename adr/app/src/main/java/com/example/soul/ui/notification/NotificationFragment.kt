@@ -104,7 +104,7 @@ class NotificationFragment : Fragment() {
                 })
             }
             "comment", "like" -> {
-                if (item.targetType == "collection" || item.targetType == "item") {
+                if (item.targetType == "collection" || item.targetType == "item" || item.targetType == "collection_item") {
                     startActivity(Intent(requireContext(), CommentsActivity::class.java).apply {
                         putExtra(CommentsActivity.EXTRA_TARGET_TYPE, item.targetType)
                         putExtra(CommentsActivity.EXTRA_TARGET_ID, item.targetId)

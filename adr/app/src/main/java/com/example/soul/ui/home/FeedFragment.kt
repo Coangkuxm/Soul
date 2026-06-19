@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.example.soul.R
@@ -105,6 +106,9 @@ class FeedFragment : Fragment() {
         setupRecyclerView()
         setupObservers()
         setupListeners()
+
+        // Hâm nóng kết nối Deezer để lần bấm play đầu tiên không bị trượt.
+        viewLifecycleOwner.lifecycleScope.launch { PreviewResolver.warmUp() }
     }
 
     private fun setupUI() {
@@ -125,6 +129,18 @@ class FeedFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = feedAdapter
             setHasFixedSize(true)
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if (dy <= 0) return // chỉ tải thêm khi cuộn xuống
+                    val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                    val total = lm.itemCount
+                    val lastVisible = lm.findLastVisibleItemPosition()
+                    // Còn cách đáy ~3 bài thì nạp trang kế tiếp
+                    if (lastVisible >= total - 3) {
+                        viewModel.loadMoreFeed()
+                    }
+                }
+            })
         }
     }
 
@@ -450,7 +466,11 @@ class FeedFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val token = "Bearer ${authPreferences.getToken()}"
-                val body = mapOf("targetId" to feedItem.item.id, "targetType" to "item")
+                val body = mapOf(
+                    "targetId" to feedItem.item.id,
+                    "targetType" to "item",
+                    "collectionItemId" to feedItem.id
+                )
                 if (isLiked) {
                     RetrofitClient.apiService.likeItem(token, body)
                 } else {

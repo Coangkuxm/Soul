@@ -19,6 +19,26 @@ object PreviewResolver {
 
     private val cache = ConcurrentHashMap<String, String>()
 
+    @Volatile
+    private var warmedUp = false
+
+    /**
+     * Hâm nóng kết nối tới Deezer (DNS + TLS) trước khi người dùng bấm play.
+     * Tránh lỗi "lần đầu hiện hộp thoại Spotify, lần thứ 2 mới nghe được"
+     * do lần gọi mạng đầu tiên (cold-start) bị trượt.
+     */
+    suspend fun warmUp() {
+        if (warmedUp) return
+        warmedUp = true
+        try {
+            DeezerRetrofitClient.apiService.search("a")
+            Log.d(TAG, "Đã hâm nóng kết nối Deezer")
+        } catch (e: Exception) {
+            warmedUp = false // thất bại thì cho phép thử lại lần sau
+            Log.w(TAG, "Hâm nóng Deezer lỗi: ${e.message}")
+        }
+    }
+
     suspend fun resolve(title: String?, artist: String?, spotifyPreviewUrl: String?): String? {
         if (!spotifyPreviewUrl.isNullOrEmpty()) {
             Log.d(TAG, "Dùng preview Spotify cho: $title")

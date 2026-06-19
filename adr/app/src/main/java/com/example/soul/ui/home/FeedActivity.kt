@@ -515,9 +515,10 @@ class FeedActivity : AppCompatActivity() {
                 val token = "Bearer ${authPreferences.getToken()}"
                 val body = mapOf(
                     "targetId" to feedItem.item.id,
-                    "targetType" to "item"
+                    "targetType" to "item",
+                    "collectionItemId" to feedItem.id
                 )
-                
+
                 if (isLiked) {
                     RetrofitClient.apiService.likeItem(token, body)
                 } else {

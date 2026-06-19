@@ -24,6 +24,7 @@ class HomeViewModel(
 
     companion object {
         private const val TAG = "HomeViewModel"
+        private const val FEED_PAGE_SIZE = 10
     }
 
     private val authPreferences = AuthPreferences(context)
@@ -46,6 +47,12 @@ class HomeViewModel(
 
     // null = "Mọi người" (mặc định), "friends" = "Chỉ bạn bè"
     private var feedScope: String? = null
+
+    // Trạng thái phân trang feed (infinite scroll, mỗi trang FEED_PAGE_SIZE bài)
+    private var feedPage = 1
+    private var feedHasMore = true
+    private var isLoadingMoreFeed = false
+    private val accumulatedFeed = mutableListOf<FeedItem>()
 
     init {
         loadData()
@@ -72,6 +79,12 @@ class HomeViewModel(
         feedScope = scope
         _isRefreshing.value = true
         loadFeed()
+    }
+
+    /** Tải thêm trang feed kế tiếp khi người dùng cuộn xuống gần cuối. */
+    fun loadMoreFeed() {
+        if (isLoadingMoreFeed || !feedHasMore) return
+        fetchFeed(reset = false)
     }
 
     private fun loadProfile() {
@@ -125,49 +138,75 @@ class HomeViewModel(
         }
     }
 
-    private fun loadFeed() {
+    /** Tải lại feed từ đầu (trang 1). */
+    private fun loadFeed() = fetchFeed(reset = true)
+
+    /**
+     * Lấy feed theo trang.
+     * - reset = true: tải trang 1, thay toàn bộ danh sách (lần đầu / refresh / đổi bộ lọc).
+     * - reset = false: tải trang kế tiếp và nối thêm vào danh sách hiện có (infinite scroll).
+     */
+    private fun fetchFeed(reset: Boolean) {
         viewModelScope.launch {
-            _feedItems.value = Resource.Loading()
+            val token = authPreferences.getToken()
+            if (token.isNullOrEmpty()) {
+                _feedItems.value = Resource.Error("Bạn chưa đăng nhập")
+                _isRefreshing.value = false
+                return@launch
+            }
+
+            if (reset) {
+                feedPage = 1
+                feedHasMore = true
+                _feedItems.value = Resource.Loading()
+            } else {
+                isLoadingMoreFeed = true
+            }
+
             try {
-                val token = authPreferences.getToken()
-                if (token.isNullOrEmpty()) {
-                    _feedItems.value = Resource.Error("Bạn chưa đăng nhập")
-                    _isRefreshing.value = false
-                    return@launch
-                }
-                
                 val response = apiService.getFeed(
                     token = "Bearer $token",
-                    page = 1,
-                    limit = 20,
+                    page = feedPage,
+                    limit = FEED_PAGE_SIZE,
                     scope = feedScope
                 )
-                
+
                 if (response.isSuccessful && response.body() != null) {
-                    val feedData = response.body()!!.data
-                    Log.d(TAG, "Loaded ${feedData.size} feed items")
-                    feedData.forEach { item ->
-                        Log.d(TAG, "Feed item: ${item.item.title} by ${item.user.username}")
+                    val body = response.body()!!
+                    val pageItems = body.data
+                    feedHasMore = body.pagination?.hasMore ?: false
+                    Log.d(TAG, "Loaded ${pageItems.size} feed items (page $feedPage, hasMore=$feedHasMore)")
+
+                    if (reset) {
+                        accumulatedFeed.clear()
                     }
-                    _feedItems.value = Resource.Success(feedData)
+                    accumulatedFeed.addAll(pageItems)
+                    // Phòng trùng lặp giữa các trang (mỗi bài là 1 collection_item id duy nhất)
+                    val deduped = accumulatedFeed.distinctBy { it.id }
+                    accumulatedFeed.clear()
+                    accumulatedFeed.addAll(deduped)
+
+                    _feedItems.value = Resource.Success(accumulatedFeed.toList())
+                    feedPage += 1
                 } else if (response.code() == 401 || response.code() == 403) {
                     _sessionExpired.value = true
-                } else {
+                } else if (reset) {
                     _feedItems.value = Resource.Error(
                         response.errorBody()?.string() ?: "Failed to load feed"
                     )
                 }
             } catch (e: SocketTimeoutException) {
-                _feedItems.value = Resource.Error("Server đang khởi động...")
+                if (reset) _feedItems.value = Resource.Error("Server đang khởi động...")
             } catch (e: ConnectException) {
-                _feedItems.value = Resource.Error("Không thể kết nối server")
+                if (reset) _feedItems.value = Resource.Error("Không thể kết nối server")
             } catch (e: UnknownHostException) {
-                _feedItems.value = Resource.Error("Kiểm tra kết nối mạng")
+                if (reset) _feedItems.value = Resource.Error("Kiểm tra kết nối mạng")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading feed", e)
-                _feedItems.value = Resource.Error(e.message ?: "Đã xảy ra lỗi mạng")
+                if (reset) _feedItems.value = Resource.Error(e.message ?: "Đã xảy ra lỗi mạng")
             } finally {
                 _isRefreshing.value = false
+                isLoadingMoreFeed = false
             }
         }
     }

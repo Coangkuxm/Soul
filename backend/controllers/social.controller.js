@@ -14,32 +14,11 @@ class SocialController {
       const friendsOnly = req.query.scope === 'friends';
       const friendFilter = friendsOnly ? 'AND uf.follower_id IS NOT NULL' : '';
 
+      // Feed sắp xếp mới-nhất-trước (chronological). Thứ tự xác định theo
+      // (added_at, id) giúp phân trang bằng OFFSET luôn ổn định, không trùng/sót
+      // khi cuộn tải thêm. Bài của chính người dùng cũng hiển thị như bài người khác.
       const feedQuery = `
-        WITH user_preferences AS (
-          SELECT i.type, COUNT(*)::int AS weight
-          FROM likes l
-          JOIN items i ON i.id = l.target_id
-          WHERE l.user_id = $1
-            AND l.target_type = 'item'
-          GROUP BY i.type
-
-          UNION ALL
-
-          SELECT i.type, COUNT(*)::int AS weight
-          FROM comments cm
-          JOIN collection_items ci_pref
-            ON cm.target_type = 'collection_item'
-           AND cm.target_id = ci_pref.id
-          JOIN items i ON i.id = ci_pref.item_id
-          WHERE cm.user_id = $1
-          GROUP BY i.type
-        ),
-        preference_scores AS (
-          SELECT type, SUM(weight)::int AS weight
-          FROM user_preferences
-          GROUP BY type
-        ),
-        post_stats AS (
+        WITH post_stats AS (
           SELECT
             ci.id AS collection_item_id,
             COUNT(DISTINCT lp.id)::int AS post_like_count,
@@ -53,7 +32,7 @@ class SocialController {
            AND cm.target_id = ci.id
           GROUP BY ci.id
         )
-        SELECT 
+        SELECT
           ci.id as collection_item_id,
           ci.note,
           ci.rating,
@@ -73,28 +52,13 @@ class SocialController {
           CASE WHEN uf.follower_id IS NOT NULL THEN true ELSE false END as is_friend,
           CASE WHEN l.id IS NOT NULL THEN true ELSE false END as is_liked,
           COALESCE(ps.post_like_count, 0) as like_count,
-          COALESCE(ps.post_comment_count, 0) as comment_count,
-          (
-            CASE WHEN uf.follower_id IS NOT NULL THEN 80 ELSE 0 END
-            + CASE WHEN c.owner_id = $1 THEN -100 ELSE 0 END
-            + CASE
-                WHEN ci.added_at >= NOW() - INTERVAL '1 day' THEN 45
-                WHEN ci.added_at >= NOW() - INTERVAL '7 days' THEN 30
-                WHEN ci.added_at >= NOW() - INTERVAL '30 days' THEN 12
-                ELSE 0
-              END
-            + LEAST(COALESCE(ps.post_like_count, 0), 20) * 2
-            + LEAST(COALESCE(ps.post_comment_count, 0), 20) * 3
-            + LEAST(COALESCE(pref.weight, 0), 10) * 4
-            + RANDOM() * 8
-          ) as feed_score
+          COALESCE(ps.post_comment_count, 0) as comment_count
         FROM collection_items ci
         JOIN items i ON ci.item_id = i.id
         JOIN collections c ON ci.collection_id = c.id
         JOIN users u ON c.owner_id = u.id
         LEFT JOIN user_follows uf ON uf.following_id = u.id AND uf.follower_id = $1
         LEFT JOIN likes l ON l.target_id = i.id AND l.target_type = 'item' AND l.user_id = $1
-        LEFT JOIN preference_scores pref ON pref.type = i.type
         LEFT JOIN post_stats ps ON ps.collection_item_id = ci.id
         WHERE c.is_private = false
           AND COALESCE(u.account_status, 'active') = 'active'
@@ -102,8 +66,8 @@ class SocialController {
           AND ci.added_at >= NOW() - INTERVAL '180 days'
           ${friendFilter}
         ORDER BY
-          feed_score DESC,
-          ci.added_at DESC
+          ci.added_at DESC,
+          ci.id DESC
         LIMIT $2 OFFSET $3
       `;
 
@@ -223,7 +187,9 @@ class SocialController {
   // Like an item/collection/comment
   async likeItem(req, res, next) {
     try {
-      const { targetId, targetType } = req.body;
+      // collectionItemId: id của bài viết (collection_items) khi tim một item trong feed,
+      // dùng để xác định đúng chủ bài viết nhận thông báo.
+      const { targetId, targetType, collectionItemId } = req.body;
       const userId = req.user.id;
 
       // Validate target type
@@ -247,11 +213,15 @@ class SocialController {
         [userId, targetId, targetType]
       );
 
-      // Update like count in the respective table
-      await db.query(
-        `UPDATE ${targetType}s SET like_count = like_count + 1 WHERE id = $1`,
-        [targetId]
-      );
+      // Update like count in the respective table.
+      // Chỉ collections và comments có cột like_count; bảng items không có
+      // (feed/user-posts đếm like động từ bảng likes) nên bỏ qua để tránh lỗi SQL.
+      if (targetType === 'collection' || targetType === 'comment') {
+        await db.query(
+          `UPDATE ${targetType}s SET like_count = like_count + 1 WHERE id = $1`,
+          [targetId]
+        );
+      }
 
       // Record activity
       await db.query(
@@ -259,22 +229,43 @@ class SocialController {
         [userId, 'like', targetId, targetType]
       );
 
-      // Create notification
+      // Create notification cho chủ nội dung được tim.
+      // Mặc định thông báo trỏ tới chính target được tim; với like trên item của
+      // một bài viết feed thì trỏ tới collection_item để bấm vào mở đúng bài.
       let targetUserId;
+      let notifTargetType = targetType;
+      let notifTargetId = targetId;
+
       if (targetType === 'comment') {
         const comment = await db.query('SELECT user_id FROM comments WHERE id = $1', [targetId]);
         targetUserId = comment.rows[0]?.user_id;
+      } else if (targetType === 'collection') {
+        const collection = await db.query('SELECT owner_id FROM collections WHERE id = $1', [targetId]);
+        targetUserId = collection.rows[0]?.owner_id;
+      } else if (collectionItemId) {
+        // Tim một bài viết trong feed: chủ bài = chủ collection chứa nó.
+        const post = await db.query(
+          `SELECT c.owner_id
+           FROM collection_items ci
+           JOIN collections c ON c.id = ci.collection_id
+           WHERE ci.id = $1`,
+          [collectionItemId]
+        );
+        targetUserId = post.rows[0]?.owner_id;
+        notifTargetType = 'collection_item';
+        notifTargetId = collectionItemId;
       } else {
-        const item = await db.query(`SELECT user_id, owner_id FROM ${targetType}s WHERE id = $1`, [targetId]);
-        targetUserId = targetType === 'collection' ? item.rows[0]?.owner_id : item.rows[0]?.user_id;
+        // Fallback: item rời không kèm bài viết -> người tạo item.
+        const item = await db.query('SELECT created_by FROM items WHERE id = $1', [targetId]);
+        targetUserId = item.rows[0]?.created_by;
       }
 
       if (targetUserId && targetUserId !== userId) {
         await db.query(
-          `INSERT INTO notifications 
-          (recipient_id, notification_type, sender_id, target_id, target_type) 
+          `INSERT INTO notifications
+          (recipient_id, notification_type, sender_id, target_id, target_type)
           VALUES ($1, $2, $3, $4, $5)`,
-          [targetUserId, 'like', userId, targetId, targetType]
+          [targetUserId, 'like', userId, notifTargetId, notifTargetType]
         );
       }
 
@@ -304,11 +295,14 @@ class SocialController {
         throw new NotFoundError('Like not found');
       }
 
-      // Update like count in the respective table
-      await db.query(
-        `UPDATE ${targetType}s SET like_count = GREATEST(0, like_count - 1) WHERE id = $1`,
-        [targetId]
-      );
+      // Update like count in the respective table.
+      // Chỉ collections/comments có cột like_count (xem ghi chú ở likeItem).
+      if (targetType === 'collection' || targetType === 'comment') {
+        await db.query(
+          `UPDATE ${targetType}s SET like_count = GREATEST(0, like_count - 1) WHERE id = $1`,
+          [targetId]
+        );
+      }
 
       res.status(200).json({ success: true, message: 'Successfully unliked item' });
     } catch (error) {
