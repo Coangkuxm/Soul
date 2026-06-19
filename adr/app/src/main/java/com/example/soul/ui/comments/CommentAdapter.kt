@@ -4,7 +4,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
-import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.soul.R
@@ -69,11 +68,11 @@ class CommentAdapter(
 
         fun bind(item: CommentUiModel) {
             val comment = item.comment
-            binding.tvUsername.text = comment.username ?: "Nguoi dung"
+            binding.tvUsername.text = comment.username ?: "Người dùng"
             binding.tvContent.text = comment.content
             binding.tvTime.text = buildTimeLabel(comment)
             binding.tvLikeCount.text = comment.likeCount.toString()
-            binding.btnLike.text = if (comment.isLiked) "Da thich" else "Thich"
+            binding.btnLike.text = if (comment.isLiked) "Đã thích" else "Thích"
             binding.btnLike.setTextColor(
                 binding.root.context.getColor(
                     if (comment.isLiked) R.color.primary else R.color.text_hint
@@ -81,11 +80,12 @@ class CommentAdapter(
             )
 
             if (item.isReply) {
-                binding.rootComment.updatePadding(left = 44)
+                // Hiện gutter chứa đường nối luồng + nhãn "Trả lời @ai"
+                binding.threadGutter.visibility = View.VISIBLE
                 binding.tvReplyMeta.visibility = View.VISIBLE
-                binding.tvReplyMeta.text = item.replyToUserName?.let { "Tra loi $it" } ?: "Tra loi"
+                binding.tvReplyMeta.text = item.replyToUserName?.let { "↳ Trả lời $it" } ?: "↳ Trả lời"
             } else {
-                binding.rootComment.updatePadding(left = 0)
+                binding.threadGutter.visibility = View.GONE
                 binding.tvReplyMeta.visibility = View.GONE
                 binding.tvReplyMeta.text = ""
             }
@@ -104,12 +104,12 @@ class CommentAdapter(
 
         private fun showCommentMenu(anchor: View, comment: Comment) {
             PopupMenu(anchor.context, anchor).apply {
-                menu.add("Sua")
-                menu.add("Xoa")
+                menu.add("Sửa")
+                menu.add("Xóa")
                 setOnMenuItemClickListener { item ->
                     when (item.title.toString()) {
-                        "Sua" -> onEditClick(comment)
-                        "Xoa" -> onDeleteClick(comment)
+                        "Sửa" -> onEditClick(comment)
+                        "Xóa" -> onDeleteClick(comment)
                     }
                     true
                 }
@@ -144,7 +144,7 @@ class CommentAdapter(
                 days > 0 -> "${days}d"
                 hours > 0 -> "${hours}h"
                 minutes > 0 -> "${minutes}m"
-                else -> "Vua xong"
+                else -> "Vừa xong"
             }
         } catch (_: Exception) {
             ""

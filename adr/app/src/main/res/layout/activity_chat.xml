@@ -68,9 +68,20 @@
         android:orientation="horizontal"
         android:paddingHorizontal="10dp"
         android:paddingVertical="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/emojiPicker"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnEmoji"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Chọn biểu tượng cảm xúc"
+            android:padding="8dp"
+            android:src="@drawable/ic_emoji"
+            app:tint="@color/text_secondary" />
 
         <EditText
             android:id="@+id/etMessage"
@@ -98,6 +109,16 @@
             android:src="@drawable/ic_arrow_right"
             app:tint="@color/white" />
     </LinearLayout>
+
+    <androidx.emoji2.emojipicker.EmojiPickerView
+        android:id="@+id/emojiPicker"
+        android:layout_width="0dp"
+        android:layout_height="280dp"
+        android:background="@color/white"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ProgressBar
         android:id="@+id/progressBar"

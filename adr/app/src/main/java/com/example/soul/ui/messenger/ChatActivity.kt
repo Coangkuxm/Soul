@@ -7,6 +7,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -58,6 +59,17 @@ class ChatActivity : AppCompatActivity() {
 
         setupUi()
         setupActions()
+        setupEmoji()
+
+        // Bấm Back: nếu bảng emoji đang mở thì đóng nó trước, chưa thoát màn chat
+        onBackPressedDispatcher.addCallback(this) {
+            if (binding.emojiPicker.visibility == View.VISIBLE) {
+                hideEmojiPicker()
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
 
         if (token.isNotBlank()) {
             ChatSocketManager.connect(token)
@@ -188,6 +200,50 @@ class ChatActivity : AppCompatActivity() {
             }
         }
         ChatSocketManager.markConversationRead(conversationId)
+    }
+
+    private fun setupEmoji() {
+        binding.btnEmoji.setOnClickListener { toggleEmojiPicker() }
+
+        // Chạm vào ô nhập -> ẩn bảng emoji để nhường chỗ cho bàn phím
+        binding.etMessage.setOnClickListener { hideEmojiPicker() }
+
+        binding.emojiPicker.setOnEmojiPickedListener { picked ->
+            val et = binding.etMessage
+            val start = et.selectionStart.coerceAtLeast(0)
+            val end = et.selectionEnd.coerceAtLeast(0)
+            et.text?.replace(minOf(start, end), maxOf(start, end), picked.emoji)
+        }
+    }
+
+    private fun toggleEmojiPicker() {
+        if (binding.emojiPicker.visibility == View.VISIBLE) {
+            hideEmojiPicker()
+            showKeyboard()
+        } else {
+            showEmojiPicker()
+        }
+    }
+
+    private fun showEmojiPicker() {
+        hideKeyboard()
+        binding.etMessage.requestFocus()
+        // Chờ bàn phím ẩn rồi mới hiện bảng emoji cho mượt
+        binding.emojiPicker.postDelayed({ binding.emojiPicker.visibility = View.VISIBLE }, 100)
+        binding.btnEmoji.setImageResource(R.drawable.ic_keyboard)
+    }
+
+    private fun hideEmojiPicker() {
+        if (binding.emojiPicker.visibility == View.VISIBLE) {
+            binding.emojiPicker.visibility = View.GONE
+        }
+        binding.btnEmoji.setImageResource(R.drawable.ic_emoji)
+    }
+
+    private fun showKeyboard() {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        binding.etMessage.requestFocus()
+        imm?.showSoftInput(binding.etMessage, InputMethodManager.SHOW_IMPLICIT)
     }
 
     private fun hideKeyboard() {

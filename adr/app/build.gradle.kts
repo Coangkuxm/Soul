@@ -92,6 +92,9 @@ dependencies {
         exclude(group = "org.json", module = "json")
     }
 
+    // Emoji picker giống Messenger (bảng emoji đầy đủ, có phân loại)
+    implementation("androidx.emoji2:emoji2-emojipicker:1.4.0")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
