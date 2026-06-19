@@ -18,8 +18,10 @@
         android:padding="16dp">
 
         <LinearLayout
+            android:id="@+id/layoutUserHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 

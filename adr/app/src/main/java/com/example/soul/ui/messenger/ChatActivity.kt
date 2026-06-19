@@ -137,8 +137,8 @@ class ChatActivity : AppCompatActivity() {
                 messages.clear()
                 val ordered = response.body()!!.data.reversed()
                 messages.addAll(ordered)
-                adapter.submitList(messages.toList())
-                scrollToBottom()
+                // Cuộn xuống đáy sau khi danh sách đã render xong (commit callback)
+                adapter.submitList(messages.toList()) { scrollToBottom() }
             } catch (e: Exception) {
                 showError(e.message ?: "Lỗi mạng")
             } finally {
@@ -179,8 +179,7 @@ class ChatActivity : AppCompatActivity() {
     private fun appendMessageIfNeeded(message: ChatMessage) {
         if (messages.any { it.id == message.id }) return
         messages.add(message)
-        adapter.submitList(messages.toList())
-        scrollToBottom()
+        adapter.submitList(messages.toList()) { scrollToBottom() }
     }
 
     private fun scrollToBottom() {

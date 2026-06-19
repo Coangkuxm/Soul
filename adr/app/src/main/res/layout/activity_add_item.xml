@@ -182,23 +182,6 @@
                         android:minLines="3" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilItemDescription"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="@string/add_item_description_hint">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etItemDescription"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="top"
-                        android:inputType="textMultiLine"
-                        android:minLines="2" />
-                </com.google.android.material.textfield.TextInputLayout>
-
                 <LinearLayout
                     android:id="@+id/layoutMetadata"
                     android:layout_width="match_parent"
@@ -295,26 +278,9 @@
                         tools:text="Nhac yeu thich" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:text="@string/add_item_rating_title"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <RatingBar
-                    android:id="@+id/ratingBar"
-                    style="?android:attr/ratingBarStyleSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
-                    android:numStars="5"
-                    android:stepSize="1" />
-
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnAdd"
+                    android:layout_marginTop="8dp"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:text="@string/add_item_submit"

@@ -2,6 +2,7 @@ package com.example.soul.ui.add
 
 import android.net.Uri
 import android.os.Bundle
+import android.text.InputType
 import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
@@ -111,7 +112,6 @@ class AddItemActivity : AppCompatActivity() {
     private fun clearForm() {
         binding.etTitle.text?.clear()
         binding.etPostNote.text?.clear()
-        binding.etItemDescription.text?.clear()
         binding.etArtist.text?.clear()
         binding.etAlbum.text?.clear()
         binding.etDirector.text?.clear()
@@ -133,6 +133,15 @@ class AddItemActivity : AppCompatActivity() {
 
         val hasSelection = selectedSearchResult != null
         binding.layoutContent.visibility = if (needsSearch && !hasSelection) View.GONE else View.VISIBLE
+
+        // Loại không phải nhạc: cho phép nhập tên thủ công trở lại.
+        if (selectedType != "music") {
+            setFieldLocked(
+                binding.etTitle,
+                false,
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            )
+        }
 
         when (selectedType) {
             "music" -> binding.btnSearch.text = getString(R.string.add_item_search_spotify)
@@ -245,17 +254,36 @@ class AddItemActivity : AppCompatActivity() {
         return emptyList()
     }
 
-    private fun setMusicFieldsEnabled(enabled: Boolean) {
-        binding.etTitle.isEnabled = enabled
-        binding.etPostNote.isEnabled = enabled
-        binding.etItemDescription.isEnabled = enabled
-        binding.etArtist.isEnabled = false
-        binding.etAlbum.isEnabled = false
+    private fun setMusicFieldsEnabled(hasSelection: Boolean) {
+        // Tên / nghệ sĩ / album là dữ liệu từ Spotify -> khóa, chỉ đọc.
+        setFieldLocked(binding.etTitle, true, 0)
+        setFieldLocked(binding.etArtist, true, 0)
+        setFieldLocked(binding.etAlbum, true, 0)
+        binding.etPostNote.isEnabled = true
 
-        binding.tilTitle.hint = if (!enabled && selectedType == "music") {
+        binding.tilTitle.hint = if (!hasSelection && selectedType == "music") {
             getString(R.string.add_item_music_name_hint)
         } else {
             getString(R.string.add_item_name_hint)
+        }
+    }
+
+    /** Khóa/mở khóa chỉnh sửa một ô nhập mà vẫn hiển thị chữ rõ ràng. */
+    private fun setFieldLocked(
+        et: com.google.android.material.textfield.TextInputEditText,
+        locked: Boolean,
+        normalInputType: Int
+    ) {
+        if (locked) {
+            et.inputType = InputType.TYPE_NULL
+            et.isFocusable = false
+            et.isFocusableInTouchMode = false
+            et.isCursorVisible = false
+        } else {
+            et.isFocusableInTouchMode = true
+            et.isFocusable = true
+            et.isCursorVisible = true
+            et.inputType = normalInputType
         }
     }
 
@@ -315,7 +343,6 @@ class AddItemActivity : AppCompatActivity() {
         binding.layoutContent.visibility = View.VISIBLE
         binding.etTitle.setText(result.title)
         binding.etPostNote.text?.clear()
-        binding.etItemDescription.text?.clear()
 
         result.coverUrl?.let { url ->
             Glide.with(this)
@@ -371,8 +398,6 @@ class AddItemActivity : AppCompatActivity() {
     private fun addItem() {
         val title = binding.etTitle.text.toString().trim()
         val note = binding.etPostNote.text.toString().trim()
-        val itemDescription = binding.etItemDescription.text.toString().trim()
-        val rating = binding.ratingBar.rating.toInt().takeIf { it > 0 }
 
         if (selectedType == "music" && selectedSearchResult == null) {
             Toast.makeText(this, R.string.add_item_select_music_required, Toast.LENGTH_SHORT).show()
@@ -416,7 +441,7 @@ class AddItemActivity : AppCompatActivity() {
                 val itemBody = mutableMapOf<String, Any?>(
                     "type" to selectedType,
                     "title" to title,
-                    "description" to itemDescription,
+                    "description" to "",
                     "metadata" to metadata
                 )
 
@@ -442,9 +467,6 @@ class AddItemActivity : AppCompatActivity() {
                 val collectionItemBody = mutableMapOf<String, Any?>("item_id" to itemId)
                 if (note.isNotEmpty()) {
                     collectionItemBody["note"] = note
-                }
-                if (rating != null) {
-                    collectionItemBody["rating"] = rating
                 }
 
                 val addToCollectionResponse = RetrofitClient.apiService.addItemToCollection(

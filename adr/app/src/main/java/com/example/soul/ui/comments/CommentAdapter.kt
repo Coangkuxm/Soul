@@ -13,6 +13,7 @@ import com.example.soul.utils.AvatarLoader
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 class CommentAdapter(
     private val currentUserId: Int,
@@ -33,16 +34,29 @@ class CommentAdapter(
 
         items.clear()
         parents.forEach { parent ->
-            items += CommentUiModel(parent, false, null)
-            repliesByParent[parent.id].orEmpty().forEach { reply ->
-                items += CommentUiModel(reply, true, parentMap[reply.parentId]?.username)
+            val replies = repliesByParent[parent.id].orEmpty()
+            items += CommentUiModel(
+                comment = parent,
+                isReply = false,
+                replyToUserName = null,
+                hasReplies = replies.isNotEmpty(),
+                isLastReply = false
+            )
+            replies.forEachIndexed { index, reply ->
+                items += CommentUiModel(
+                    comment = reply,
+                    isReply = true,
+                    replyToUserName = parentMap[reply.parentId]?.username,
+                    hasReplies = false,
+                    isLastReply = index == replies.lastIndex
+                )
             }
         }
 
         comments
             .filter { it.parentId != null && parentMap[it.parentId] == null }
             .forEach { orphanReply ->
-                items += CommentUiModel(orphanReply, true, null)
+                items += CommentUiModel(orphanReply, true, null, false, isLastReply = true)
             }
 
         notifyDataSetChanged()
@@ -80,15 +94,19 @@ class CommentAdapter(
             )
 
             if (item.isReply) {
-                // Hiện gutter chứa đường nối luồng + nhãn "Trả lời @ai"
+                // Reply: hiện gutter có đường nối (nửa trên + khúc nối), nửa dưới chỉ
+                // hiện khi còn reply phía sau để nối tiếp luồng.
                 binding.threadGutter.visibility = View.VISIBLE
+                binding.threadLineBottom.visibility = if (item.isLastReply) View.GONE else View.VISIBLE
                 binding.tvReplyMeta.visibility = View.VISIBLE
-                binding.tvReplyMeta.text = item.replyToUserName?.let { "↳ Trả lời $it" } ?: "↳ Trả lời"
+                binding.tvReplyMeta.text = item.replyToUserName?.let { "Trả lời $it" } ?: "Trả lời"
             } else {
                 binding.threadGutter.visibility = View.GONE
                 binding.tvReplyMeta.visibility = View.GONE
                 binding.tvReplyMeta.text = ""
             }
+            // Cmt gốc có reply -> kéo đường nối từ dưới avatar xuống các reply
+            binding.parentDownLine.visibility = if (item.hasReplies) View.VISIBLE else View.GONE
 
             val isOwnComment = comment.userId == currentUserId
             binding.btnMore.visibility = if (isOwnComment) View.VISIBLE else View.GONE
@@ -120,17 +138,33 @@ class CommentAdapter(
 
     private fun buildTimeLabel(comment: Comment): String {
         val base = formatTimeAgo(comment.createdAt)
-        val edited = !comment.updatedAt.isNullOrBlank() &&
-            !comment.createdAt.isNullOrBlank() &&
-            comment.updatedAt.substringBefore(".") != comment.createdAt.substringBefore(".")
+        // Chỉ coi là đã chỉnh sửa khi updated_at lớn hơn created_at đáng kể (>= 60s).
+        // Tránh báo nhầm do sai lệch mili-giây hoặc các thao tác khác (vd: thả tim).
+        val created = parseUtcMillis(comment.createdAt)
+        val updated = parseUtcMillis(comment.updatedAt)
+        val edited = created != null && updated != null && (updated - created) >= 60_000L
         return if (edited && base.isNotBlank()) "$base • Đã chỉnh sửa" else base
+    }
+
+    private fun parseUtcMillis(value: String?): Long? {
+        if (value.isNullOrBlank()) return null
+        return try {
+            val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            fmt.timeZone = TimeZone.getTimeZone("UTC")
+            fmt.parse(value.substringBefore("."))?.time
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun formatTimeAgo(dateString: String?): String {
         if (dateString.isNullOrEmpty()) return ""
 
         return try {
+            // Server trả mốc thời gian theo UTC -> phải parse theo UTC, nếu không
+            // sẽ lệch đúng bằng chênh múi giờ (VN +7h) khiến cmt vừa đăng hiện "7h".
             val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            format.timeZone = TimeZone.getTimeZone("UTC")
             val date = format.parse(dateString.substringBefore(".")) ?: return ""
             val now = Date()
             val diff = now.time - date.time
@@ -154,7 +188,9 @@ class CommentAdapter(
     data class CommentUiModel(
         val comment: Comment,
         val isReply: Boolean,
-        val replyToUserName: String?
+        val replyToUserName: String?,
+        val hasReplies: Boolean = false,
+        val isLastReply: Boolean = false
     )
 }
 

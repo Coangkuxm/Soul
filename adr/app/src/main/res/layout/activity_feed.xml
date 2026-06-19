@@ -32,7 +32,7 @@
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
-            android:text="Moi nguoi"
+            android:text="Mọi Người"
             android:textColor="@color/text_primary"
             android:textSize="14sp"
             app:cornerRadius="20dp"
@@ -101,7 +101,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Chua co muc nao trong bang tin"
+            android:text="Chưa có mục nào trong bảng tin"
             android:textColor="@color/text_secondary"
             android:textSize="16sp" />
 
@@ -109,7 +109,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Hay theo doi nguoi khac de xem bo suu tap cua ho"
+            android:text="Hãy theo dõi người khác để xem bộ sưu tập của họ"
             android:textColor="@color/text_hint"
             android:textSize="14sp" />
     </LinearLayout>
@@ -204,7 +204,7 @@
             android:layout_height="32dp"
             android:layout_marginStart="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Dong mini player"
+            android:contentDescription="Đóng mini player"
             android:padding="6dp"
             android:src="@drawable/ic_close"
             app:tint="#D6DCE5" />

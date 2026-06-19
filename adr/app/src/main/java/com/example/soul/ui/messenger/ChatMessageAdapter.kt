@@ -15,6 +15,9 @@ import com.example.soul.databinding.ItemChatMessageOtherBinding
 import com.example.soul.databinding.ItemChatMessageSelfBinding
 import com.example.soul.ui.notification.RelativeTime
 import com.example.soul.utils.AvatarLoader
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 class ChatMessageAdapter(
     private val currentUserId: Int,
@@ -39,16 +42,21 @@ class ChatMessageAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val message = getItem(position)
+        val prev = if (position > 0) getItem(position - 1) else null
+        // Hiện nhãn thời gian khi: là tin đầu, hoặc cách tin trước >= 15 phút.
+        val showTime = prev == null || gapMillis(prev.createdAt, message.createdAt) >= GROUP_THRESHOLD_MS
+        // Gom sát khi cùng người gửi và trong cùng cụm thời gian.
+        val groupedWithPrev = prev != null && prev.senderId == message.senderId && !showTime
         when (holder) {
-            is SelfMessageViewHolder -> holder.bind(message)
-            is OtherMessageViewHolder -> holder.bind(message)
+            is SelfMessageViewHolder -> holder.bind(message, showTime, groupedWithPrev)
+            is OtherMessageViewHolder -> holder.bind(message, showTime, groupedWithPrev)
         }
     }
 
     inner class SelfMessageViewHolder(
         private val binding: ItemChatMessageSelfBinding
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: ChatMessage) {
+        fun bind(item: ChatMessage, showTime: Boolean, groupedWithPrev: Boolean) {
             bindSharedPostCard(
                 item = item,
                 contentView = binding.tvContent,
@@ -58,14 +66,20 @@ class ChatMessageAdapter(
                 noteView = binding.tvSharedNote,
                 coverView = binding.ivSharedCover
             )
-            binding.tvTime.text = RelativeTime.format(item.createdAt)
+            if (showTime) {
+                binding.tvTime.visibility = View.VISIBLE
+                binding.tvTime.text = RelativeTime.format(item.createdAt)
+            } else {
+                binding.tvTime.visibility = View.GONE
+            }
+            applyTopSpacing(itemView, groupedWithPrev)
         }
     }
 
     inner class OtherMessageViewHolder(
         private val binding: ItemChatMessageOtherBinding
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: ChatMessage) {
+        fun bind(item: ChatMessage, showTime: Boolean, groupedWithPrev: Boolean) {
             bindSharedPostCard(
                 item = item,
                 contentView = binding.tvContent,
@@ -75,12 +89,26 @@ class ChatMessageAdapter(
                 noteView = binding.tvSharedNote,
                 coverView = binding.ivSharedCover
             )
-            binding.tvSender.text = item.senderDisplayName?.takeIf { it.isNotBlank() }
-                ?: item.senderUsername
-                ?: "Người dùng"
-            binding.tvTime.text = RelativeTime.format(item.createdAt)
-
+            // Khi gom nhóm cùng người gửi thì ẩn tên cho gọn (giống Messenger)
+            if (groupedWithPrev) {
+                binding.tvSender.visibility = View.GONE
+            } else {
+                binding.tvSender.visibility = View.VISIBLE
+                binding.tvSender.text = item.senderDisplayName?.takeIf { it.isNotBlank() }
+                    ?: item.senderUsername
+                    ?: "Người dùng"
+            }
+            if (showTime) {
+                binding.tvTime.visibility = View.VISIBLE
+                binding.tvTime.text = RelativeTime.format(item.createdAt)
+            } else {
+                binding.tvTime.visibility = View.GONE
+            }
+            // Ẩn avatar ở các tin gộp để tránh lặp; vẫn giữ chỗ cho thẳng hàng
+            binding.ivAvatar.visibility = if (groupedWithPrev) View.INVISIBLE else View.VISIBLE
             AvatarLoader.load(binding.ivAvatar, item.senderAvatarUrl)
+
+            applyTopSpacing(itemView, groupedWithPrev)
         }
     }
 
@@ -126,6 +154,33 @@ class ChatMessageAdapter(
         }
     }
 
+    /** Giãn cách trên của item: gộp thì sát (1dp), tin đầu cụm thì thoáng hơn (10dp). */
+    private fun applyTopSpacing(itemView: View, groupedWithPrev: Boolean) {
+        val density = itemView.resources.displayMetrics.density
+        val top = ((if (groupedWithPrev) 1 else 10) * density).toInt()
+        val bottom = (1 * density).toInt()
+        itemView.setPadding(itemView.paddingLeft, top, itemView.paddingRight, bottom)
+    }
+
+    /** Khoảng cách (ms) giữa 2 mốc thời gian ISO; trả về Long.MAX nếu không phân tích được. */
+    private fun gapMillis(prev: String?, current: String?): Long {
+        val a = parseMillis(prev)
+        val b = parseMillis(current)
+        if (a == null || b == null) return Long.MAX_VALUE
+        return kotlin.math.abs(b - a)
+    }
+
+    private fun parseMillis(value: String?): Long? {
+        if (value.isNullOrBlank()) return null
+        return try {
+            val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            fmt.timeZone = TimeZone.getTimeZone("UTC")
+            fmt.parse(value.substringBefore("."))?.time
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private class Diff : DiffUtil.ItemCallback<ChatMessage>() {
         override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
             return oldItem.id == newItem.id
@@ -139,6 +194,8 @@ class ChatMessageAdapter(
     companion object {
         private const val VIEW_TYPE_SELF = 1
         private const val VIEW_TYPE_OTHER = 2
+        // Cách nhau >= 15 phút thì mới tách hiển thị mốc thời gian
+        private const val GROUP_THRESHOLD_MS = 15 * 60 * 1000L
     }
 }
 

@@ -116,6 +116,8 @@ class FeedAdapter(
                 btnMore.setOnClickListener { onReportClick(feedItem, it) }
 
                 root.setOnClickListener { onItemClick(feedItem) }
+                // Chạm bất kỳ đâu trong header (avatar + tên + thời gian) -> mở trang cá nhân
+                layoutUserHeader.setOnClickListener { onUserClick(feedItem.user.id) }
                 ivAvatar.setOnClickListener { onUserClick(feedItem.user.id) }
                 tvActivity.setOnClickListener { onUserClick(feedItem.user.id) }
             }
